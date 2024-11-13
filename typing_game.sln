@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "typing_game", "typing_game\typing_game.vcxproj", "{D967B37C-5ABC-4982-89DA-5AA8FA9A435E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D967B37C-5ABC-4982-89DA-5AA8FA9A435E}.Debug|x64.ActiveCfg = Debug|x64
+		{D967B37C-5ABC-4982-89DA-5AA8FA9A435E}.Debug|x64.Build.0 = Debug|x64
+		{D967B37C-5ABC-4982-89DA-5AA8FA9A435E}.Debug|x86.ActiveCfg = Debug|Win32
+		{D967B37C-5ABC-4982-89DA-5AA8FA9A435E}.Debug|x86.Build.0 = Debug|Win32
+		{D967B37C-5ABC-4982-89DA-5AA8FA9A435E}.Release|x64.ActiveCfg = Release|x64
+		{D967B37C-5ABC-4982-89DA-5AA8FA9A435E}.Release|x64.Build.0 = Release|x64
+		{D967B37C-5ABC-4982-89DA-5AA8FA9A435E}.Release|x86.ActiveCfg = Release|Win32
+		{D967B37C-5ABC-4982-89DA-5AA8FA9A435E}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A83EA2B3-3D47-489A-9152-0E8AE3E02BA1}
+	EndGlobalSection
+EndGlobal
