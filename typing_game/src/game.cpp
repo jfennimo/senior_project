@@ -1,15 +1,21 @@
 #include "game.h"
 #include "TextureManager.h"
 #include "GameObject.h"
+#include "map.h"
 
+GameObject* player;
 GameObject* zombie;
+Map* map;
+
+
+SDL_Renderer* Game::renderer = nullptr;
 
 Game::Game()
 {}
 Game::~Game()
 {}
 
-void Game::init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen)
+void Game::init(const char* title, int width, int height, bool fullscreen)
 {
 	int flags = 0;
 
@@ -22,7 +28,7 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height, bo
 	{
 		std::cout << "Subsystems Intialized..." << std::endl;
 
-		window = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
+		window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
 		if (window)
 		{
 			std::cout << "Window created!" << std::endl;
@@ -40,15 +46,9 @@ void Game::init(const char* title, int xpos, int ypos, int width, int height, bo
 		isRunning = false;
 	}
 
-	// testing...
-	//SDL_Surface* tmpSurface = IMG_Load("Assets/Zombie.png");
-
-	//zombieTex = SDL_CreateTextureFromSurface(renderer, tmpSurface);
-	//SDL_FreeSurface(tmpSurface);
-
-	/*zombieTex = TextureManager::LoadTexture("assets/zombie.png", renderer);*/
-
-	zombie = new GameObject("assets/Zombie.png", renderer, 0, 0);
+	player = new GameObject("assets/Player.png", 0, 0);
+	zombie = new GameObject("assets/Zombie.png", 300, 300);
+	map = new Map();
 }
 
 void Game::handleEvents()
@@ -67,25 +67,16 @@ void Game::handleEvents()
 
 void Game::update()
 {
-	// Testing to get this right
-	//cnt++;
-	//destR.h = 128;
-	//destR.w = 128;
-	//destR.x = cnt;
-	////destR.x = 350;
-	////destR.y = 120;
-
-	//std::cout << cnt << std::endl;
-
+	player->update();
 	zombie->update();
 }
 
 void Game::render()
 {
 	SDL_RenderClear(renderer);
-	// here ya add stuff to render
+	map->drawMap();
+	player->render();
 	zombie->render();
-	//SDL_RenderCopy(renderer, zombieTex, NULL, &destR);
 	SDL_RenderPresent(renderer);
 }
 
