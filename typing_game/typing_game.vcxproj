@@ -143,7 +143,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Components.h" />
-    <ClInclude Include="src\ECS.h" />
+    <ClInclude Include="src\ECS\Components.h" />
+    <ClInclude Include="src\ECS\ECS.h" />
+    <ClInclude Include="src\ECS\PositionComponent.h" />
+    <ClInclude Include="src\ECS\SpriteComponent.h" />
     <ClInclude Include="src\game.h" />
     <ClInclude Include="src\GameObject.h" />
     <ClInclude Include="src\map.h" />

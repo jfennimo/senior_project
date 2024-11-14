@@ -1,19 +1,20 @@
 #include "game.h"
 #include "TextureManager.h"
-#include "GameObject.h"
 #include "map.h"
+#include "ECS/Components.h"
 
-#include "ECS.h"
-#include "Components.h"
 
-GameObject* player;
-GameObject* zombie;
+//#include "GameObject.h"
+//#include "ECS.h"
+//#include "Components.h"
+//GameObject* player;
+//GameObject* zombie;
 Map* map;
 
 SDL_Renderer* Game::renderer = nullptr;
 
 Manager manager;
-auto& newPlayer(manager.addEntity());
+auto& player(manager.addEntity());
 
 Game::Game()
 {}
@@ -49,12 +50,12 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 		isRunning = true;
 	}
 
-	player = new GameObject("assets/Player.png", 0, 0);
-	zombie = new GameObject("assets/Zombie.png", 300, 300);
+	//player = new GameObject("assets/Player.png", 400, 300);
+	//zombie = new GameObject("assets/Zombie.png", 0, 0);
 	map = new Map();
 
-	newPlayer.addComponent<PositionComponent>();
-	//newPlayer.getComponent<PositionComponent>().setPos(500, 500);
+	player.addComponent<PositionComponent>(0, 0);
+	player.addComponent<SpriteComponent>("assets/Player.png");
 }
 
 void Game::handleEvents()
@@ -73,19 +74,28 @@ void Game::handleEvents()
 
 void Game::update()
 {
-	player->update();
-	zombie->update();
+	//player->update();
+	//zombie->update();
+	manager.refresh();
 	manager.update();
-	std::cout << newPlayer.getComponent<PositionComponent>().x() << "," <<
-		newPlayer.getComponent<PositionComponent>().y() << std::endl;
+
+	// player will turn into zombie if they go past x100
+	// for texture filtering
+	if (player.getComponent<PositionComponent>().x() > 100)
+	{
+		player.getComponent<SpriteComponent>().setTex("assets/Zombie.png");
+	}
+	//std::cout << player.getComponent<PositionComponent>().x() << "," <<
+	//	player.getComponent<PositionComponent>().y() << std::endl;
 }
 
 void Game::render()
 {
 	SDL_RenderClear(renderer);
 	map->drawMap();
-	player->render();
-	zombie->render();
+	manager.draw();
+	//player->render();
+	//zombie->render();
 	SDL_RenderPresent(renderer);
 }
 
