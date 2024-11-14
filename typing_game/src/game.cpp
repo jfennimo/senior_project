@@ -3,12 +3,17 @@
 #include "GameObject.h"
 #include "map.h"
 
+#include "ECS.h"
+#include "Components.h"
+
 GameObject* player;
 GameObject* zombie;
 Map* map;
 
-
 SDL_Renderer* Game::renderer = nullptr;
+
+Manager manager;
+auto& newPlayer(manager.addEntity());
 
 Game::Game()
 {}
@@ -42,13 +47,14 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 		}
 
 		isRunning = true;
-	} else {
-		isRunning = false;
 	}
 
 	player = new GameObject("assets/Player.png", 0, 0);
 	zombie = new GameObject("assets/Zombie.png", 300, 300);
 	map = new Map();
+
+	newPlayer.addComponent<PositionComponent>();
+	//newPlayer.getComponent<PositionComponent>().setPos(500, 500);
 }
 
 void Game::handleEvents()
@@ -69,6 +75,9 @@ void Game::update()
 {
 	player->update();
 	zombie->update();
+	manager.update();
+	std::cout << newPlayer.getComponent<PositionComponent>().x() << "," <<
+		newPlayer.getComponent<PositionComponent>().y() << std::endl;
 }
 
 void Game::render()
