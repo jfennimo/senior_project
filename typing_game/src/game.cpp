@@ -2,6 +2,7 @@
 #include "TextureManager.h"
 #include "map.h"
 #include "ECS/Components.h"
+#include "Vector2D.h"
 
 
 //#include "GameObject.h"
@@ -54,7 +55,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	//zombie = new GameObject("assets/Zombie.png", 0, 0);
 	map = new Map();
 
-	player.addComponent<PositionComponent>(0, 0);
+	player.addComponent<TransformComponent>();
 	player.addComponent<SpriteComponent>("assets/Player.png");
 }
 
@@ -78,10 +79,10 @@ void Game::update()
 	//zombie->update();
 	manager.refresh();
 	manager.update();
-
+	player.getComponent<TransformComponent>().position.Add(Vector2D(5, 0));
 	// player will turn into zombie if they go past x100
 	// for texture filtering
-	if (player.getComponent<PositionComponent>().x() > 100)
+	if (player.getComponent<TransformComponent>().position.x > 100)
 	{
 		player.getComponent<SpriteComponent>().setTex("assets/Zombie.png");
 	}

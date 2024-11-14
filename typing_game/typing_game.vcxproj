@@ -140,17 +140,19 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\map.cpp" />
     <ClCompile Include="src\TextureManager.cpp" />
+    <ClCompile Include="src\Vector2D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Components.h" />
     <ClInclude Include="src\ECS\Components.h" />
     <ClInclude Include="src\ECS\ECS.h" />
-    <ClInclude Include="src\ECS\PositionComponent.h" />
+    <ClInclude Include="src\ECS\TransformComponent.h" />
     <ClInclude Include="src\ECS\SpriteComponent.h" />
     <ClInclude Include="src\game.h" />
     <ClInclude Include="src\GameObject.h" />
     <ClInclude Include="src\map.h" />
     <ClInclude Include="src\TextureManager.h" />
+    <ClInclude Include="src\Vector2D.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
