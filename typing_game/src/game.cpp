@@ -11,10 +11,11 @@
 //GameObject* player;
 //GameObject* zombie;
 Map* map;
+Manager manager;
 
 SDL_Renderer* Game::renderer = nullptr;
+SDL_Event Game::event;
 
-Manager manager;
 auto& player(manager.addEntity());
 
 Game::Game()
@@ -57,11 +58,11 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
 	player.addComponent<TransformComponent>();
 	player.addComponent<SpriteComponent>("assets/Player.png");
+	player.addComponent<KeyboardController>();
 }
 
 void Game::handleEvents()
 {
-	SDL_Event event;
 	SDL_PollEvent(&event);
 	switch (event.type) 
 	{
@@ -79,13 +80,13 @@ void Game::update()
 	//zombie->update();
 	manager.refresh();
 	manager.update();
-	player.getComponent<TransformComponent>().position.Add(Vector2D(5, 0));
-	// player will turn into zombie if they go past x100
-	// for texture filtering
-	if (player.getComponent<TransformComponent>().position.x > 100)
-	{
-		player.getComponent<SpriteComponent>().setTex("assets/Zombie.png");
-	}
+	//player.getComponent<TransformComponent>().position.Add(Vector2D(5, 0));
+	//// player will turn into zombie if they go past x100
+	//// for texture filtering
+	//if (player.getComponent<TransformComponent>().position.x > 100)
+	//{
+	//	player.getComponent<SpriteComponent>().setTex("assets/Zombie.png");
+	//}
 	//std::cout << player.getComponent<PositionComponent>().x() << "," <<
 	//	player.getComponent<PositionComponent>().y() << std::endl;
 }
