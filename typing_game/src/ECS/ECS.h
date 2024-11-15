@@ -7,6 +7,8 @@
 #include <bitset>
 #include <array>
 
+// Entity Component System
+
 class Component;
 class Entity;
 

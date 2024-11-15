@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../game.h"
+#include "../Game.h"
 #include "ECS.h"
 #include "Components.h"
 

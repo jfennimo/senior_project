@@ -135,23 +135,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\game.cpp" />
+    <ClCompile Include="src\Game.cpp" />
     <ClCompile Include="src\GameObject.cpp" />
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\map.cpp" />
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\Map.cpp" />
     <ClCompile Include="src\TextureManager.cpp" />
     <ClCompile Include="src\Vector2D.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Components.h" />
     <ClInclude Include="src\ECS\Components.h" />
     <ClInclude Include="src\ECS\ECS.h" />
     <ClInclude Include="src\ECS\KeyboardController.h" />
     <ClInclude Include="src\ECS\TransformComponent.h" />
     <ClInclude Include="src\ECS\SpriteComponent.h" />
-    <ClInclude Include="src\game.h" />
+    <ClInclude Include="src\Game.h" />
     <ClInclude Include="src\GameObject.h" />
-    <ClInclude Include="src\map.h" />
+    <ClInclude Include="src\Map.h" />
     <ClInclude Include="src\TextureManager.h" />
     <ClInclude Include="src\Vector2D.h" />
   </ItemGroup>

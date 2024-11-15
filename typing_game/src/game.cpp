@@ -1,6 +1,6 @@
-#include "game.h"
+#include "Game.h"
 #include "TextureManager.h"
-#include "map.h"
+#include "Map.h"
 #include "ECS/Components.h"
 #include "Vector2D.h"
 
@@ -17,6 +17,7 @@ SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
 
 auto& player(manager.addEntity());
+auto& zombie(manager.addEntity());
 
 Game::Game()
 {}
@@ -56,9 +57,14 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	//zombie = new GameObject("assets/Zombie.png", 0, 0);
 	map = new Map();
 
-	player.addComponent<TransformComponent>();
+	// Setting player position
+	player.addComponent<TransformComponent>(350, 550);
 	player.addComponent<SpriteComponent>("assets/Player.png");
 	player.addComponent<KeyboardController>();
+
+	zombie.addComponent<TransformComponent>();
+	zombie.addComponent<SpriteComponent>("assets/Zombie.png");
+
 }
 
 void Game::handleEvents()
@@ -80,13 +86,14 @@ void Game::update()
 	//zombie->update();
 	manager.refresh();
 	manager.update();
-	//player.getComponent<TransformComponent>().position.Add(Vector2D(5, 0));
-	//// player will turn into zombie if they go past x100
+
+	zombie.getComponent<TransformComponent>().position.Add(Vector2D(2, 0));
+	//// zombie will turn into tombstone if they go past x300
 	//// for texture filtering
-	//if (player.getComponent<TransformComponent>().position.x > 100)
-	//{
-	//	player.getComponent<SpriteComponent>().setTex("assets/Zombie.png");
-	//}
+	if (zombie.getComponent<TransformComponent>().position.x > 300)
+	{
+		zombie.getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+	}
 	//std::cout << player.getComponent<PositionComponent>().x() << "," <<
 	//	player.getComponent<PositionComponent>().y() << std::endl;
 }

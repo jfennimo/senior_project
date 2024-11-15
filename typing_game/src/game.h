@@ -1,5 +1,5 @@
-#ifndef game_h
-#define game_h
+#ifndef Game_h
+#define Game_h
 #include "SDL.h"
 #include "SDL_image.h"
 #include <iostream>
