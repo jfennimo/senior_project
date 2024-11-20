@@ -40,6 +40,12 @@ Map::Map()
 	dest.y = 0;
 }
 
+Map::~Map()
+{
+	SDL_DestroyTexture(wall);
+	SDL_DestroyTexture(floor);
+}
+
 void Map::loadMap(int arr[20][25])
 {
 	for(int row = 0; row < 20; row++) 

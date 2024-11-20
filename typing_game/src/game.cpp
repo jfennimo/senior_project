@@ -3,7 +3,7 @@
 #include "Map.h"
 #include "ECS/Components.h"
 #include "Vector2D.h"
-
+#include "Collision.h"
 
 //#include "GameObject.h"
 //#include "ECS.h"
@@ -18,6 +18,7 @@ SDL_Event Game::event;
 
 auto& player(manager.addEntity());
 auto& zombie(manager.addEntity());
+auto& wall(manager.addEntity());
 
 Game::Game()
 {}
@@ -61,10 +62,14 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	player.addComponent<TransformComponent>(350, 550);
 	player.addComponent<SpriteComponent>("assets/Player.png");
 	player.addComponent<KeyboardController>();
+	player.addComponent<ColliderComponent>("player");
 
 	zombie.addComponent<TransformComponent>();
 	zombie.addComponent<SpriteComponent>("assets/Zombie.png");
 
+	wall.addComponent<TransformComponent>(300.0f, 300.0f, 300, 20, 1);
+	wall.addComponent<SpriteComponent>("assets/Wall.png");
+	wall.addComponent<ColliderComponent>("wall");
 }
 
 void Game::handleEvents()
@@ -96,6 +101,13 @@ void Game::update()
 	}
 	//std::cout << player.getComponent<PositionComponent>().x() << "," <<
 	//	player.getComponent<PositionComponent>().y() << std::endl;
+
+	if (Collision::AABB(player.getComponent<ColliderComponent>().collider,
+		wall.getComponent<ColliderComponent>().collider))
+	{
+		//player.getComponent<TransformComponent>().scale = 1;
+		std::cout << "Wall Hit!" << std::endl;
+	}
 }
 
 void Game::render()
