@@ -106,6 +106,7 @@ void Game::update()
 		wall.getComponent<ColliderComponent>().collider))
 	{
 		//player.getComponent<TransformComponent>().scale = 1;
+		player.getComponent<TransformComponent>().velocity * -1;
 		std::cout << "Wall Hit!" << std::endl;
 	}
 }
