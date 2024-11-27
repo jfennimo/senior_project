@@ -2,6 +2,7 @@
 #define Game_h
 #include "SDL.h"
 #include "SDL_image.h"
+#include "UIManager.h"
 #include <iostream>
 
 class Game {
@@ -28,6 +29,7 @@ private:
 	bool isRunning = false;
 	int cnt = 0;
 	SDL_Window* window;
+	UIManager* uiManager;
 };
 
 #endif

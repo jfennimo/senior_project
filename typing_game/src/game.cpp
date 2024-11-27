@@ -12,6 +12,7 @@
 //GameObject* zombie;
 Map* map;
 Manager manager;
+UIManager* uiManager;
 
 SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
@@ -21,9 +22,13 @@ auto& zombie(manager.addEntity());
 auto& wall(manager.addEntity());
 
 Game::Game()
-{}
+{
+	uiManager = nullptr;
+}
 Game::~Game()
-{}
+{
+	delete uiManager;
+}
 
 void Game::init(const char* title, int width, int height, bool fullscreen)
 {
@@ -51,8 +56,19 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 			std::cout << "Renderer created!" << std::endl;
 		}
 
+		if (TTF_Init() == -1) {
+			std::cout << "Failed to initialize SDL_ttf... " << TTF_GetError() << std::endl;
+			return;
+		}
+
 		isRunning = true;
+	} else {
+		std::cout << "SDL Initialization Failed!" << std::endl;
+		isRunning = false;
 	}
+
+
+	uiManager = new UIManager(renderer);
 
 	//player = new GameObject("assets/Player.png", 400, 300);
 	//zombie = new GameObject("assets/Zombie.png", 0, 0);
@@ -117,17 +133,37 @@ void Game::update()
 void Game::render()
 {
 	SDL_RenderClear(renderer);
+
+	// Draw map and game objects
 	map->drawMap();
 	manager.draw();
-	//player->render();
-	//zombie->render();
+
+	// Access zombie's position
+	auto& zombieTransform = zombie.getComponent<TransformComponent>();
+	int textX = static_cast<int>(zombieTransform.position.x - 60); // Zombie's x position
+	int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above the zombie
+
+	// Render the prompt bubble and text
+	if (uiManager) {
+	SDL_Color rectColor = { 153, 255, 153, 255 };
+	uiManager->drawRectangle(textX - 10, textY - 5, 200, 25, rectColor);
+		TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16); // Smaller font size
+		if (font) {
+			SDL_Color color = { 255, 255, 255, 255 }; // White color
+			uiManager->drawText("hello world", textX, textY, color, font);
+			TTF_CloseFont(font);
+		}
+	}
+
 	SDL_RenderPresent(renderer);
 }
 
 void Game::clean()
 {
+	delete uiManager;
 	SDL_DestroyWindow(window);
 	SDL_DestroyRenderer(renderer);
+	TTF_Quit();
 	SDL_Quit();
 	std::cout << "Game Cleaned" << std::endl;
 }
