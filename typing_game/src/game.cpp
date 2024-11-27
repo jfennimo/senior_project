@@ -64,10 +64,12 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	player.addComponent<KeyboardController>();
 	player.addComponent<ColliderComponent>("player");
 
-	zombie.addComponent<TransformComponent>();
+	// Setting zombie position
+	zombie.addComponent<TransformComponent>(350, 300);
 	zombie.addComponent<SpriteComponent>("assets/Zombie.png");
 
-	wall.addComponent<TransformComponent>(300.0f, 300.0f, 300, 20, 1);
+	// Placing wall into area for testing
+	wall.addComponent<TransformComponent>(00.0f, 500.0f, 30, 800, 1);
 	wall.addComponent<SpriteComponent>("assets/Wall.png");
 	wall.addComponent<ColliderComponent>("wall");
 }
@@ -92,13 +94,14 @@ void Game::update()
 	manager.refresh();
 	manager.update();
 
-	zombie.getComponent<TransformComponent>().position.Add(Vector2D(2, 0));
+	// Move zombie
+	//zombie.getComponent<TransformComponent>().position.Add(Vector2D(2, 0));
 	//// zombie will turn into tombstone if they go past x300
 	//// for texture filtering
-	if (zombie.getComponent<TransformComponent>().position.x > 300)
-	{
-		zombie.getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
-	}
+	//if (zombie.getComponent<TransformComponent>().position.x > 300)
+	//{
+	//	zombie.getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+	//}
 	//std::cout << player.getComponent<PositionComponent>().x() << "," <<
 	//	player.getComponent<PositionComponent>().y() << std::endl;
 
