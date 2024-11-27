@@ -30,6 +30,8 @@ private:
 	int cnt = 0;
 	SDL_Window* window;
 	UIManager* uiManager;
+	std::string userInput = ""; // for storing typed text
+	bool isZombieTransformed = false; // to prevent multiple transformations!
 };
 
 #endif

@@ -77,14 +77,14 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	// Setting player position
 	player.addComponent<TransformComponent>(350, 550);
 	player.addComponent<SpriteComponent>("assets/Player.png");
-	player.addComponent<KeyboardController>();
-	player.addComponent<ColliderComponent>("player");
+	//player.addComponent<KeyboardController>();
 
 	// Setting zombie position
-	zombie.addComponent<TransformComponent>(350, 300);
+	zombie.addComponent<TransformComponent>(350, 100);
 	zombie.addComponent<SpriteComponent>("assets/Zombie.png");
+	zombie.addComponent<ColliderComponent>("zombie");
 
-	// Placing wall into area for testing
+	// Wall around player
 	wall.addComponent<TransformComponent>(00.0f, 500.0f, 30, 800, 1);
 	wall.addComponent<SpriteComponent>("assets/Wall.png");
 	wall.addComponent<ColliderComponent>("wall");
@@ -98,6 +98,20 @@ void Game::handleEvents()
 		case SDL_QUIT:
 			isRunning = false;
 				break;
+		case SDL_TEXTINPUT: // Capture text input
+			userInput += event.text.text; // Append typed text
+			break;
+		case SDL_KEYDOWN:
+			if (event.key.keysym.sym == SDLK_BACKSPACE && !userInput.empty()) {
+				userInput.pop_back(); // Remove last character on backspace
+			}
+			else if (event.key.keysym.sym == SDLK_RETURN) { // Check for Enter key
+				if (userInput == "hello world" && !isZombieTransformed) {
+					zombie.getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+					isZombieTransformed = true; // Prevent further changes
+				}
+			}
+			break;
 		default:
 			break;
 	}
@@ -110,23 +124,22 @@ void Game::update()
 	manager.refresh();
 	manager.update();
 
-	// Move zombie
-	//zombie.getComponent<TransformComponent>().position.Add(Vector2D(2, 0));
-	//// zombie will turn into tombstone if they go past x300
-	//// for texture filtering
-	//if (zombie.getComponent<TransformComponent>().position.x > 300)
-	//{
-	//	zombie.getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
-	//}
-	//std::cout << player.getComponent<PositionComponent>().x() << "," <<
-	//	player.getComponent<PositionComponent>().y() << std::endl;
+	// Referencing zombie's transform component
+	auto& zombieTransform = zombie.getComponent<TransformComponent>();
 
-	if (Collision::AABB(player.getComponent<ColliderComponent>().collider,
-		wall.getComponent<ColliderComponent>().collider))
-	{
-		//player.getComponent<TransformComponent>().scale = 1;
-		player.getComponent<TransformComponent>().velocity * -1;
-		std::cout << "Wall Hit!" << std::endl;
+	// Only move zombie if it has not transformed
+	if (!isZombieTransformed) {
+		// Move zombie down
+		Vector2D movement(0, 1); // Move downwards
+		zombieTransform.position.Add(movement);
+
+		// Checking for wall collision
+		if (Collision::AABB(zombie.getComponent<ColliderComponent>().collider,
+			wall.getComponent<ColliderComponent>().collider))
+		{
+			zombieTransform.position.Subtract(movement); // Reverse (stop) the movement
+			std::cout << "Wall Hit!" << std::endl;
+		}
 	}
 }
 
@@ -145,18 +158,42 @@ void Game::render()
 
 	// Render the prompt bubble and text
 	if (uiManager) {
-	SDL_Color rectColor = { 153, 255, 153, 255 };
-	uiManager->drawRectangle(textX - 10, textY - 5, 200, 25, rectColor);
-		TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16); // Smaller font size
+		SDL_Color rectColor = { 153, 255, 153, 255 };
+		uiManager->drawRectangle(textX - 10, textY - 5, 200, 25, rectColor);
+
+		TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
 		if (font) {
-			SDL_Color color = { 255, 255, 255, 255 }; // White color
-			uiManager->drawText("hello world", textX, textY, color, font);
+			std::string targetText = "hello world";
+
+			int letterX = textX; // Starting position for letters
+			for (size_t i = 0; i < targetText.size(); ++i) {
+				// Determine color based on what the user has typed
+				SDL_Color color = { 255, 255, 255, 255 }; // Default: white
+				if (i < userInput.size() && userInput[i] == targetText[i]) {
+					color = { 255, 0, 0, 255 }; // Correctly typed: red
+				}
+
+				// Render each letter individually
+				std::string letter(1, targetText[i]); // Convert char to string
+				SDL_Surface* surface = TTF_RenderText_Solid(font, letter.c_str(), color);
+				if (surface) {
+					SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+					if (texture) {
+						SDL_Rect dst = { letterX, textY, surface->w, surface->h };
+						SDL_RenderCopy(renderer, texture, nullptr, &dst);
+						letterX += surface->w; // Move to the right for the next letter
+						SDL_DestroyTexture(texture);
+					}
+					SDL_FreeSurface(surface);
+				}
+			}
 			TTF_CloseFont(font);
 		}
 	}
 
 	SDL_RenderPresent(renderer);
 }
+
 
 void Game::clean()
 {
