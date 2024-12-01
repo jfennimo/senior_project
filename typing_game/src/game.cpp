@@ -130,7 +130,7 @@ void Game::update()
 	// Only move zombie if it has not transformed
 	if (!isZombieTransformed) {
 		// Move zombie down
-		Vector2D movement(0, 1); // Move downwards
+		Vector2D movement(0, 0.5); // Move downwards
 		zombieTransform.position.Add(movement);
 
 		// Checking for wall collision
