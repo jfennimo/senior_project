@@ -19,7 +19,10 @@ SDL_Event Game::event;
 
 auto& player(manager.addEntity());
 auto& zombie(manager.addEntity());
-auto& wall(manager.addEntity());
+auto& wall1(manager.addEntity());
+auto& wall2(manager.addEntity());
+auto& wall3(manager.addEntity());
+
 
 Game::Game()
 {
@@ -75,19 +78,25 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	map = new Map();
 
 	// Setting player position
-	player.addComponent<TransformComponent>(350, 550);
+	player.addComponent<TransformComponent>(615, 640);
 	player.addComponent<SpriteComponent>("assets/Player.png");
 	//player.addComponent<KeyboardController>();
 
 	// Setting zombie position
-	zombie.addComponent<TransformComponent>(350, 100);
+	zombie.addComponent<TransformComponent>(615, 100);
 	zombie.addComponent<SpriteComponent>("assets/Zombie.png");
 	zombie.addComponent<ColliderComponent>("zombie");
 
 	// Wall around player
-	wall.addComponent<TransformComponent>(00.0f, 500.0f, 30, 800, 1);
-	wall.addComponent<SpriteComponent>("assets/Wall.png");
-	wall.addComponent<ColliderComponent>("wall");
+	wall1.addComponent<TransformComponent>(520.0f, 600.0f, 30, 225, 1);
+	wall2.addComponent<TransformComponent>(520.0f, 600.0f, 150, 30, 1);
+	wall3.addComponent<TransformComponent>(745.0f, 600.0f, 150, 30, 1);
+	wall1.addComponent<SpriteComponent>("assets/Wall.png");
+	wall1.addComponent<ColliderComponent>("wall");
+	wall2.addComponent<SpriteComponent>("assets/Wall.png");
+	wall2.addComponent<ColliderComponent>("wall");
+	wall3.addComponent<SpriteComponent>("assets/Wall.png");
+	wall3.addComponent<ColliderComponent>("wall");
 }
 
 void Game::handleEvents()
@@ -135,7 +144,7 @@ void Game::update()
 
 		// Checking for wall collision
 		if (Collision::AABB(zombie.getComponent<ColliderComponent>().collider,
-			wall.getComponent<ColliderComponent>().collider))
+			wall1.getComponent<ColliderComponent>().collider))
 		{
 			zombieTransform.position.Subtract(movement); // Reverse (stop) the movement
 			std::cout << "Wall Hit!" << std::endl;

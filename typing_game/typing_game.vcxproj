@@ -74,6 +74,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\Dev\SDL2_ttf-2.22.0\include;C:\Dev\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Dev\SDL2_ttf-2.22.0\lib\x64;C:\Dev\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\lib\x64;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)typing_game\bin\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)typing_game\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
