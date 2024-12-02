@@ -5,11 +5,6 @@
 #include "Vector2D.h"
 #include "Collision.h"
 
-//#include "GameObject.h"
-//#include "ECS.h"
-//#include "Components.h"
-//GameObject* player;
-//GameObject* zombie;
 Map* map;
 Manager manager;
 UIManager* uiManager;
@@ -72,15 +67,11 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
 
 	uiManager = new UIManager(renderer);
-
-	//player = new GameObject("assets/Player.png", 400, 300);
-	//zombie = new GameObject("assets/Zombie.png", 0, 0);
 	map = new Map();
 
 	// Setting player position
 	player.addComponent<TransformComponent>(615, 640);
 	player.addComponent<SpriteComponent>("assets/Player.png");
-	//player.addComponent<KeyboardController>();
 
 	// Setting zombie position
 	zombie.addComponent<TransformComponent>(500, 100);
@@ -98,6 +89,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	wall3.addComponent<SpriteComponent>("assets/Wall.png");
 	wall3.addComponent<ColliderComponent>("wall");
 }
+
 
 void Game::handleEvents()
 {
