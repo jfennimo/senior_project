@@ -30,6 +30,9 @@ std::string targetText; // Holds the current target prompt
 std::vector<Entity*> zombies;
 size_t currentZombieIndex = 0; // Tracks the currently active zombie
 
+// Crosshair that appears above next zombie in list
+std::unique_ptr<SpriteComponent> crosshairSprite;
+
 
 Game::Game()
 {
@@ -98,6 +101,9 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
     // Initialize random seed
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+    // Intialize crosshair sprite
+    crosshairSprite = std::make_unique<SpriteComponent>("assets/Crosshair.png");
 
     // Spawn zombies at random off-screen positions, ensuring they are not too close to the player
     int spawnBuffer = 100; // Distance beyond the game window for spawning
@@ -175,7 +181,7 @@ void Game::update() {
 
     auto& playerTransform = player.getComponent<TransformComponent>();
 
-    // Iterate through all zombies in order of the word list
+    // Iterate through all zombies
     for (size_t i = 0; i < zombies.size(); ++i) {
         Entity* zombie = zombies[i];
         auto& zombieTransform = zombie->getComponent<TransformComponent>();
@@ -217,12 +223,29 @@ void Game::update() {
             zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
             transformStatus.setTransformed(true);
 
-            // Move to the next target word if applicable
+            // Move to the next closest zombie
             if (i == currentZombieIndex) {
-                currentZombieIndex++;
-                if (currentZombieIndex < zombies.size()) {
-                    targetText = wordList[currentZombieIndex];
+                // Find the closest remaining zombie
+                float closestDistance = std::numeric_limits<float>::max();
+                size_t closestZombieIndex = currentZombieIndex;
+
+                for (size_t j = 0; j < zombies.size(); ++j) {
+                    if (!zombies[j]->getComponent<TransformStatusComponent>().getTransformed()) {
+                        auto& targetZombieTransform = zombies[j]->getComponent<TransformComponent>();
+                        float dx = playerTransform.position.x - targetZombieTransform.position.x;
+                        float dy = playerTransform.position.y - targetZombieTransform.position.y;
+                        float distance = sqrt(dx * dx + dy * dy);
+
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestZombieIndex = j;
+                        }
+                    }
                 }
+
+                // Update the current zombie to the closest one
+                currentZombieIndex = closestZombieIndex;
+                targetText = wordList[currentZombieIndex];
             }
 
             userInput.clear();
@@ -239,7 +262,17 @@ void Game::render()
     map->drawMap();
     manager.draw();
 
-    if (currentZombieIndex < zombies.size()) {
+    // Check if all zombies have been defeated (transformed)
+    bool allZombiesTransformed = true;
+    for (size_t i = 0; i < zombies.size(); ++i) {
+        if (!zombies[i]->getComponent<TransformStatusComponent>().getTransformed()) {
+            allZombiesTransformed = false;
+            break;
+        }
+    }
+
+    if (!allZombiesTransformed && currentZombieIndex < zombies.size()) {
+        // Only render the prompt if there are still zombies to be defeated
         Entity* activeZombie = zombies[currentZombieIndex];
         auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
@@ -279,7 +312,6 @@ void Game::render()
 
     SDL_RenderPresent(renderer);
 }
-
 
 void Game::clean()
 {

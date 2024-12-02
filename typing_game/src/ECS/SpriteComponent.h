@@ -49,6 +49,15 @@ public:
 	{
 		TextureManager::Draw(texture, srcRect, destRect);
 	}
+
+	// New render function for custom position rendering
+	void render(int x, int y)
+	{
+		destRect.x = x;
+		destRect.y = y;
+		TextureManager::Draw(texture, srcRect, destRect);
+	}
+
 };
 
 class TransformStatusComponent : public Component {
