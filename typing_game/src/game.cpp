@@ -20,18 +20,16 @@ auto& player(manager.addEntity());
 auto& wall1(manager.addEntity());
 auto& wall2(manager.addEntity());
 auto& wall3(manager.addEntity());
+auto& crosshair(manager.addEntity());
 
 // Wordlist stuff
-std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck"};
+std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck" };
 size_t currentPromptIndex = 0; // Track the current word prompt
 std::string targetText; // Holds the current target prompt
 
 // Zombie entities and active zombie index
 std::vector<Entity*> zombies;
 size_t currentZombieIndex = 0; // Tracks the currently active zombie
-
-// Crosshair that appears above next zombie in list
-std::unique_ptr<SpriteComponent> crosshairSprite;
 
 
 Game::Game()
@@ -99,11 +97,12 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
     wall3.addComponent<SpriteComponent>("assets/Wall.png");
     wall3.addComponent<ColliderComponent>("wall");
 
+    // Initialize the crosshair entity only once with its components
+    crosshair.addComponent<TransformComponent>(0, 0); // Initial position of the crosshair (0, 0)
+    crosshair.addComponent<SpriteComponent>("assets/Crosshair.png");
+
     // Initialize random seed
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-
-    // Intialize crosshair sprite
-    crosshairSprite = std::make_unique<SpriteComponent>("assets/Crosshair.png");
 
     // Spawn zombies at random off-screen positions, ensuring they are not too close to the player
     int spawnBuffer = 100; // Distance beyond the game window for spawning
@@ -146,6 +145,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
         newZombie->addComponent<ColliderComponent>("zombie");
         newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
         zombies.push_back(newZombie);
+
     }
 
     // Initialize the first target prompt
@@ -180,6 +180,16 @@ void Game::update() {
     manager.update();
 
     auto& playerTransform = player.getComponent<TransformComponent>();
+
+    // Update crosshair position if zombies are present
+    if (!zombies.empty() && currentZombieIndex < zombies.size()) {
+        Entity* activeZombie = zombies[currentZombieIndex];
+        auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
+
+        // Update the crosshair's position to the zombie's position
+        auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+        crosshairTransform.position = zombieTransform.position;
+    }
 
     // Iterate through all zombies
     for (size_t i = 0; i < zombies.size(); ++i) {
@@ -262,6 +272,19 @@ void Game::render()
     map->drawMap();
     manager.draw();
 
+    // Render the crosshair
+    if (!zombies.empty() && currentZombieIndex < zombies.size()) {
+        Entity* activeZombie = zombies[currentZombieIndex];
+        auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
+
+        // Place crosshair on top of the current zombie
+        auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+        crosshairTransform.position = zombieTransform.position;
+
+        // Draw the crosshair sprite
+        crosshair.getComponent<SpriteComponent>().draw();
+    }
+
     // Check if all zombies have been defeated (transformed)
     bool allZombiesTransformed = true;
     for (size_t i = 0; i < zombies.size(); ++i) {
@@ -276,12 +299,12 @@ void Game::render()
         Entity* activeZombie = zombies[currentZombieIndex];
         auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-        int textX = static_cast<int>(zombieTransform.position.x - 60); // Zombie's x position
+        int textX = static_cast<int>(zombieTransform.position.x + 5); // Zombie's x position
         int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above the zombie
 
         if (uiManager) {
             SDL_Color rectColor = { 153, 255, 153, 255 };
-            uiManager->drawRectangle(textX - 10, textY - 5, 200, 25, rectColor);
+            uiManager->drawRectangle(textX - 20, textY - 5, 125, 25, rectColor);
 
             TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
             if (font) {
