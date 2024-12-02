@@ -50,3 +50,15 @@ public:
 		TextureManager::Draw(texture, srcRect, destRect);
 	}
 };
+
+class TransformStatusComponent : public Component {
+public:
+	bool isTransformed = false; // Default to false
+
+	void setTransformed(bool status) {
+		isTransformed = status;
+	}
+	bool getTransformed() const {
+		return isTransformed;
+	}
+};
