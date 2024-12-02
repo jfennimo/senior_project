@@ -102,29 +102,24 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 void Game::handleEvents()
 {
 	SDL_PollEvent(&event);
-	switch (event.type) 
+	switch (event.type)
 	{
-		case SDL_QUIT:
-			isRunning = false;
-				break;
-		case SDL_TEXTINPUT: // Capture text input
-			userInput += event.text.text; // Append typed text
-			break;
-		case SDL_KEYDOWN:
-			if (event.key.keysym.sym == SDLK_BACKSPACE && !userInput.empty()) {
-				userInput.pop_back(); // Remove last character on backspace
-			}
-			else if (event.key.keysym.sym == SDLK_RETURN) { // Check for Enter key
-				if (userInput == "hello world" && !isZombieTransformed) {
-					zombie.getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
-					isZombieTransformed = true; // Prevent further changes
-				}
-			}
-			break;
-		default:
-			break;
+	case SDL_QUIT:
+		isRunning = false;
+		break;
+	case SDL_TEXTINPUT: // Capture text input
+		userInput += event.text.text; // Append typed text
+		break;
+	case SDL_KEYDOWN:
+		if (event.key.keysym.sym == SDLK_BACKSPACE && !userInput.empty()) {
+			userInput.pop_back(); // Remove last character on backspace
+		}
+		break;
+	default:
+		break;
 	}
 }
+
 
 void Game::update()
 {
@@ -134,6 +129,13 @@ void Game::update()
 	// Referencing zombie's and player's transform components
 	auto& playerTransform = player.getComponent<TransformComponent>();
 	auto& zombieTransform = zombie.getComponent<TransformComponent>();
+
+	// Check if the user input matches the target text
+	std::string targetText = "hello world";
+	if (userInput == targetText && !isZombieTransformed) {
+		zombie.getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+		isZombieTransformed = true; // Prevent further movement
+	}
 
 	// Only move zombie if it has not transformed
 	if (!isZombieTransformed) {
