@@ -83,7 +83,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	//player.addComponent<KeyboardController>();
 
 	// Setting zombie position
-	zombie.addComponent<TransformComponent>(615, 100);
+	zombie.addComponent<TransformComponent>(500, 100);
 	zombie.addComponent<SpriteComponent>("assets/Zombie.png");
 	zombie.addComponent<ColliderComponent>("zombie");
 
@@ -128,29 +128,49 @@ void Game::handleEvents()
 
 void Game::update()
 {
-	//player->update();
-	//zombie->update();
 	manager.refresh();
 	manager.update();
 
-	// Referencing zombie's transform component
+	// Referencing zombie's and player's transform components
+	auto& playerTransform = player.getComponent<TransformComponent>();
 	auto& zombieTransform = zombie.getComponent<TransformComponent>();
 
 	// Only move zombie if it has not transformed
 	if (!isZombieTransformed) {
-		// Move zombie down
-		Vector2D movement(0, 0.5); // Move downwards
-		zombieTransform.position.Add(movement);
+		// Calculate the direction vector towards the player
+		float dx = playerTransform.position.x - zombieTransform.position.x;
+		float dy = playerTransform.position.y - zombieTransform.position.y;
+
+		// Normalize the direction vector
+		float magnitude = sqrt(dx * dx + dy * dy);
+		if (magnitude > 0) {
+			dx /= magnitude;
+			dy /= magnitude;
+		}
+
+		// Set the movement speed
+		float speed = 0.5f;
+
+		// Apply the movement
+		zombieTransform.position.x += dx * speed;
+		zombieTransform.position.y += dy * speed;
 
 		// Checking for wall collision
 		if (Collision::AABB(zombie.getComponent<ColliderComponent>().collider,
-			wall1.getComponent<ColliderComponent>().collider))
+			wall1.getComponent<ColliderComponent>().collider) ||
+			Collision::AABB(zombie.getComponent<ColliderComponent>().collider,
+				wall2.getComponent<ColliderComponent>().collider) ||
+			Collision::AABB(zombie.getComponent<ColliderComponent>().collider,
+				wall3.getComponent<ColliderComponent>().collider))
 		{
-			zombieTransform.position.Subtract(movement); // Reverse (stop) the movement
+			// Reverse the movement upon collision
+			zombieTransform.position.x -= dx * speed;
+			zombieTransform.position.y -= dy * speed;
 			std::cout << "Wall Hit!" << std::endl;
 		}
 	}
 }
+
 
 void Game::render()
 {
