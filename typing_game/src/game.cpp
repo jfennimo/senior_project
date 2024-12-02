@@ -17,9 +17,9 @@ SDL_Event Game::event;
 
 auto& player(manager.addEntity());
 //auto& zombie(manager.addEntity());
-auto& wall1(manager.addEntity());
-auto& wall2(manager.addEntity());
-auto& wall3(manager.addEntity());
+auto& barrier1(manager.addEntity());
+auto& barrier2(manager.addEntity());
+auto& barrier3(manager.addEntity());
 auto& crosshair(manager.addEntity());
 
 // Wordlist stuff
@@ -87,15 +87,15 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
     player.addComponent<SpriteComponent>("assets/Player.png");
 
     // Walls around player
-    wall1.addComponent<TransformComponent>(520.0f, 600.0f, 30, 225, 1);
-    wall2.addComponent<TransformComponent>(520.0f, 600.0f, 150, 30, 1);
-    wall3.addComponent<TransformComponent>(745.0f, 600.0f, 150, 30, 1);
-    wall1.addComponent<SpriteComponent>("assets/Wall.png");
-    wall1.addComponent<ColliderComponent>("wall");
-    wall2.addComponent<SpriteComponent>("assets/Wall.png");
-    wall2.addComponent<ColliderComponent>("wall");
-    wall3.addComponent<SpriteComponent>("assets/Wall.png");
-    wall3.addComponent<ColliderComponent>("wall");
+    barrier1.addComponent<TransformComponent>(520.0f, 600.0f, 30, 225, 1);
+    barrier2.addComponent<TransformComponent>(520.0f, 600.0f, 150, 30, 1);
+    barrier3.addComponent<TransformComponent>(745.0f, 600.0f, 150, 30, 1);
+    barrier1.addComponent<SpriteComponent>("assets/Barrier1.png");
+    barrier1.addComponent<ColliderComponent>("barrier");
+    barrier2.addComponent<SpriteComponent>("assets/Barrier2.png");
+    barrier2.addComponent<ColliderComponent>("barrier");
+    barrier3.addComponent<SpriteComponent>("assets/Barrier3.png");
+    barrier3.addComponent<ColliderComponent>("barrier");
 
     // Initialize the crosshair entity only once with its components
     crosshair.addComponent<TransformComponent>(0, 0); // Initial position of the crosshair (0, 0)
@@ -215,11 +215,11 @@ void Game::update() {
 
             // Check for wall collisions
             if (Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
-                wall1.getComponent<ColliderComponent>().collider) ||
+                barrier1.getComponent<ColliderComponent>().collider) ||
                 Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
-                    wall2.getComponent<ColliderComponent>().collider) ||
+                    barrier2.getComponent<ColliderComponent>().collider) ||
                 Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
-                    wall3.getComponent<ColliderComponent>().collider)) {
+                    barrier3.getComponent<ColliderComponent>().collider)) {
                 zombieTransform.position.x -= dx * speed;
                 zombieTransform.position.y -= dy * speed;
 
@@ -303,7 +303,7 @@ void Game::render()
         int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above the zombie
 
         if (uiManager) {
-            SDL_Color rectColor = { 153, 255, 153, 255 };
+            SDL_Color rectColor = { 255, 178, 102, 255 };
             uiManager->drawRectangle(textX - 20, textY - 5, 125, 25, rectColor);
 
             TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
