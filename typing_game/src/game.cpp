@@ -16,11 +16,15 @@ SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
 
 auto& player(manager.addEntity());
-//auto& zombie(manager.addEntity());
 auto& barrier1(manager.addEntity());
 auto& barrier2(manager.addEntity());
 auto& barrier3(manager.addEntity());
 auto& crosshair(manager.addEntity());
+
+// Health bar / HP
+int barrierHP;
+const int maxHP = 500;
+//TTF_Font* healthFont = TTF_OpenFont("assets/PressStart2P.ttf", 16);
 
 // Wordlist stuff
 std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck" };
@@ -131,11 +135,11 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
                 break;
             }
 
-            // Ensure the spawn is not too close to the player
+            // Ensure zombie spawn is not too close to the player
             auto& playerTransform = player.getComponent<TransformComponent>();
             float dx = playerTransform.position.x - x;
             float dy = playerTransform.position.y - y;
-            if (sqrt(dx * dx + dy * dy) < 200.0f) { // Adjust the threshold as needed
+            if (sqrt(dx * dx + dy * dy) < 200.0f) { // Adjust threshold as needed
                 validSpawn = false;
             }
         }
@@ -150,6 +154,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
     // Initialize the first target prompt
     targetText = wordList[currentPromptIndex];
+
+    // Intialize barrier health and health font
+    barrierHP = maxHP;
+    //TTF_Font* healthFont = TTF_OpenFont("assets/PressStart2P.ttf", 16);
 }
 
 
@@ -209,7 +217,7 @@ void Game::update() {
                 dy /= magnitude;
             }
 
-            float speed = 1.0f; // Adjust speed as necessary
+            float speed = 0.5f; // May need to adjust this for difficulty
             zombieTransform.position.x += dx * speed;
             zombieTransform.position.y += dy * speed;
 
@@ -223,8 +231,12 @@ void Game::update() {
                 zombieTransform.position.x -= dx * speed;
                 zombieTransform.position.y -= dy * speed;
 
+                // Lower hp if zombie touches barrier
+                barrierHP--;
+                if (barrierHP < 0) barrierHP = 0;
+
                 // Wall hit detected
-                std::cout << "Wall hit!" << std::endl;
+                std::cout << "Barrier hit! HP: " << barrierHP << std::endl;
             }
         }
 
@@ -271,6 +283,16 @@ void Game::render()
     // Draw map and game objects
     map->drawMap();
     manager.draw();
+
+    TTF_Font* healthFont = TTF_OpenFont("assets/PressStart2P.ttf", 20);
+    // Draw HP bar
+    if (uiManager && healthFont) {
+        SDL_Color outlineColor = { 255, 255, 255, 255 };
+        SDL_Color fgColor = { 102, 255, 105, 255 };
+        SDL_Color bgColor = { 255, 102, 102, 255 };
+        SDL_Color textColor = { 255, 255, 51, 255 };
+        uiManager->drawHealthbar(40, 30, 200, 25, barrierHP, maxHP, outlineColor, fgColor, bgColor, "Barrier HP", healthFont, textColor);
+    }
 
     // Render the crosshair
     if (!zombies.empty() && currentZombieIndex < zombies.size()) {
@@ -341,6 +363,10 @@ void Game::clean()
 	delete uiManager;
 	SDL_DestroyWindow(window);
 	SDL_DestroyRenderer(renderer);
+    //if (healthFont) {
+    //    TTF_CloseFont(healthFont);
+    //    healthFont = nullptr;
+    //}
 	TTF_Quit();
 	SDL_Quit();
 	std::cout << "Game Cleaned" << std::endl;
