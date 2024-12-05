@@ -15,6 +15,8 @@ UIManager* uiManager;
 SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
 
+GameState gameState = GameState::TITLE_SCREEN; // Initial state
+
 auto& player(manager.addEntity());
 auto& barrier1(manager.addEntity());
 auto& barrier2(manager.addEntity());

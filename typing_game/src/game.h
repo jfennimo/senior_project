@@ -3,6 +3,7 @@
 #include "SDL.h"
 #include "SDL_image.h"
 #include "UIManager.h"
+#include "GameState.h"
 #include <iostream>
 
 class Game {
@@ -24,6 +25,8 @@ public:
 
 	static SDL_Renderer *renderer;
 	static SDL_Event event;
+
+	GameState gameState;
 
 private:
 	bool isRunning = false;
