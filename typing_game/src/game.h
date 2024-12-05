@@ -26,6 +26,8 @@ public:
 	static SDL_Renderer *renderer;
 	static SDL_Event event;
 
+	TTF_Font* titleFont;
+
 	GameState gameState;
 
 private:
