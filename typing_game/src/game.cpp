@@ -29,18 +29,20 @@ const int maxHP = 500;
 
 // Fonts
 TTF_Font* titleFont;
+TTF_Font* menuFont;
 TTF_Font* healthFont;
+
+// Frame timer
+Uint32 currentTime;
 
 // Wordlist stuff
 std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck" };
 size_t currentPromptIndex = 0; // Track the current word prompt
-std::string targetText; // Holds the current target prompt
+std::string targetText; // Holds current target prompt
 
 // Zombie entities and active zombie index
 std::vector<Entity*> zombies;
 size_t currentZombieIndex = 0; // Tracks the currently active zombie
-
-//TTF_Font* titleFont = TTF_OpenFont("assets/PressStart2P.ttf", 30);
 
 bool allZombiesTransformed = false;
 
@@ -92,7 +94,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
         isRunning = false;
     }
 
-    gameState = GameState::ARCADE_MODE; // Initial state
+    gameState = GameState::RESULTS; // Initial state
 
     uiManager = new UIManager(renderer);
     map = new Map();
@@ -114,13 +116,13 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
     barrier3.addComponent<ColliderComponent>("barrier");
 
     // Initialize the crosshair entity only once with its components
-    crosshair.addComponent<TransformComponent>(0, 0); // Initial position of the crosshair (0, 0)
+    crosshair.addComponent<TransformComponent>(0, 0); // Initial position of the crosshair
     crosshair.addComponent<SpriteComponent>("assets/Crosshair.png");
 
     // Initialize random seed
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-    // Spawn zombies at random off-screen positions, ensuring they are not too close to the player
+    // Spawn zombies at random off-screen positions but not too close to the player
     int spawnBuffer = 100; // Distance beyond the game window for spawning
     for (size_t i = 0; i < wordList.size(); ++i)
     {
@@ -171,7 +173,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
     barrierHP = maxHP;
 
     titleFont = TTF_OpenFont("assets/PressStart2P.ttf", 30);
-    //TTF_Font* healthFont = TTF_OpenFont("assets/PressStart2P.ttf", 16);
+    menuFont = TTF_OpenFont("assets/PressStart2P.ttf", 20);
+    healthFont = TTF_OpenFont("assets/PressStart2P.ttf", 20);
 }
 
 
@@ -182,6 +185,7 @@ void Game::handleEvents()
     case SDL_QUIT:
         isRunning = false;
         break;
+
     case SDL_KEYDOWN:
         if (event.key.keysym.sym == SDLK_RETURN) {
             if (gameState == GameState::TITLE_SCREEN) {
@@ -198,8 +202,8 @@ void Game::handleEvents()
                 userInput.pop_back(); // Remove last character in ARCADE_MODE
             }
         }
-        
         break;
+
     case SDL_TEXTINPUT:
         if (gameState == GameState::ARCADE_MODE) {
             userInput += event.text.text; // Append typed text only in ARCADE_MODE
@@ -209,25 +213,6 @@ void Game::handleEvents()
     default:
         break;
     }
-    /*
-	SDL_PollEvent(&event);
-	switch (event.type)
-	{
-	case SDL_QUIT:
-		isRunning = false;
-		break;
-	case SDL_TEXTINPUT: // Capture text input
-		userInput += event.text.text; // Append typed text
-		break;
-	case SDL_KEYDOWN:
-		if (event.key.keysym.sym == SDLK_BACKSPACE && !userInput.empty()) {
-			userInput.pop_back(); // Remove last character on backspace
-		}
-		break;
-	default:
-		break;
-	}
-    */
 }
 
 
@@ -240,24 +225,20 @@ void Game::update() {
     switch (gameState) {
     case GameState::TITLE_SCREEN:
         // Title screen logic
-        //if (Game::event.type == SDL_KEYDOWN) {
 
+        // Blink counter logic
+        currentTime = SDL_GetTicks(); // Get current time
 
-        //    // Transition to main menu on any key press
-        //std::cout << "Title screen updated!" << std::endl;
-        //    gameState = GameState::MAIN_MENU;
-        //}
+        if (currentTime > lastBlinkTime + BLINK_DELAY) {
+            showBlinkText = !showBlinkText;  // Toggle visibility
+            lastBlinkTime = currentTime;    // Update last blink time
+        }
         break;
 
     case GameState::MAIN_MENU:
         // Main menu logic
-        //if (Game::event.type == SDL_KEYDOWN) {
-
-
-        //    // Transition to arade mode on any key press
-        //std::cout << "Main menu updated!" << std::endl;
-        //    gameState = GameState::ARCADE_MODE;
-        //}
+ 
+        // TODO
         break;
 
 
@@ -269,7 +250,7 @@ void Game::update() {
             Entity* activeZombie = zombies[currentZombieIndex];
             auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-            // Update the crosshair's position to the zombie's position
+            // Update crosshair's position to the zombie's position
             auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
             crosshairTransform.position = zombieTransform.position;
         }
@@ -280,9 +261,9 @@ void Game::update() {
             auto& zombieTransform = zombie->getComponent<TransformComponent>();
             auto& transformStatus = zombie->getComponent<TransformStatusComponent>();
 
-            // Check if the zombie is transformed
+            // Check if zombie is transformed
             if (!transformStatus.getTransformed()) {
-                // Move the zombie toward the player
+                // Move zombie toward the player
                 float dx = playerTransform.position.x - zombieTransform.position.x;
                 float dy = playerTransform.position.y - zombieTransform.position.y;
 
@@ -315,14 +296,14 @@ void Game::update() {
                 }
             }
 
-            // Check if this zombie's prompt matches the user input
+            // Check if zombie's prompt matches the user input
             if (userInput == wordList[i] && !transformStatus.getTransformed()) {
                 zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
                 transformStatus.setTransformed(true);
 
-                // Move to the next closest zombie
+                // Move to next closest zombie
                 if (i == currentZombieIndex) {
-                    // Find the closest remaining zombie
+                    // Find closest remaining zombie
                     float closestDistance = std::numeric_limits<float>::max();
                     size_t closestZombieIndex = currentZombieIndex;
 
@@ -340,7 +321,7 @@ void Game::update() {
                         }
                     }
 
-                    // Update the current zombie to the closest one
+                    // Update current zombie to the closest one
                     currentZombieIndex = closestZombieIndex;
                     targetText = wordList[currentZombieIndex];
                 }
@@ -362,6 +343,12 @@ void Game::update() {
         }
         break;
 
+        case GameState::RESULTS:
+            // Results screen logic
+            
+            // TODO
+            break;
+
         default:
             break;
     }
@@ -375,7 +362,6 @@ void Game::render()
     switch (gameState) {
     case GameState::TITLE_SCREEN:
         // Draw title screen
-        //TTF_Font* titleFont = TTF_OpenFont("assets/PressStart2P.ttf", 30);
         if (!titleFont) {
             std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
             return;
@@ -385,14 +371,14 @@ void Game::render()
         SDL_RenderClear(renderer);
 
         uiManager->drawText("Letter RIP", 520, 360, { 255, 255, 255, 255 }, titleFont);
-
-        //SDL_RenderPresent(game->renderer);
-        //std::cout << "Title screen rendered!" << std::endl;
+        if (showBlinkText) {
+            uiManager->drawText("Press Enter to Start!", 470, 420, { 255, 255, 255, 255 }, menuFont);
+        }
+        SDL_RenderPresent(renderer);
         break;
 
     case GameState::MAIN_MENU:
         // Draw main menu
-        //TTF_Font* titleFont = TTF_OpenFont("assets/PressStart2P.ttf", 30);
         if (!titleFont) {
             std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
             return;
@@ -401,19 +387,19 @@ void Game::render()
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        uiManager->drawText("Main menu!", 520, 360, { 255, 255, 255, 255 }, titleFont);
+        uiManager->drawText("Main Menu!", 520, 50, { 255, 255, 255, 255 }, titleFont);
+        uiManager->drawText("Arcade Mode", 510, 360, { 255, 255, 255, 255 }, titleFont);
 
-        //SDL_RenderPresent(game->renderer);
-        //std::cout << "Main menu rendered!" << std::endl;
+        SDL_RenderPresent(renderer);
         break;
 
     case GameState::ARCADE_MODE:
         // Draw game
+        
         // Draw map and game objects
         map->drawMap();
         manager.draw();
 
-        healthFont = TTF_OpenFont("assets/PressStart2P.ttf", 20);
         // Draw HP bar
         if (uiManager && healthFont) {
             SDL_Color outlineColor = { 255, 255, 255, 255 };
@@ -423,16 +409,16 @@ void Game::render()
             uiManager->drawHealthbar(40, 30, 200, 25, barrierHP, maxHP, outlineColor, fgColor, bgColor, "Barrier HP", healthFont, textColor);
         }
 
-        // Render the crosshair
+        // Render crosshair
         if (!zombies.empty() && currentZombieIndex < zombies.size()) {
             Entity* activeZombie = zombies[currentZombieIndex];
             auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-            // Place crosshair on top of the current zombie
+            // Place crosshair on top of current zombie
             auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
             crosshairTransform.position = zombieTransform.position;
 
-            // Draw the crosshair sprite
+            // Draw crosshair sprite
             crosshair.getComponent<SpriteComponent>().draw();
         }
 
@@ -446,12 +432,12 @@ void Game::render()
         }
 
         if (!allZombiesTransformed && currentZombieIndex < zombies.size()) {
-            // Only render the prompt if there are still zombies to be defeated
+            // Only render prompt if there are still zombies to be defeated
             Entity* activeZombie = zombies[currentZombieIndex];
             auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
             int textX = static_cast<int>(zombieTransform.position.x + 5); // Zombie's x position
-            int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above the zombie
+            int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
 
             if (uiManager) {
                 SDL_Color rectColor = { 255, 178, 102, 255 };
@@ -488,9 +474,22 @@ void Game::render()
 
     case GameState::RESULTS:
         // Draw results screen
+        if (!titleFont) {
+            std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
+            return;
+        }
 
+        SDL_SetRenderDrawColor(renderer, 255, 178, 102, 255);
+        SDL_RenderClear(renderer);
+
+        uiManager->drawText("Results!", 520, 50, { 255, 255, 255, 255 }, titleFont);
+        uiManager->drawText("Barrier HP Remaining: ", 20, 150, { 255, 255, 255, 255 }, menuFont);
+        uiManager->drawText("Letters Typed Incorrectly:", 20, 300, { 255, 255, 255, 255 }, menuFont);
+        uiManager->drawText("Overall Accuracy: ", 20, 450, { 255, 255, 255, 255 }, menuFont);
+        uiManager->drawText("Play Again?", 500, 600, { 255, 255, 255, 255 }, titleFont);
+
+        SDL_RenderPresent(renderer);
         break;
-
 
     default:
         break;
@@ -501,13 +500,12 @@ void Game::render()
 
 void Game::clean()
 {
+    // Clean game/free memory on exit
+
+    // TODO (add more items to free)
 	delete uiManager;
 	SDL_DestroyWindow(window);
 	SDL_DestroyRenderer(renderer);
-    //if (healthFont) {
-    //    TTF_CloseFont(healthFont);
-    //    healthFont = nullptr;
-    //}
 	TTF_Quit();
 	SDL_Quit();
 	std::cout << "Game Cleaned" << std::endl;

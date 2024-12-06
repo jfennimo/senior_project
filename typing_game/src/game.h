@@ -27,12 +27,18 @@ public:
 	static SDL_Event event;
 
 	TTF_Font* titleFont;
+	TTF_Font* menuFont;
+	TTF_Font* healthFont;
 
 	GameState gameState;
 
 private:
 	bool isRunning = false;
 	int cnt = 0;
+	bool showBlinkText = true;       // Controls whether the text is visible
+	Uint32 lastBlinkTime = 0;        // Tracks the last time the blink toggled
+	const Uint32 BLINK_DELAY = 1000; // 1000 ms = 1 second
+
 	SDL_Window* window;
 	UIManager* uiManager;
 	std::string userInput = ""; // for storing typed text
