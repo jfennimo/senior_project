@@ -317,7 +317,7 @@ void Game::update() {
                     if (j >= targetText.size() || userInput[j] != targetText[j]) {
                         // Append to typedWrong only if not already processed
                         if (std::find(typedWrong.begin(), typedWrong.end(), userInput[j]) == typedWrong.end()) {
-                            typedWrong.push_back(userInput[j]);
+                            typedWrong.push_back(targetText[j]);
                         }
                     }
                 }
