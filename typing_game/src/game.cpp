@@ -28,7 +28,6 @@ auto& barrier2(manager.addEntity());
 auto& barrier3(manager.addEntity());
 auto& crosshair(manager.addEntity());
 
-
 // Fonts
 TTF_Font* titleFont;
 TTF_Font* menuFont;
@@ -38,7 +37,7 @@ TTF_Font* healthFont;
 Uint32 currentTime;
 
 // Wordlist stuff
-std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck"};
+std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck" };
 size_t currentPromptIndex = 0; // Track the current word prompt
 std::string targetText; // Holds current target prompt
 
@@ -117,15 +116,15 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
     barrier3.addComponent<SpriteComponent>("assets/Barrier3.png");
     barrier3.addComponent<ColliderComponent>("barrier");
 
-    // Initialize the crosshair entity only once with its components
-    crosshair.addComponent<TransformComponent>(0, 0); // Initial position of the crosshair
+    // Initialize crosshair entity
+    crosshair.addComponent<TransformComponent>(0, 0); // Initial position of crosshair
     crosshair.addComponent<SpriteComponent>("assets/Crosshair.png");
 
     // Initialize random seed
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-    // Spawn zombies at random off-screen positions but not too close to the player
-    int spawnBuffer = 100; // Distance beyond the game window for spawning
+    // Spawn zombies at random off-screen positions but not too close to player
+    int spawnBuffer = 100; // Distance beyond game window for spawning
     for (size_t i = 0; i < wordList.size(); ++i)
     {
         Entity* newZombie = &manager.addEntity();
@@ -151,11 +150,11 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
                 break;
             }
 
-            // Ensure zombie spawn is not too close to the player
+            // Ensure zombie spawn is not too close to player
             auto& playerTransform = player.getComponent<TransformComponent>();
             float dx = playerTransform.position.x - x;
             float dy = playerTransform.position.y - y;
-            if (sqrt(dx * dx + dy * dy) < 200.0f) { // Adjust threshold as needed
+            if (sqrt(dx * dx + dy * dy) < 200.0f) {
                 validSpawn = false;
             }
         }
@@ -191,7 +190,7 @@ void Game::handleEvents()
     case SDL_KEYDOWN:
         if (event.key.keysym.sym == SDLK_RETURN) {
             if (gameState == GameState::TITLE_SCREEN) {
-                gameState = GameState::MAIN_MENU; // Transition from title screen
+                gameState = GameState::MAIN_MENU; // Transition main menu
                 std::cout << "Navigating to main menu!" << std::endl;
             }
             else if (gameState == GameState::MAIN_MENU) {
@@ -211,10 +210,10 @@ void Game::handleEvents()
             userInput += event.text.text; // Append typed text
             processedInput.assign(userInput.size(), false);
 
-            // Increment the total number of typed letters
+            // Increment total number of typed letters
             totalLetters++;
 
-            // Check if the typed letter matches the target letter
+            // Check if typed letter matches target letter
             if (userInput.size() <= targetText.size() && event.text.text[0] == targetText[userInput.size() - 1]) {
                 correctLetters++; // Increment correct letters
             }
@@ -266,14 +265,13 @@ void Game::update() {
             Entity* activeZombie = zombies[currentZombieIndex];
             auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-            // Update crosshair's position to the zombie's position
+            // Update crosshair's position to zombie's position
             auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
             crosshairTransform.position = zombieTransform.position;
         }
 
         // Iterate through all zombies
         for (size_t i = 0; i < zombies.size(); ++i) {
-            //processedInput.assign(userInput.size(), false);
             Entity* zombie = zombies[i];
             auto& zombieTransform = zombie->getComponent<TransformComponent>();
             auto& transformStatus = zombie->getComponent<TransformStatusComponent>();
@@ -290,7 +288,7 @@ void Game::update() {
                     dy /= magnitude;
                 }
 
-                float speed = 0.5f; // May need to adjust this for difficulty
+                float speed = 0.5f; // How fast the zombies move towards the player
                 zombieTransform.position.x += dx * speed;
                 zombieTransform.position.y += dy * speed;
 
@@ -313,7 +311,7 @@ void Game::update() {
                 }
             }
 
-            // Check if zombie's prompt matches the user input
+            // Check if zombie's prompt matches user input
             if (userInput == wordList[i] && !transformStatus.getTransformed()) {
                 for (size_t j = 0; j < userInput.size(); ++j) {
                     if (j >= targetText.size() || userInput[j] != targetText[j]) {
@@ -327,7 +325,6 @@ void Game::update() {
                 // Transform zombie
                 zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
                 transformStatus.setTransformed(true);
-                //processedInput.assign(userInput.size(), false);
 
                 // Clear user input
                 userInput.clear();
@@ -490,7 +487,7 @@ void Game::render()
 
                                 // Append to typedWrong only if not already processed
                                 if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
-                                    typedWrong.push_back(userInput[i]);
+                                    typedWrong.push_back(targetText[i]);
                                 }
 
                                 processedInput[i] = true;
@@ -552,7 +549,7 @@ void Game::render()
             finalWrongResults = "Letters Typed Incorrectly: " + formattedResults.str();
             std::cout << finalWrongResults << std::endl;
 
-            // Calculate accuracy (avoid division by zero)
+            // Calculate accuracy (avoiding division by zero for testing)
             double accuracy = 0.0;
             if (totalLetters > 0) {
                 accuracy = (static_cast<double>(correctLetters) / totalLetters) * 100;
@@ -593,5 +590,3 @@ void Game::clean()
 	SDL_Quit();
 	std::cout << "Game Cleaned" << std::endl;
 }
-
-
