@@ -4,6 +4,11 @@
 #include "ECS/Components.h"
 #include "Vector2D.h"
 #include "Collision.h"
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include <format>
+#include <sstream>
 #include <vector> // For wordlist and zombie count
 #include <cstdlib> // For rand() and srand()
 #include <ctime>   // For time()
@@ -23,9 +28,6 @@ auto& barrier2(manager.addEntity());
 auto& barrier3(manager.addEntity());
 auto& crosshair(manager.addEntity());
 
-// Health bar / HP
-int barrierHP;
-const int maxHP = 500;
 
 // Fonts
 TTF_Font* titleFont;
@@ -36,7 +38,7 @@ TTF_Font* healthFont;
 Uint32 currentTime;
 
 // Wordlist stuff
-std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck" };
+std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck"};
 size_t currentPromptIndex = 0; // Track the current word prompt
 std::string targetText; // Holds current target prompt
 
@@ -94,7 +96,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
         isRunning = false;
     }
 
-    gameState = GameState::RESULTS; // Initial state
+    gameState = GameState::TITLE_SCREEN; // Initial state
 
     uiManager = new UIManager(renderer);
     map = new Map();
@@ -166,7 +168,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
     }
 
-    // Initialize the first target prompt
+    // Initialize target prompt
     targetText = wordList[currentPromptIndex];
 
     // Intialize barrier health and health font
@@ -199,14 +201,23 @@ void Game::handleEvents()
         }
         if (gameState == GameState::ARCADE_MODE) {
             if (event.key.keysym.sym == SDLK_BACKSPACE && !userInput.empty()) {
-                userInput.pop_back(); // Remove last character in ARCADE_MODE
+                userInput.pop_back(); // Remove last character
             }
         }
         break;
 
     case SDL_TEXTINPUT:
         if (gameState == GameState::ARCADE_MODE) {
-            userInput += event.text.text; // Append typed text only in ARCADE_MODE
+            userInput += event.text.text; // Append typed text
+            processedInput.assign(userInput.size(), false);
+
+            // Increment the total number of typed letters
+            totalLetters++;
+
+            // Check if the typed letter matches the target letter
+            if (userInput.size() <= targetText.size() && event.text.text[0] == targetText[userInput.size() - 1]) {
+                correctLetters++; // Increment correct letters
+            }
         }
         break;
     
@@ -237,10 +248,15 @@ void Game::update() {
 
     case GameState::MAIN_MENU:
         // Main menu logic
- 
-        // TODO
-        break;
 
+        // Blink counter logic
+        currentTime = SDL_GetTicks(); // Get current time
+
+        if (currentTime > lastBlinkTime + BLINK_DELAY) {
+            showBlinkText = !showBlinkText;  // Toggle visibility
+            lastBlinkTime = currentTime;    // Update last blink time
+        }
+        break;
 
     case GameState::ARCADE_MODE:
         // Game logic
@@ -257,6 +273,7 @@ void Game::update() {
 
         // Iterate through all zombies
         for (size_t i = 0; i < zombies.size(); ++i) {
+            //processedInput.assign(userInput.size(), false);
             Entity* zombie = zombies[i];
             auto& zombieTransform = zombie->getComponent<TransformComponent>();
             auto& transformStatus = zombie->getComponent<TransformStatusComponent>();
@@ -298,8 +315,22 @@ void Game::update() {
 
             // Check if zombie's prompt matches the user input
             if (userInput == wordList[i] && !transformStatus.getTransformed()) {
+                for (size_t j = 0; j < userInput.size(); ++j) {
+                    if (j >= targetText.size() || userInput[j] != targetText[j]) {
+                        // Append to typedWrong only if not already processed
+                        if (std::find(typedWrong.begin(), typedWrong.end(), userInput[j]) == typedWrong.end()) {
+                            typedWrong.push_back(userInput[j]);
+                        }
+                    }
+                }
+
+                // Transform zombie
                 zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
                 transformStatus.setTransformed(true);
+                //processedInput.assign(userInput.size(), false);
+
+                // Clear user input
+                userInput.clear();
 
                 // Move to next closest zombie
                 if (i == currentZombieIndex) {
@@ -325,8 +356,6 @@ void Game::update() {
                     currentZombieIndex = closestZombieIndex;
                     targetText = wordList[currentZombieIndex];
                 }
-
-                userInput.clear();
             }
         }
         // Check if all zombies are transformed
@@ -366,11 +395,12 @@ void Game::render()
             std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
             return;
         }
-
+        
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
         uiManager->drawText("Letter RIP", 520, 360, { 255, 255, 255, 255 }, titleFont);
+
         if (showBlinkText) {
             uiManager->drawText("Press Enter to Start!", 470, 420, { 255, 255, 255, 255 }, menuFont);
         }
@@ -387,8 +417,11 @@ void Game::render()
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        uiManager->drawText("Main Menu!", 520, 50, { 255, 255, 255, 255 }, titleFont);
-        uiManager->drawText("Arcade Mode", 510, 360, { 255, 255, 255, 255 }, titleFont);
+        uiManager->drawText("Main Menu!", 510, 50, { 255, 255, 255, 255 }, titleFont);
+
+        if (showBlinkText) {
+            uiManager->drawText("Arcade Mode", 490, 360, { 255, 255, 255, 255 }, titleFont);
+        }
 
         SDL_RenderPresent(renderer);
         break;
@@ -447,9 +480,24 @@ void Game::render()
                 if (font) {
                     int letterX = textX;
                     for (size_t i = 0; i < targetText.size(); ++i) {
-                        SDL_Color color = { 255, 255, 255, 255 };
-                        if (i < userInput.size() && userInput[i] == targetText[i]) {
-                            color = { 255, 0, 0, 255 };
+                        SDL_Color color = { 255, 255, 255, 255 }; // Default to white
+                        if (i < userInput.size()) {
+                            if (userInput[i] == targetText[i]) {
+                                color = { 0, 255, 0, 255 }; // Green for correct input
+                            }
+                            else if (!processedInput[i]) {
+                                color = { 255, 0, 0, 255 }; // Red for incorrect input
+
+                                // Append to typedWrong only if not already processed
+                                if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
+                                    typedWrong.push_back(userInput[i]);
+                                }
+
+                                processedInput[i] = true;
+                            }
+                            else if (processedInput[i]) {
+                                color = { 255, 0, 0, 255 }; // Keep red for already processed incorrect input
+                            }
                         }
 
                         std::string letter(1, targetText[i]);
@@ -482,11 +530,46 @@ void Game::render()
         SDL_SetRenderDrawColor(renderer, 255, 178, 102, 255);
         SDL_RenderClear(renderer);
 
+        if (!resultsCalculated) {
+            hpResults = "Barrier HP Remaining: " + std::to_string(barrierHP);
+
+            // Move unique values from typedWrong to wrongResults
+            wrongResults.clear(); // Clear previous values
+            for (auto i : typedWrong) {
+                if (wrongResults.find(i) == std::string::npos) { // Ensure no duplicates
+                    wrongResults.push_back(i);
+                }
+            }
+
+            // Format wrongResults with commas
+            for (size_t i = 0; i < wrongResults.size(); ++i) {
+                formattedResults << wrongResults[i];
+                if (i < wrongResults.size() - 1) { // Add comma for all but the last character
+                    formattedResults << ", ";
+                }
+            }
+
+            finalWrongResults = "Letters Typed Incorrectly: " + formattedResults.str();
+            std::cout << finalWrongResults << std::endl;
+
+            // Calculate accuracy (avoid division by zero)
+            double accuracy = 0.0;
+            if (totalLetters > 0) {
+                accuracy = (static_cast<double>(correctLetters) / totalLetters) * 100;
+            }
+
+            accuracyStream << "Overall Accuracy: " << std::fixed << std::setprecision(2) << accuracy << "%";
+            overallAccuracy = accuracyStream.str(); // Assign the formatted string
+            std::cout << overallAccuracy << std::endl;
+
+            resultsCalculated = true;
+        }
+
         uiManager->drawText("Results!", 520, 50, { 255, 255, 255, 255 }, titleFont);
-        uiManager->drawText("Barrier HP Remaining: ", 20, 150, { 255, 255, 255, 255 }, menuFont);
-        uiManager->drawText("Letters Typed Incorrectly:", 20, 300, { 255, 255, 255, 255 }, menuFont);
-        uiManager->drawText("Overall Accuracy: ", 20, 450, { 255, 255, 255, 255 }, menuFont);
-        uiManager->drawText("Play Again?", 500, 600, { 255, 255, 255, 255 }, titleFont);
+        uiManager->drawText(hpResults, 20, 150, {255, 255, 255, 255}, menuFont);
+        uiManager->drawText(finalWrongResults, 20, 300, { 255, 255, 255, 255 }, menuFont);
+        uiManager->drawText(overallAccuracy, 20, 450, { 255, 255, 255, 255 }, menuFont);
+        uiManager->drawText("Play Again?", 485, 600, { 255, 255, 255, 255 }, titleFont);
 
         SDL_RenderPresent(renderer);
         break;

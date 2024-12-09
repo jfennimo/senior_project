@@ -4,7 +4,9 @@
 #include "SDL_image.h"
 #include "UIManager.h"
 #include "GameState.h"
+#include <vector>
 #include <iostream>
+#include <sstream>
 
 class Game {
 
@@ -43,6 +45,29 @@ private:
 	UIManager* uiManager;
 	std::string userInput = ""; // for storing typed text
 	bool isZombieTransformed = false; // to prevent multiple transformations!
+
+
+	// Results screen variables
+
+	// Barrier HP
+	std::string hpResults;
+	int barrierHP;
+	const int maxHP = 500;
+
+	// Letters typed incorrectly
+	std::vector<char> typedWrong;
+	std::vector<bool> processedInput;
+	std::string wrongResults;
+	std::ostringstream formattedResults;
+	std::string finalWrongResults;
+
+	// Overall accuracy
+	std::ostringstream accuracyStream;
+	std::string overallAccuracy;
+	bool resultsCalculated = false;
+	int correctLetters = 0;
+	int totalLetters = 0;
+
 };
 
 #endif
