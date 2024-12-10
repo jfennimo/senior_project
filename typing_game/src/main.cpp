@@ -1,4 +1,4 @@
-#include "game.h"
+#include "Game.h"
 
 Game* game = nullptr;
 
@@ -12,7 +12,8 @@ int main(int argc, char* argv[])
 
 	game = new Game();
 
-	game->init("Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, false);
+	// previously 800x640
+	game->init("Engine", 1280, 720, false);
 
 	while (game->running())
 	{
