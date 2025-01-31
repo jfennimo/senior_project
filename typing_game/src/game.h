@@ -21,6 +21,9 @@ public:
 	void render();
 	void clean();
 
+	void nextLevel();
+	void resetGame();
+
 	bool running() {
 		return isRunning;
 	}
@@ -31,6 +34,7 @@ public:
 	TTF_Font* titleFont;
 	TTF_Font* menuFont;
 	TTF_Font* healthFont;
+	TTF_Font* gameOverFont;
 
 	GameState gameState;
 
@@ -46,11 +50,15 @@ private:
 	std::string userInput = ""; // for storing typed text
 	bool isZombieTransformed = false; // to prevent multiple transformations!
 
+	// Zombie speed!!
+	float speed = 0.5f; // How fast the zombies move towards the player
 
 	// Results screen variables
+	int level = 1;
 
 	// Barrier HP
 	std::string hpResults;
+	int resultsHP;
 	int barrierHP;
 	const int maxHP = 500;
 
@@ -62,11 +70,15 @@ private:
 	std::string finalWrongResults;
 
 	// Overall accuracy
-	std::ostringstream accuracyStream;
+	double levelAccuracy = 0.0;
+	double totalAccuracy = 0.0;
+	std::ostringstream levelAccuracyStream;
 	std::string overallAccuracy;
 	bool resultsCalculated = false;
-	int correctLetters = 0;
-	int totalLetters = 0;
+	int levelCorrectLetters = 0;
+	int levelTotalLetters = 0;
+	int finalCorrectLetters = 0;
+	int finalTotalLetters = 0;
 
 };
 
