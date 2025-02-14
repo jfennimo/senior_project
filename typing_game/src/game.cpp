@@ -23,13 +23,13 @@ SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
 
 auto& player(manager.addEntity());
+auto& leftHand(manager.addEntity());
+auto& rightHand(manager.addEntity());
 auto& barrier1(manager.addEntity());
 auto& barrier2(manager.addEntity());
 auto& barrier3(manager.addEntity());
 auto& greenSiren1(manager.addEntity());
 auto& greenSiren2(manager.addEntity());
-//auto& redSiren1(manager.addEntity());
-//auto& redSiren2(manager.addEntity());
 auto& crosshair(manager.addEntity());
 
 // Fonts
@@ -111,6 +111,13 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	player.addComponent<TransformComponent>(615, 640);
 	player.addComponent<SpriteComponent>("assets/Player.png");
 
+	// Setting hand sprites
+	leftHand.addComponent<TransformComponent>(380, 580, 64, 64, 2);
+	rightHand.addComponent<TransformComponent>(790, 580, 64, 64, 2);
+
+	leftHand.addComponent<SpriteComponent>("assets/Left_Hand.png");
+	rightHand.addComponent<SpriteComponent>("assets/Right_Hand.png");
+
 	// Walls around player
 	barrier1.addComponent<TransformComponent>(520.0f, 600.0f, 32, 225, 1);
 	barrier2.addComponent<TransformComponent>(520.0f, 600.0f, 150, 32, 1);
@@ -127,15 +134,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	greenSiren1.addComponent<TransformComponent>(515, 560, 10, 10, 4);
 	greenSiren2.addComponent<TransformComponent>(740, 560, 10, 10, 4);
 
-	//Entity* greenSiren = &manager.addEntity();
-	//greenSiren->addComponent<TransformComponent>(515, 560, 10, 10, 4);
-	//greenSiren->addComponent<SpriteComponent>("assets/Siren_Green.png");
-	//greenSiren->addComponent<TransformStatusComponent>(); // Add transformation status
-
 	greenSiren1.addComponent<SpriteComponent>("assets/Siren_Green.png");
 	greenSiren2.addComponent<SpriteComponent>("assets/Siren_Green.png");
-	//redSiren1.addComponent<SpriteComponent>("assets/Siren_Red.png");
-	//redSiren2.addComponent<SpriteComponent>("assets/Siren_Red.png");
 
 	// Initialize crosshair entity
 	crosshair.addComponent<TransformComponent>(0, 0); // Initial position of crosshair
@@ -528,21 +528,9 @@ void Game::render()
 		map->drawMap();
 		manager.draw();
 
-		// Draw HP bar
-		if (uiManager && healthFont) {
-			SDL_Color outlineColor = { 255, 255, 255, 255 };
-			SDL_Color fgColor = { 102, 255, 105, 255 };
-			SDL_Color bgColor = { 255, 102, 102, 255 };
-			//SDL_Color textColor = { 255, 255, 51, 255 };
-			SDL_Color textColor = { 0, 0, 0, 255 };
-			uiManager->drawHealthbar(40, 30, 200, 25, barrierHP, maxHP, outlineColor, fgColor, bgColor, "Barrier HP", healthFont, textColor);
-		}
-
-		// Draw level text
-		uiManager->drawText("Level " + std::to_string(level), 570, 10, { 0, 0, 0, 255 }, healthFont);
-
-		// Draw zombies remaining text
-		uiManager->drawText("Zombies Remaining: " + std::to_string(zombieCount), 870, 10, { 0, 0, 0, 255 }, healthFont);
+		// Render sprite hands over tombstones
+		leftHand.getComponent<SpriteComponent>().draw();
+		rightHand.getComponent<SpriteComponent>().draw();
 
 		// Render crosshair
 		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
@@ -619,6 +607,24 @@ void Game::render()
 				}
 			}
 		}
+
+		// Moving down here so this is drawn over the zombies
+		
+		// Draw HP bar
+		if (uiManager && healthFont) {
+			SDL_Color outlineColor = { 255, 255, 255, 255 };
+			SDL_Color fgColor = { 102, 255, 105, 255 };
+			SDL_Color bgColor = { 255, 102, 102, 255 };
+			//SDL_Color textColor = { 255, 255, 51, 255 };
+			SDL_Color textColor = { 0, 0, 0, 255 };
+			uiManager->drawHealthbar(40, 30, 200, 25, barrierHP, maxHP, outlineColor, fgColor, bgColor, "Barrier HP", healthFont, textColor);
+		}
+
+		// Draw level text
+		uiManager->drawText("Level " + std::to_string(level), 570, 10, { 0, 0, 0, 255 }, healthFont);
+
+		// Draw zombies remaining text
+		uiManager->drawText("Zombies Remaining: " + std::to_string(zombieCount), 870, 10, { 0, 0, 0, 255 }, healthFont);
 
 		SDL_RenderPresent(renderer);
 		break;
