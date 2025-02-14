@@ -24,6 +24,8 @@ public:
 	void nextLevel();
 	void resetGame();
 
+	//void updateBarrierSprite();
+
 	bool running() {
 		return isRunning;
 	}
@@ -44,17 +46,25 @@ private:
 	bool showBlinkText = true;       // Controls whether the text is visible
 	Uint32 lastBlinkTime = 0;        // Tracks the last time the blink toggled
 	const Uint32 BLINK_DELAY = 1000; // 1000 ms = 1 second
+	Uint32 currentTime;
 
 	SDL_Window* window;
 	UIManager* uiManager;
 	std::string userInput = ""; // for storing typed text
 	bool isZombieTransformed = false; // to prevent multiple transformations!
 
+	// For barrier UI
+	bool barrierUnderAttack = false; // Track if zombies are attacking
+	Uint32 lastFlashTime = 0; // Store last time the sprite switched
+	bool flashState = false;  // Track if the barrier is currently in its "flashed" state
+
 	// Zombie speed!!
 	float speed = 0.5f; // How fast the zombies move towards the player
 
 	// Results screen variables
 	int level = 1;
+	int zombieCount = 0;
+	int zombiesDefeated = 0;
 
 	// Barrier HP
 	std::string hpResults;

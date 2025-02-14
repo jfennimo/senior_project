@@ -26,6 +26,10 @@ auto& player(manager.addEntity());
 auto& barrier1(manager.addEntity());
 auto& barrier2(manager.addEntity());
 auto& barrier3(manager.addEntity());
+auto& greenSiren1(manager.addEntity());
+auto& greenSiren2(manager.addEntity());
+//auto& redSiren1(manager.addEntity());
+//auto& redSiren2(manager.addEntity());
 auto& crosshair(manager.addEntity());
 
 // Fonts
@@ -49,7 +53,7 @@ std::vector<Entity*> tombstones;
 size_t currentZombieIndex = 0; // Tracks the currently active zombie
 
 bool allZombiesTransformed = false;
-
+bool barrierUnderAttack = false; // Track if zombies are attacking
 
 Game::Game()
 {
@@ -119,6 +123,20 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	barrier3.addComponent<SpriteComponent>("assets/Barrier3.png");
 	barrier3.addComponent<ColliderComponent>("barrier");
 
+	// Green and red sirens on barrier
+	greenSiren1.addComponent<TransformComponent>(515, 560, 10, 10, 4);
+	greenSiren2.addComponent<TransformComponent>(740, 560, 10, 10, 4);
+
+	//Entity* greenSiren = &manager.addEntity();
+	//greenSiren->addComponent<TransformComponent>(515, 560, 10, 10, 4);
+	//greenSiren->addComponent<SpriteComponent>("assets/Siren_Green.png");
+	//greenSiren->addComponent<TransformStatusComponent>(); // Add transformation status
+
+	greenSiren1.addComponent<SpriteComponent>("assets/Siren_Green.png");
+	greenSiren2.addComponent<SpriteComponent>("assets/Siren_Green.png");
+	//redSiren1.addComponent<SpriteComponent>("assets/Siren_Red.png");
+	//redSiren2.addComponent<SpriteComponent>("assets/Siren_Red.png");
+
 	// Initialize crosshair entity
 	crosshair.addComponent<TransformComponent>(0, 0); // Initial position of crosshair
 	crosshair.addComponent<SpriteComponent>("assets/Crosshair.png");
@@ -168,6 +186,9 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		zombies.push_back(newZombie);
 	}
+	
+	// Intilalize zombies remaining
+	zombieCount = zombies.size();
 
 	// Initialize target prompt
 	targetText = wordList[currentPromptIndex];
@@ -276,6 +297,7 @@ void Game::update() {
 
 	case GameState::ARCADE_MODE:
 		// Game logic
+		currentTime = SDL_GetTicks(); // Get current time in milliseconds
 
 		// Update crosshair position if zombies are present
 		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
@@ -318,12 +340,42 @@ void Game::update() {
 					zombieTransform.position.x -= dx * speed;
 					zombieTransform.position.y -= dy * speed;
 
+					// Wall collision is true
+					barrierUnderAttack = true; // Track if zombies are attacking
+
 					// Lower hp if zombie touches barrier
 					barrierHP--;
 					if (barrierHP < 0) barrierHP = 0;
 
 					// Wall hit detected
 					std::cout << "Barrier hit! HP: " << barrierHP << std::endl;
+
+					if (currentTime - lastFlashTime > 200) // Flash every 200ms
+					{
+						flashState = !flashState; // Toggle flash state
+						const char* newTexture = flashState ? "assets/Siren_Green.png" : "assets/Siren_Red.png";
+
+						// Ensure greenSiren1 has a SpriteComponent before setting texture
+						if (greenSiren1.hasComponent<SpriteComponent>())
+						{
+							greenSiren1.getComponent<SpriteComponent>().setTex(newTexture);
+						}
+
+						if (greenSiren2.hasComponent<SpriteComponent>())
+						{
+							greenSiren2.getComponent<SpriteComponent>().setTex(newTexture);
+						}
+
+						lastFlashTime = currentTime;
+					}
+				} else
+				{
+					if (barrierUnderAttack && (currentTime - lastFlashTime > 300)) {
+						barrierUnderAttack = false; // Track if zombies are attacking
+						
+						greenSiren1.getComponent<SpriteComponent>().setTex("assets/Siren_Green.png");
+						greenSiren2.getComponent<SpriteComponent>().setTex("assets/Siren_Green.png");
+					}
 				}
 			}
 
@@ -342,6 +394,10 @@ void Game::update() {
 				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 				transformStatus.setTransformed(true);
 				tombstones.push_back(zombie);
+
+				// Update zombie count / zombies defeated
+				zombieCount--;
+				zombiesDefeated++;
 
 				// Clear user input
 				userInput.clear();
@@ -483,7 +539,10 @@ void Game::render()
 		}
 
 		// Draw level text
-		uiManager->drawText("Level " + std::to_string(level), 560, 10, { 0, 0, 0, 255 }, healthFont);
+		uiManager->drawText("Level " + std::to_string(level), 570, 10, { 0, 0, 0, 255 }, healthFont);
+
+		// Draw zombies remaining text
+		uiManager->drawText("Zombies Remaining: " + std::to_string(zombieCount), 870, 10, { 0, 0, 0, 255 }, healthFont);
 
 		// Render crosshair
 		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
@@ -641,10 +700,11 @@ void Game::render()
 		uiManager->drawText("GAME", 450, 80, { 255, 255, 255, 255 }, gameOverFont);
 		uiManager->drawText("OVER!", 425, 280, { 255, 255, 255, 255 }, gameOverFont);
 		uiManager->drawText("Highest Level Reached: " + std::to_string(level), 420, 450, { 255, 255, 255, 255 }, menuFont);
-		uiManager->drawText(overallAccuracy, 425, 520, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Total Zombies Defeated: " + std::to_string(zombiesDefeated), 420, 500, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText(overallAccuracy, 420, 550, { 255, 255, 255, 255 }, menuFont);
 
 		if (showBlinkText) {
-			uiManager->drawText("Press Enter to Return to the Title Screen...", 225, 600, { 255, 255, 255, 255 }, menuFont);
+			uiManager->drawText("Press Enter to Return to the Title Screen...", 225, 630, { 255, 255, 255, 255 }, menuFont);
 		}
 
 		SDL_RenderPresent(renderer);
@@ -719,6 +779,9 @@ void Game::nextLevel()
 		
 		zombies.push_back(newZombie);
 	}
+
+	// Intilalize zombies remaining
+	zombieCount = zombies.size();
 
 	// Reset the typing target
 	currentPromptIndex = 0;
@@ -805,6 +868,10 @@ void Game::resetGame()
 	}
 
 	// Reset game variables
+
+	// Reset zombies remaining / zombies defeated
+	zombieCount = zombies.size();
+	zombiesDefeated = 0;
 
 	// Reset HP
 	barrierHP = maxHP;
