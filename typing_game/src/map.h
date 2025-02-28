@@ -8,7 +8,7 @@ public:
 	~Map();
 
 	//void loadMap(int** arr, int rows, int columns);
-	void loadMap(int arr[23][40]);
+	void loadMap(int arr[24][50]);
 	void drawMap();
 
 	//int map[23][40];
@@ -20,6 +20,6 @@ private:
 	SDL_Texture* wall;
 	SDL_Texture* floor;
 
-	int map[23][40];
+	int map[24][50];
 
 };

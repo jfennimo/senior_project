@@ -88,7 +88,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 		renderer = SDL_CreateRenderer(window, -1, 0);
 		if (renderer)
 		{
-			SDL_SetRenderDrawColor(renderer, 148, 148, 148, 0);
+			SDL_SetRenderDrawColor(renderer, 160, 160, 160, 0);
 			std::cout << "Renderer created!" << std::endl;
 		}
 
@@ -109,21 +109,24 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	uiManager = new UIManager(renderer);
 	map = new Map();
 
+
+	// previously 1280x720
+	// now 1600x900
 	// Setting player position
-	player.addComponent<TransformComponent>(615, 640);
+	player.addComponent<TransformComponent>(770, 820);
 	player.addComponent<SpriteComponent>("assets/Player.png");
 
 	// Setting hand sprites
-	leftHand.addComponent<TransformComponent>(380, 580, 64, 64, 2);
-	rightHand.addComponent<TransformComponent>(790, 580, 64, 64, 2);
+	leftHand.addComponent<TransformComponent>(515, 770, 64, 64, 2);
+	rightHand.addComponent<TransformComponent>(970, 770, 64, 64, 2);
 
 	leftHand.addComponent<SpriteComponent>("assets/Left_Hand.png");
 	rightHand.addComponent<SpriteComponent>("assets/Right_Hand.png");
 
 	// Walls around player
-	barrier1.addComponent<TransformComponent>(520.0f, 600.0f, 32, 225, 1);
-	barrier2.addComponent<TransformComponent>(520.0f, 600.0f, 150, 32, 1);
-	barrier3.addComponent<TransformComponent>(745.0f, 600.0f, 150, 32, 1);
+	barrier1.addComponent<TransformComponent>(650.0f, 768.0f, 32, 280, 1);
+	barrier2.addComponent<TransformComponent>(650.0f, 768.0f, 190, 32, 1);
+	barrier3.addComponent<TransformComponent>(930.0f, 768.0f, 190, 32, 1);
 
 	barrier1.addComponent<SpriteComponent>("assets/Barrier1.png");
 	barrier1.addComponent<ColliderComponent>("barrier");
@@ -133,8 +136,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	barrier3.addComponent<ColliderComponent>("barrier");
 
 	// Green and red sirens on barrier
-	greenSiren1.addComponent<TransformComponent>(515, 560, 10, 10, 4);
-	greenSiren2.addComponent<TransformComponent>(740, 560, 10, 10, 4);
+	greenSiren1.addComponent<TransformComponent>(645, 728, 10, 10, 4);
+	greenSiren2.addComponent<TransformComponent>(926, 728, 10, 10, 4);
 
 	greenSiren1.addComponent<SpriteComponent>("assets/Siren_Green.png");
 	greenSiren2.addComponent<SpriteComponent>("assets/Siren_Green.png");
@@ -147,7 +150,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
 	// Spawn zombies at random off-screen positions but not too close to player
-	int spawnBuffer = 100; // Distance beyond game window for spawning
+	int spawnBuffer = 150; // Distance beyond game window for spawning
 	for (size_t i = 0; i < wordList.size(); ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
@@ -155,21 +158,22 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 		int spawnEdge = rand() % 3; // 0: top, 1: left, 2: right
 		int x, y;
 		bool validSpawn = false;
+
 		while (!validSpawn) {
 			validSpawn = true;
 			switch (spawnEdge)
 			{
 			case 0: // Top
-				x = rand() % width;
+				x = rand() % width; // Full width range
 				y = -spawnBuffer;
 				break;
 			case 1: // Left
 				x = -spawnBuffer;
-				y = rand() % height;
+				y = rand() % 720; // Keep it within valid height
 				break;
 			case 2: // Right
-				x = width + spawnBuffer;
-				y = rand() % height;
+				x = width + spawnBuffer; // Force outside screen bounds
+				y = rand() % 720; // Keep within valid height
 				break;
 			}
 
@@ -177,7 +181,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 			auto& playerTransform = player.getComponent<TransformComponent>();
 			float dx = playerTransform.position.x - x;
 			float dy = playerTransform.position.y - y;
-			if (sqrt(dx * dx + dy * dy) < 200.0f) {
+			if (sqrt(dx * dx + dy * dy) < 400.0f) {
 				validSpawn = false;
 			}
 		}
@@ -505,10 +509,10 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
-		uiManager->drawText("Letter RIP", 520, 360, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawText("Letter RIP", 650, 450, { 255, 255, 255, 255 }, titleFont);
 
 		if (showBlinkText) {
-			uiManager->drawText("Press Enter to Start!", 470, 420, { 255, 255, 255, 255 }, menuFont);
+			uiManager->drawText("Press Enter to Start!", 600, 525, { 255, 255, 255, 255 }, menuFont);
 		}
 		SDL_RenderPresent(renderer);
 		break;
@@ -523,10 +527,10 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
-		uiManager->drawText("Main Menu!", 520, 50, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawText("Main Menu!", 660, 60, { 255, 255, 255, 255 }, titleFont);
 
 		if (showBlinkText) {
-			uiManager->drawText("Arcade Mode", 500, 360, { 255, 255, 255, 255 }, titleFont);
+			uiManager->drawText("Arcade Mode", 640, 450, { 255, 255, 255, 255 }, titleFont);
 		}
 
 		SDL_RenderPresent(renderer);
@@ -534,6 +538,9 @@ void Game::render()
 
 	case GameState::ARCADE_MODE:
 		// Draw game
+
+		SDL_SetRenderDrawColor(renderer, 160, 160, 160, 255);
+		SDL_RenderClear(renderer);
 
 		// Draw map and game objects
 		map->drawMap();
@@ -631,14 +638,14 @@ void Game::render()
 			SDL_Color bgColor = { 255, 102, 102, 255 };
 			//SDL_Color textColor = { 255, 255, 51, 255 };
 			SDL_Color textColor = { 0, 0, 0, 255 };
-			uiManager->drawHealthbar(40, 30, 200, 25, barrierHP, maxHP, outlineColor, fgColor, bgColor, "Barrier HP", healthFont, textColor);
+			uiManager->drawHealthbar(50, 35, 250, 30, barrierHP, maxHP, outlineColor, fgColor, bgColor, "Barrier HP", healthFont, textColor);
 		}
 
 		// Draw level text
-		uiManager->drawText("Level " + std::to_string(level), 570, 10, { 0, 0, 0, 255 }, healthFont);
+		uiManager->drawText("Level " + std::to_string(level), 715, 10, { 0, 0, 0, 255 }, healthFont);
 
 		// Draw zombies remaining text
-		uiManager->drawText("Zombies Remaining: " + std::to_string(zombieCount), 870, 10, { 0, 0, 0, 255 }, healthFont);
+		uiManager->drawText("Zombies Remaining: " + std::to_string(zombieCount), 1090, 10, { 0, 0, 0, 255 }, healthFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -685,13 +692,13 @@ void Game::render()
 		levelAccuracyStream << "Level Accuracy: " << std::fixed << std::setprecision(2) << levelAccuracy << "%";
 		overallAccuracy = levelAccuracyStream.str(); // Assign the formatted string
 
-		uiManager->drawText("Level " + std::to_string(level) + " Results!", 430, 50, { 255, 255, 255, 255 }, titleFont);
-		uiManager->drawText(hpResults, 20, 150, { 255, 255, 255, 255 }, menuFont);
-		uiManager->drawText(finalWrongResults, 20, 300, { 255, 255, 255, 255 }, menuFont);
-		uiManager->drawText(overallAccuracy, 20, 450, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Level " + std::to_string(level) + " Results!", 625, 50, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawText(hpResults, 40, 200, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText(finalWrongResults, 40, 400, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText(overallAccuracy, 40, 600, { 255, 255, 255, 255 }, menuFont);
 
 		if (showBlinkText) {
-			uiManager->drawText("Press Enter to Start the Next Level!", 290, 600, { 255, 255, 255, 255 }, menuFont);
+			uiManager->drawText("Press Enter to Start the Next Level!", 500, 750, { 255, 255, 255, 255 }, menuFont);
 		}
 
 		SDL_RenderPresent(renderer);
@@ -717,14 +724,14 @@ void Game::render()
 		levelAccuracyStream << "Overall Accuracy: " << std::fixed << std::setprecision(2) << levelAccuracy << "%";
 		overallAccuracy = levelAccuracyStream.str(); // Assign the formatted string
 
-		uiManager->drawText("GAME", 450, 80, { 255, 255, 255, 255 }, gameOverFont);
-		uiManager->drawText("OVER!", 425, 280, { 255, 255, 255, 255 }, gameOverFont);
-		uiManager->drawText("Highest Level Reached: " + std::to_string(level), 420, 450, { 255, 255, 255, 255 }, menuFont);
-		uiManager->drawText("Total Zombies Defeated: " + std::to_string(zombiesDefeated), 420, 500, { 255, 255, 255, 255 }, menuFont);
-		uiManager->drawText(overallAccuracy, 420, 550, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("GAME", 600, 100, { 255, 255, 255, 255 }, gameOverFont);
+		uiManager->drawText("OVER!", 575, 350, { 255, 255, 255, 255 }, gameOverFont);
+		uiManager->drawText("Highest Level Reached: " + std::to_string(level), 600, 500, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Total Zombies Defeated: " + std::to_string(zombiesDefeated), 600, 550, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText(overallAccuracy, 600, 600, { 255, 255, 255, 255 }, menuFont);
 
 		if (showBlinkText) {
-			uiManager->drawText("Press Enter to Return to the Title Screen...", 225, 630, { 255, 255, 255, 255 }, menuFont);
+			uiManager->drawText("Press Enter to Return to the Title Screen...", 400, 750, { 255, 255, 255, 255 }, menuFont);
 		}
 
 		SDL_RenderPresent(renderer);
@@ -757,7 +764,8 @@ void Game::nextLevel()
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
-	int spawnBuffer = 100; // Distance beyond game window for spawning
+	// Spawn zombies at random off-screen positions but not too close to player
+	int spawnBuffer = 150; // Distance beyond game window for spawning
 	for (size_t i = 0; i < wordList.size(); ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
@@ -765,21 +773,22 @@ void Game::nextLevel()
 		int spawnEdge = rand() % 3; // 0: top, 1: left, 2: right
 		int x, y;
 		bool validSpawn = false;
+
 		while (!validSpawn) {
 			validSpawn = true;
 			switch (spawnEdge)
 			{
 			case 0: // Top
-				x = rand() % 1280;
+				x = rand() % 1600; // Full width range
 				y = -spawnBuffer;
 				break;
 			case 1: // Left
 				x = -spawnBuffer;
-				y = rand() % 720;
+				y = rand() % 720; // Keep it within valid height
 				break;
 			case 2: // Right
-				x = 1280 + spawnBuffer;
-				y = rand() % 720;
+				x = 1600 + spawnBuffer; // Force outside screen bounds
+				y = rand() % 720; // Keep within valid height
 				break;
 			}
 
@@ -787,7 +796,7 @@ void Game::nextLevel()
 			auto& playerTransform = player.getComponent<TransformComponent>();
 			float dx = playerTransform.position.x - x;
 			float dy = playerTransform.position.y - y;
-			if (sqrt(dx * dx + dy * dy) < 200.0f) {
+			if (sqrt(dx * dx + dy * dy) < 400.0f) {
 				validSpawn = false;
 			}
 		}
@@ -796,7 +805,6 @@ void Game::nextLevel()
 		newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
-		
 		zombies.push_back(newZombie);
 	}
 
@@ -848,7 +856,8 @@ void Game::resetGame()
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
-	int spawnBuffer = 100; // Distance beyond game window for spawning
+	// Spawn zombies at random off-screen positions but not too close to player
+	int spawnBuffer = 150; // Distance beyond game window for spawning
 	for (size_t i = 0; i < wordList.size(); ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
@@ -856,21 +865,22 @@ void Game::resetGame()
 		int spawnEdge = rand() % 3; // 0: top, 1: left, 2: right
 		int x, y;
 		bool validSpawn = false;
+
 		while (!validSpawn) {
 			validSpawn = true;
 			switch (spawnEdge)
 			{
 			case 0: // Top
-				x = rand() % 1280;
+				x = rand() % 1600; // Full width range
 				y = -spawnBuffer;
 				break;
 			case 1: // Left
 				x = -spawnBuffer;
-				y = rand() % 720;
+				y = rand() % 720; // Keep it within valid height
 				break;
 			case 2: // Right
-				x = 1280 + spawnBuffer;
-				y = rand() % 720;
+				x = 1600 + spawnBuffer; // Force outside screen bounds
+				y = rand() % 720; // Keep within valid height
 				break;
 			}
 
@@ -878,7 +888,7 @@ void Game::resetGame()
 			auto& playerTransform = player.getComponent<TransformComponent>();
 			float dx = playerTransform.position.x - x;
 			float dy = playerTransform.position.y - y;
-			if (sqrt(dx * dx + dy * dy) < 200.0f) {
+			if (sqrt(dx * dx + dy * dy) < 400.0f) {
 				validSpawn = false;
 			}
 		}
@@ -925,23 +935,6 @@ void Game::resetGame()
 }
 
 //// Key-to-finger sprite mapping
-//std::unordered_map<char, std::string> keyToFingerMap = {
-//	{'Q', "assets/Left_Pinky.png"}, {'A', "assets/Left_Pinky.png"},
-//	{'Z', "assets/Left_Pinky.png"}, {'W', "assets/Left_Ring.png"},
-//	{'s', "assets/Left_Ring.png"}, {'X', "assets/Left_Ring.png"},
-//	{'e', "assets/Left_Middle.png"}, {'D', "assets/Left_Middle.png"},
-//	{'C', "assets/Left_Middle.png"}, {'R', "assets/Left_Index.png"},
-//	{'F', "assets/Left_Index.png"}, {'V', "assets/Left_Index.png"},
-//	{'t', "assets/Left_Index.png"}, {'G', "assets/Left_Index.png"},
-//	{'B', "assets/Left_Index.png"}, {'Y', "assets/Right_Index.png"},
-//	{'H', "assets/Right_Index.png"}, {'N', "assets/Right_Index.png"},
-//	{'U', "assets/Right_Index.png"}, {'J', "assets/Right_Index.png"},
-//	{'M', "assets/Right_Index.png"}, {'I', "assets/Right_Middle.png"},
-//	{'K', "assets/Right_Middle.png"}, {',', "assets/Right_Middle.png"},
-//	{'O', "assets/Right_Ring.png"}, {'L', "assets/Right_Ring.png"},
-//	{'.', "assets/Right_Ring.png"}, {'P', "assets/Right_Pinky.png"}
-//};
-
 void Game::updateHandSprites() {
 
 	// Get next letter to be typed and update sprite fingers accordingly
