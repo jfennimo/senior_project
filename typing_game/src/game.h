@@ -7,6 +7,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <unordered_map>
 
 class Game {
 
@@ -23,6 +24,10 @@ public:
 
 	void nextLevel();
 	void resetGame();
+
+	void updateHandSprites();
+
+	void resetHandSprites();
 
 	//void updateBarrierSprite();
 
@@ -78,6 +83,9 @@ private:
 	std::string wrongResults;
 	std::ostringstream formattedResults;
 	std::string finalWrongResults;
+
+	// Key-to-finger sprite mapping
+	std::unordered_map<char, std::string> keyToFingerMap;
 
 	// Overall accuracy
 	double levelAccuracy = 0.0;

@@ -9,6 +9,7 @@
 #include <string>
 #include <format>
 #include <sstream>
+#include <unordered_map>
 #include <vector> // For wordlist and zombie count
 #include <cstdlib> // For rand() and srand()
 #include <ctime>   // For time()
@@ -46,6 +47,7 @@ std::vector<std::string> wordList = { "test", "brains" };
 //std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck" };
 size_t currentPromptIndex = 0; // Track the current word prompt
 std::string targetText; // Holds current target prompt
+
 
 // Zombie entities and active zombie index
 std::vector<Entity*> zombies;
@@ -254,6 +256,9 @@ void Game::handleEvents()
 			if (userInput.size() <= targetText.size() && event.text.text[0] == targetText[userInput.size() - 1]) {
 				levelCorrectLetters++; // Increment correct letters
 				finalCorrectLetters++; // Increment total correct letters for game over screen
+
+				// Resetting hand sprites
+				resetHandSprites();
 			}
 		}
 		break;
@@ -308,6 +313,9 @@ void Game::update() {
 			auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
 			crosshairTransform.position = zombieTransform.position;
 		}
+
+		// Update hand sprites to reflect the key needed to be pressed
+		updateHandSprites();
 
 		// Iterate through all zombies
 		for (size_t i = 0; i < zombies.size(); ++i) {
@@ -401,6 +409,9 @@ void Game::update() {
 
 				// Clear user input
 				userInput.clear();
+
+				// Resetting hand sprites
+				resetHandSprites();
 
 				// Move to next closest zombie
 				if (i == currentZombieIndex) {
@@ -531,6 +542,9 @@ void Game::render()
 		// Render sprite hands over tombstones
 		leftHand.getComponent<SpriteComponent>().draw();
 		rightHand.getComponent<SpriteComponent>().draw();
+
+		// Update hand sprites to reflect the key needed to be pressed
+		//updateHandSprites();
 
 		// Render crosshair
 		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
@@ -793,6 +807,9 @@ void Game::nextLevel()
 	currentPromptIndex = 0;
 	targetText = wordList[currentPromptIndex];
 
+	// Reset hand sprites
+	//resetHandSprites();
+
 	// Reset letters typed incorrectly
 	typedWrong.clear();
 
@@ -886,6 +903,9 @@ void Game::resetGame()
 	currentPromptIndex = 0;
 	targetText = wordList[currentPromptIndex];
 
+	// Reset hand sprites
+	//resetHandSprites();
+
 	// Reset letters typed incorrectly
 	typedWrong.clear();
 
@@ -902,4 +922,193 @@ void Game::resetGame()
 	level = 1;
 
 	std::cout << "Game reset!" << std::endl;
+}
+
+//// Key-to-finger sprite mapping
+//std::unordered_map<char, std::string> keyToFingerMap = {
+//	{'Q', "assets/Left_Pinky.png"}, {'A', "assets/Left_Pinky.png"},
+//	{'Z', "assets/Left_Pinky.png"}, {'W', "assets/Left_Ring.png"},
+//	{'s', "assets/Left_Ring.png"}, {'X', "assets/Left_Ring.png"},
+//	{'e', "assets/Left_Middle.png"}, {'D', "assets/Left_Middle.png"},
+//	{'C', "assets/Left_Middle.png"}, {'R', "assets/Left_Index.png"},
+//	{'F', "assets/Left_Index.png"}, {'V', "assets/Left_Index.png"},
+//	{'t', "assets/Left_Index.png"}, {'G', "assets/Left_Index.png"},
+//	{'B', "assets/Left_Index.png"}, {'Y', "assets/Right_Index.png"},
+//	{'H', "assets/Right_Index.png"}, {'N', "assets/Right_Index.png"},
+//	{'U', "assets/Right_Index.png"}, {'J', "assets/Right_Index.png"},
+//	{'M', "assets/Right_Index.png"}, {'I', "assets/Right_Middle.png"},
+//	{'K', "assets/Right_Middle.png"}, {',', "assets/Right_Middle.png"},
+//	{'O', "assets/Right_Ring.png"}, {'L', "assets/Right_Ring.png"},
+//	{'.', "assets/Right_Ring.png"}, {'P', "assets/Right_Pinky.png"}
+//};
+
+void Game::updateHandSprites() {
+
+	// Get next letter to be typed and update sprite fingers accordingly
+	for (size_t i = 0; i < targetText.size(); i++) {
+		//std::cout << "Checking key: " << targetText[i] << std::endl;
+		if (i <= userInput.size()) {
+			// Left pinky
+			if (targetText[i] == 'q') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Pinky.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 'a') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Pinky.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 'z') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Pinky.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			// Left ring
+			else if (targetText[i] == 'w') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Ring.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 's') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Ring.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 'x') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Ring.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			// Left middle
+			else if (targetText[i] == 'e') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Middle.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 'd') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Middle.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 'c') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Middle.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			// Left index
+			else if (targetText[i] == 'r') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 'f') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 'v') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 't') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 'g') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+			else if (targetText[i] == 'b') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+			}
+
+			// Right index
+			else if (targetText[i] == 'y') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			else if (targetText[i] == 'h') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			else if (targetText[i] == 'n') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			else if (targetText[i] == 'u') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			else if (targetText[i] == 'j') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			else if (targetText[i] == 'm') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			// Right middle
+			else if (targetText[i] == 'i') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Middle.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			else if (targetText[i] == 'k') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Middle.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			else if (targetText[i] == ',') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Middle.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			// Right ring
+			else if (targetText[i] == 'o') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Ring.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			else if (targetText[i] == 'l') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Ring.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			else if (targetText[i] == '.') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Ring.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			// Right pinky
+			else if (targetText[i] == 'p') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Pinky.png");
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+			}
+			// Left thumb / Right thumb
+			else if (targetText[i] == ' ') {
+				//std::cout << "Checking key: " << targetText[i] << std::endl;
+				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Thumb.png");
+				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Thumb.png");
+			}
+		}
+	}
+
+}
+
+void Game::resetHandSprites() {
+	leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
+	rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 }
