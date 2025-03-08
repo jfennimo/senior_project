@@ -6,6 +6,9 @@ enum class GameState {
     ARCADE_MODE,
     SPEED_MODE,
     LESSON_MODE,
+    BONUS_TITLE,
+    BONUS_STAGE,
+    BONUS_RESULTS,
     RESULTS,
     GAME_OVER
 };

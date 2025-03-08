@@ -23,6 +23,7 @@ public:
 	void clean();
 
 	void nextLevel();
+	void bonusStage();
 	void resetGame();
 
 	void updateHandSprites();
@@ -75,6 +76,7 @@ private:
 	std::string hpResults;
 	int resultsHP;
 	int barrierHP;
+	int bonusHP;
 	const int maxHP = 500;
 
 	// Letters typed incorrectly
@@ -98,6 +100,13 @@ private:
 	int finalCorrectLetters = 0;
 	int finalTotalLetters = 0;
 
+	// Bonus stage
+	bool inBonusStage = false;
+	//bool bonusHPAward = false;
+	float bonusSpeed = 1.5f;
+	int bonusZombiesDefeated;
+	int totalBonusZombies;
+	std::string totalBonusZombiesDefeated;
 };
 
 #endif

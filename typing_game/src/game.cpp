@@ -44,6 +44,8 @@ Uint32 currentTime;
 
 // Wordlist stuff
 std::vector<std::string> wordList = { "test", "brains" };
+std::vector<std::string> bonusList = { "a", "b", "c" , "d"};
+
 //std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck" };
 size_t currentPromptIndex = 0; // Track the current word prompt
 std::string targetText; // Holds current target prompt
@@ -111,7 +113,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
 
 	// previously 1280x720
-	// now 1600x900
+		// now 1600x900
 	// Setting player position
 	player.addComponent<TransformComponent>(770, 820);
 	player.addComponent<SpriteComponent>("assets/Player.png");
@@ -169,11 +171,11 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 				break;
 			case 1: // Left
 				x = -spawnBuffer;
-				y = rand() % 720; // Keep it within valid height
+				y = rand() % 650; // Keep it within valid height
 				break;
 			case 2: // Right
 				x = width + spawnBuffer; // Force outside screen bounds
-				y = rand() % 720; // Keep within valid height
+				y = rand() % 650; // Keep within valid height
 				break;
 			}
 
@@ -233,6 +235,18 @@ void Game::handleEvents()
 				nextLevel();
 				std::cout << "Starting next round!" << std::endl;
 			}
+			else if (gameState == GameState::BONUS_TITLE) {
+				gameState = GameState::BONUS_STAGE; // Start bonus round
+				//allZombiesTransformed = false;
+				bonusStage();
+				std::cout << "Starting bonus round!" << std::endl;
+			}
+			else if (gameState == GameState::BONUS_RESULTS) {
+				gameState = GameState::ARCADE_MODE; // Start next level of arcade mode
+				//allZombiesTransformed = false;
+				nextLevel();
+				std::cout << "Starting next round!" << std::endl;
+			}
 			else if (gameState == GameState::GAME_OVER) {
 				gameState = GameState::TITLE_SCREEN;
 				resetGame();
@@ -245,6 +259,11 @@ void Game::handleEvents()
 				userInput.pop_back(); // Remove last character
 			}
 		}
+		if (gameState == GameState::BONUS_STAGE) {
+			if (event.key.keysym.sym == SDLK_BACKSPACE && !userInput.empty()) {
+				userInput.pop_back(); // Remove last character
+			}
+		}
 		break;
 
 	case SDL_TEXTINPUT:
@@ -252,6 +271,25 @@ void Game::handleEvents()
 			userInput += event.text.text; // Append typed text
 			processedInput.assign(userInput.size(), false);
 
+			// Increment total number of typed letters
+			levelTotalLetters++;
+			finalTotalLetters++;
+
+			// Check if typed letter matches target letter
+			if (userInput.size() <= targetText.size() && event.text.text[0] == targetText[userInput.size() - 1]) {
+				levelCorrectLetters++; // Increment correct letters
+				finalCorrectLetters++; // Increment total correct letters for game over screen
+
+				// Resetting hand sprites
+				resetHandSprites();
+			}
+		}
+
+		if (gameState == GameState::BONUS_STAGE) {
+			userInput += event.text.text; // Append typed text
+			processedInput.assign(userInput.size(), false);
+
+			// NEED TO UPDATE
 			// Increment total number of typed letters
 			levelTotalLetters++;
 			finalTotalLetters++;
@@ -306,6 +344,7 @@ void Game::update() {
 
 	case GameState::ARCADE_MODE:
 		// Game logic
+
 		currentTime = SDL_GetTicks(); // Get current time in milliseconds
 
 		// Update crosshair position if zombies are present
@@ -462,6 +501,228 @@ void Game::update() {
 
 		break;
 
+	case GameState::BONUS_TITLE:
+		// Bonus title logic
+
+		// Blink counter logic
+		currentTime = SDL_GetTicks(); // Get current time
+
+		if (currentTime > lastBlinkTime + BLINK_DELAY) {
+			showBlinkText = !showBlinkText;  // Toggle visibility
+			lastBlinkTime = currentTime;    // Update last blink time
+		}
+		break;
+
+	case GameState::BONUS_STAGE:
+		// Bonus stage logic
+		currentTime = SDL_GetTicks(); // Get current time in milliseconds
+
+		// Update crosshair position if zombies are present
+		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
+			Entity* activeZombie = zombies[currentZombieIndex];
+			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
+
+			// Update crosshair's position to zombie's position
+			auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+			crosshairTransform.position = zombieTransform.position;
+		}
+
+		// Update hand sprites to reflect the key needed to be pressed
+		updateHandSprites();
+
+		// Iterate through all zombies
+		for (size_t i = 0; i < zombies.size(); ++i) {
+			Entity* zombie = zombies[i];
+			auto& zombieTransform = zombie->getComponent<TransformComponent>();
+			auto& transformStatus = zombie->getComponent<TransformStatusComponent>();
+
+			// Check if zombie moves past screen, then eliminate if so
+			if (zombieTransform.position.x > 1600) {
+				// Transform zombie
+				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+				transformStatus.setTransformed(true);
+				tombstones.push_back(zombie);
+
+				// Update zombie count / zombies defeated
+				//zombiesDefeated++;
+
+				// Clear user input
+				userInput.clear();
+
+				// Resetting hand sprites
+				resetHandSprites();
+
+				// Move to next closest zombie
+				if (i == currentZombieIndex) {
+					zombieCount--;
+					// Find closest remaining zombie
+					float closestDistance = std::numeric_limits<float>::max();
+					size_t closestZombieIndex = currentZombieIndex;
+
+					for (size_t j = 0; j < zombies.size(); ++j) {
+						if (!zombies[j]->getComponent<TransformStatusComponent>().getTransformed()) {
+							auto& targetZombieTransform = zombies[j]->getComponent<TransformComponent>();
+							float dx = playerTransform.position.x - targetZombieTransform.position.x;
+							float dy = playerTransform.position.y - targetZombieTransform.position.y;
+							float distance = sqrt(dx * dx + dy * dy);
+
+							if (distance < closestDistance) {
+								closestDistance = distance;
+								closestZombieIndex = j;
+							}
+						}
+					}
+
+					// Update current zombie to the closest one
+					currentZombieIndex = closestZombieIndex;
+					targetText = bonusList[currentZombieIndex];
+				}
+			}
+
+			// Check if zombie is transformed
+			if (!transformStatus.getTransformed()) {
+				// Move zombie toward the player
+				//float dx = playerTransform.position.x - zombieTransform.position.x;
+				//float dy = playerTransform.position.y - zombieTransform.position.y;
+
+				//float magnitude = sqrt(dx * dx + dy * dy);
+				//if (magnitude > 0) {
+				//	dx /= magnitude;
+				//	dy /= magnitude;
+				//}
+
+				zombieTransform.position.x += bonusSpeed;
+				//zombieTransform.position.y += bonusSpeed;
+
+				// Check for wall collisions
+				if (Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
+					barrier1.getComponent<ColliderComponent>().collider) ||
+					Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
+						barrier2.getComponent<ColliderComponent>().collider) ||
+					Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
+						barrier3.getComponent<ColliderComponent>().collider)) {
+					//zombieTransform.position.x -= dx * speed;
+					//zombieTransform.position.y -= dy * speed;
+
+					// Wall collision is true
+					barrierUnderAttack = true; // Track if zombies are attacking
+
+					// Lower hp if zombie touches barrier
+					barrierHP--;
+					if (barrierHP < 0) barrierHP = 0;
+
+					// Wall hit detected
+					std::cout << "Barrier hit! HP: " << barrierHP << std::endl;
+
+					if (currentTime - lastFlashTime > 200) // Flash every 200ms
+					{
+						flashState = !flashState; // Toggle flash state
+						const char* newTexture = flashState ? "assets/Siren_Green.png" : "assets/Siren_Red.png";
+
+						// Ensure greenSiren1 has a SpriteComponent before setting texture
+						if (greenSiren1.hasComponent<SpriteComponent>())
+						{
+							greenSiren1.getComponent<SpriteComponent>().setTex(newTexture);
+						}
+
+						if (greenSiren2.hasComponent<SpriteComponent>())
+						{
+							greenSiren2.getComponent<SpriteComponent>().setTex(newTexture);
+						}
+
+						lastFlashTime = currentTime;
+					}
+				}
+				else
+				{
+					if (barrierUnderAttack && (currentTime - lastFlashTime > 300)) {
+						barrierUnderAttack = false; // Track if zombies are attacking
+
+						greenSiren1.getComponent<SpriteComponent>().setTex("assets/Siren_Green.png");
+						greenSiren2.getComponent<SpriteComponent>().setTex("assets/Siren_Green.png");
+					}
+				}
+			}
+
+			// Check if zombie's prompt matches user input
+			if (userInput == bonusList[i] && !transformStatus.getTransformed()) {
+				for (size_t j = 0; j < userInput.size(); ++j) {
+					if (j >= targetText.size() || userInput[j] != targetText[j]) {
+						// Append to typedWrong only if not already processed
+						if (std::find(typedWrong.begin(), typedWrong.end(), userInput[j]) == typedWrong.end()) {
+							typedWrong.push_back(targetText[j]);
+						}
+					}
+				}
+
+				// Transform zombie
+				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+				transformStatus.setTransformed(true);
+				tombstones.push_back(zombie);
+
+				// Update zombie count / zombies defeated
+				zombieCount--;
+				zombiesDefeated++;
+
+				// Update bonus zombie count / zombies defeated
+				bonusZombiesDefeated++;
+
+				// Restore some HP or... add this at the results screen...
+				bonusHP += 5;
+
+				// Clear user input
+				userInput.clear();
+
+				// Resetting hand sprites
+				resetHandSprites();
+
+				// Move to next closest zombie
+				if (i == currentZombieIndex) {
+					// Find closest remaining zombie
+					float closestDistance = std::numeric_limits<float>::max();
+					size_t closestZombieIndex = currentZombieIndex;
+
+					for (size_t j = 0; j < zombies.size(); ++j) {
+						if (!zombies[j]->getComponent<TransformStatusComponent>().getTransformed()) {
+							auto& targetZombieTransform = zombies[j]->getComponent<TransformComponent>();
+							float dx = playerTransform.position.x - targetZombieTransform.position.x;
+							float dy = playerTransform.position.y - targetZombieTransform.position.y;
+							float distance = sqrt(dx * dx + dy * dy);
+
+							if (distance < closestDistance) {
+								closestDistance = distance;
+								closestZombieIndex = j;
+							}
+						}
+					}
+
+					// Update current zombie to the closest one
+					currentZombieIndex = closestZombieIndex;
+					targetText = bonusList[currentZombieIndex];
+				}
+			}
+		}
+
+		// Check if all zombies are transformed
+		allZombiesTransformed = true; // Assume all are defeated
+		for (auto* zombie : zombies) {
+			if (!zombie->getComponent<TransformStatusComponent>().getTransformed()) {
+				allZombiesTransformed = false;
+				break;
+			}
+		}
+
+		if (allZombiesTransformed && gameState == GameState::BONUS_STAGE) {
+			barrierHP += bonusHP;
+			gameState = GameState::BONUS_RESULTS; // Transition to results state
+		}
+
+		if (barrierHP <= 0) {
+			gameState = GameState::BONUS_RESULTS;
+		}
+
+		break;
+
 	case GameState::RESULTS:
 		// Results screen logic
 		
@@ -474,6 +735,20 @@ void Game::update() {
 		}
 		break;
 
+	case GameState::BONUS_RESULTS:
+		// Results screen logic
+
+		// Blink counter logic
+		currentTime = SDL_GetTicks(); // Get current time
+
+		if (currentTime > lastBlinkTime + BLINK_DELAY) {
+			showBlinkText = !showBlinkText;  // Toggle visibility
+			lastBlinkTime = currentTime;    // Update last blink time
+		}	
+
+		//inBonusStage = false; // Reset the flag when exiting the bonus stage
+
+		break;
 
 	case GameState::GAME_OVER:
 		// Game over logic
@@ -650,6 +925,132 @@ void Game::render()
 		SDL_RenderPresent(renderer);
 		break;
 
+	case GameState::BONUS_TITLE:
+		// Draw bonus title screen
+		if (!titleFont) {
+			std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
+			return;
+		}
+
+		SDL_SetRenderDrawColor(renderer, 255, 51, 51, 255);
+		SDL_RenderClear(renderer);
+
+		uiManager->drawText("BONUS", 600, 100, { 255, 255, 255, 255 }, gameOverFont);
+		uiManager->drawText("STAGE!", 565, 350, { 255, 255, 255, 255 }, gameOverFont);
+
+
+		if (showBlinkText) {
+			uiManager->drawText("Press Enter to Start Bonus Round...", 500, 750, { 255, 255, 255, 255 }, menuFont);
+		}
+
+		SDL_RenderPresent(renderer);
+		break;
+
+	case GameState::BONUS_STAGE:
+		// Draw game
+
+		SDL_SetRenderDrawColor(renderer, 160, 160, 160, 255);
+		SDL_RenderClear(renderer);
+
+		// Draw map and game objects
+		map->drawMap();
+		manager.draw();
+
+		// Render sprite hands over tombstones
+		leftHand.getComponent<SpriteComponent>().draw();
+		rightHand.getComponent<SpriteComponent>().draw();
+
+		// Update hand sprites to reflect the key needed to be pressed
+		//updateHandSprites();
+
+		// Render crosshair
+		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
+			Entity* activeZombie = zombies[currentZombieIndex];
+			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
+
+			// Place crosshair on top of current zombie
+			auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+			crosshairTransform.position = zombieTransform.position;
+
+			// Draw crosshair sprite
+			crosshair.getComponent<SpriteComponent>().draw();
+		}
+
+		if (!allZombiesTransformed && currentZombieIndex < zombies.size()) {
+			// Only render prompt if there are still zombies to be defeated
+			Entity* activeZombie = zombies[currentZombieIndex];
+			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
+
+			int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
+			int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
+
+			if (uiManager) {
+				SDL_Color rectColor = { 255, 178, 102, 255 };
+				uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
+
+				TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
+				if (font) {
+					int letterX = textX;
+					for (size_t i = 0; i < targetText.size(); ++i) {
+						SDL_Color color = { 255, 255, 255, 255 }; // Default to white
+						if (i < userInput.size()) {
+							if (userInput[i] == targetText[i]) {
+								color = { 0, 255, 0, 255 }; // Green for correct input
+							}
+							else if (!processedInput[i]) {
+								color = { 255, 0, 0, 255 }; // Red for incorrect input
+
+								// Append to typedWrong only if not already processed
+								if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
+									typedWrong.push_back(targetText[i]);
+								}
+
+								processedInput[i] = true;
+							}
+							else if (processedInput[i]) {
+								color = { 255, 0, 0, 255 }; // Keep red for already processed incorrect input
+							}
+						}
+
+						std::string letter(1, targetText[i]);
+						SDL_Surface* surface = TTF_RenderText_Solid(font, letter.c_str(), color);
+						if (surface) {
+							SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+							if (texture) {
+								SDL_Rect dst = { letterX, textY, surface->w, surface->h };
+								SDL_RenderCopy(renderer, texture, nullptr, &dst);
+								letterX += surface->w;
+								SDL_DestroyTexture(texture);
+							}
+							SDL_FreeSurface(surface);
+						}
+					}
+					TTF_CloseFont(font);
+				}
+			}
+		}
+
+		// Moving down here so this is drawn over the zombies
+
+		// Draw HP bar
+		if (uiManager && healthFont) {
+			SDL_Color outlineColor = { 255, 255, 255, 255 };
+			SDL_Color fgColor = { 102, 255, 105, 255 };
+			SDL_Color bgColor = { 255, 102, 102, 255 };
+			//SDL_Color textColor = { 255, 255, 51, 255 };
+			SDL_Color textColor = { 0, 0, 0, 255 };
+			uiManager->drawHealthbar(50, 35, 250, 30, barrierHP, maxHP, outlineColor, fgColor, bgColor, "Barrier HP", healthFont, textColor);
+		}
+
+		// Draw level text
+		uiManager->drawText("BONUS STAGE", 700, 10, { 0, 0, 0, 255 }, healthFont);
+
+		// Draw zombies remaining text
+		uiManager->drawText("Zombies Remaining: " + std::to_string(zombieCount), 1090, 10, { 0, 0, 0, 255 }, healthFont);
+
+		SDL_RenderPresent(renderer);
+		break;
+
 	case GameState::RESULTS:
 		// Draw results screen
 		if (!titleFont) {
@@ -696,6 +1097,63 @@ void Game::render()
 		uiManager->drawText(hpResults, 40, 200, { 255, 255, 255, 255 }, menuFont);
 		uiManager->drawText(finalWrongResults, 40, 400, { 255, 255, 255, 255 }, menuFont);
 		uiManager->drawText(overallAccuracy, 40, 600, { 255, 255, 255, 255 }, menuFont);
+
+		if (showBlinkText) {
+			uiManager->drawText("Press Enter to Start the Next Level!", 500, 750, { 255, 255, 255, 255 }, menuFont);
+		}
+
+		SDL_RenderPresent(renderer);
+		break;
+
+	case GameState::BONUS_RESULTS:
+		// Draw results screen
+		if (!titleFont) {
+			std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
+			return;
+		}
+
+		SDL_SetRenderDrawColor(renderer, 255, 178, 102, 255);
+		SDL_RenderClear(renderer);
+
+		hpResults = "Barrier HP restored: " + std::to_string(bonusHP);
+
+		// Move unique values from typedWrong to wrongResults
+		wrongResults.clear(); // Clear previous values
+		for (auto i : typedWrong) {
+			if (wrongResults.find(i) == std::string::npos) { // Ensure no duplicates
+				wrongResults.push_back(i);
+			}
+		}
+
+		// Format wrongResults with commas
+		formattedResults.str(""); // Clear previous results
+		formattedResults.clear(); // Reset state
+		for (size_t i = 0; i < wrongResults.size(); ++i) {
+			formattedResults << wrongResults[i];
+			if (i < wrongResults.size() - 1) { // Add comma for all but the last character
+				formattedResults << ", ";
+			}
+		}
+
+		finalWrongResults = "Letters Typed Incorrectly: " + formattedResults.str();
+
+		// Calculate accuracy (avoiding division by zero for testing)
+		if (levelTotalLetters > 0) {
+			levelAccuracy = (static_cast<double>(levelCorrectLetters) / levelTotalLetters) * 100;
+		}
+
+		totalBonusZombiesDefeated = "Zombies defeated: " + std::to_string(bonusZombiesDefeated) + "/" + std::to_string(totalBonusZombies);
+
+		levelAccuracyStream.str(""); // Clear previous accuracy
+		levelAccuracyStream.clear(); // Reset state
+		levelAccuracyStream << "Level Accuracy: " << std::fixed << std::setprecision(2) << levelAccuracy << "%";
+		overallAccuracy = levelAccuracyStream.str(); // Assign the formatted string
+
+		uiManager->drawText("Bonus Stage Results!", 560, 50, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawText(hpResults, 40, 200, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText(finalWrongResults, 40, 300, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText(totalBonusZombiesDefeated, 40, 400, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText(overallAccuracy, 40, 500, { 255, 255, 255, 255 }, menuFont);
 
 		if (showBlinkText) {
 			uiManager->drawText("Press Enter to Start the Next Level!", 500, 750, { 255, 255, 255, 255 }, menuFont);
@@ -760,6 +1218,17 @@ void Game::clean()
 // To set up next level of arcade mode
 void Game::nextLevel()
 {
+	if (level % 2 == 0 && !inBonusStage) {
+		gameState = GameState::BONUS_TITLE; // Transition to bonus title screen
+		inBonusStage = true;
+		return;
+	}
+
+	// Ensuring barrierHP doesn't surpass 500
+	if (barrierHP >= 500) {
+		barrierHP = 500;
+	}
+
 	zombies.clear(); // Clear the previous round's zombies
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
@@ -784,11 +1253,11 @@ void Game::nextLevel()
 				break;
 			case 1: // Left
 				x = -spawnBuffer;
-				y = rand() % 720; // Keep it within valid height
+				y = rand() % 650; // Keep it within valid height
 				break;
 			case 2: // Right
 				x = 1600 + spawnBuffer; // Force outside screen bounds
-				y = rand() % 720; // Keep within valid height
+				y = rand() % 650; // Keep within valid height
 				break;
 			}
 
@@ -831,7 +1300,81 @@ void Game::nextLevel()
 	// Increment level
 	level++;
 
+	// Reset bonus total zombies
+	totalBonusZombies = 0;
+
+	inBonusStage = false; // Reset the flag when exiting the bonus stage
+
 	std::cout << "Zombies reset for new round!" << std::endl;
+}
+
+// To set up bonus stage
+void Game::bonusStage()
+{
+	zombies.clear(); // Clear the previous round's zombies
+	currentZombieIndex = 0;
+	allZombiesTransformed = false;
+
+	int numZombies = bonusList.size();
+	int startY = 200;  // Y-position for the row of zombies
+	int spacing = 120; // Space between zombies
+
+	// Left to Right group
+	for (int i = 0; i < numZombies / 2; ++i)
+	{
+		Entity* newZombie = &manager.addEntity();
+		int x = -150 - (i * spacing); // Start just outside the left edge
+		int y = startY;
+
+		newZombie->addComponent<TransformComponent>(x, y);
+		newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
+		newZombie->addComponent<ColliderComponent>("zombie");
+		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
+		zombies.push_back(newZombie);
+		totalBonusZombies++;
+	}
+
+	// Right to Left group
+	//for (int i = 0; i < numZombies / 2; ++i)
+	//{
+	//	Entity* newZombie = &manager.addEntity();
+	//	int x = 1600 + 150; // Start just outside the right edge
+	//	int y = startY + (i * spacing);
+
+	//	newZombie->addComponent<TransformComponent>(x, y);
+	//	newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
+	//	newZombie->addComponent<ColliderComponent>("zombie");
+	//	newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
+	//	zombies.push_back(newZombie);
+	//}
+
+	// Intilalize zombies remaining
+	zombieCount = zombies.size();
+
+	// Reset the typing target
+	currentPromptIndex = 0;
+	targetText = bonusList[currentPromptIndex];
+
+	// Reset hand sprites
+	//resetHandSprites();
+
+	// Reset letters typed incorrectly
+	typedWrong.clear();
+
+	// Reset accuracy
+	levelCorrectLetters = 0;
+	levelTotalLetters = 0;
+
+	// Reset bonus HP
+	bonusHP = 0;
+
+	// Reset bonus stage zombies defeated
+	bonusZombiesDefeated = 0;
+
+	// Increase zambie speed!!
+	bonusSpeed += 0.5;
+
+	std::cout << "Zombies reset for bonus round!" << std::endl;
 }
 
 // Reset all elements of arcade mode for a fresh playthrough
