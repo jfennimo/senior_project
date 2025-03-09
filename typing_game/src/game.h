@@ -102,8 +102,8 @@ private:
 
 	// Bonus stage
 	bool inBonusStage = false;
-	//bool bonusHPAward = false;
-	float bonusSpeed = 1.5f;
+	bool leftGroupDefeated = false;
+	float bonusSpeed = 2.0f;
 	int bonusZombiesDefeated;
 	int totalBonusZombies;
 	std::string totalBonusZombiesDefeated;

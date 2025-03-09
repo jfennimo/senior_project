@@ -44,7 +44,7 @@ Uint32 currentTime;
 
 // Wordlist stuff
 std::vector<std::string> wordList = { "test", "brains" };
-std::vector<std::string> bonusList = { "a", "b", "c" , "d"};
+std::vector<std::string> bonusList = { "a", "b", "c" , "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" };
 
 //std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck" };
 size_t currentPromptIndex = 0; // Track the current word prompt
@@ -53,6 +53,9 @@ std::string targetText; // Holds current target prompt
 
 // Zombie entities and active zombie index
 std::vector<Entity*> zombies;
+std::vector<Entity*> leftToRight;
+std::vector<Entity*> rightToLeft;
+ 
 std::vector<Entity*> tombstones;
 size_t currentZombieIndex = 0; // Tracks the currently active zombie
 
@@ -518,8 +521,18 @@ void Game::update() {
 		currentTime = SDL_GetTicks(); // Get current time in milliseconds
 
 		// Update crosshair position if zombies are present
-		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
-			Entity* activeZombie = zombies[currentZombieIndex];
+		if (!leftToRight.empty() &&  currentZombieIndex < leftToRight.size()) {
+			Entity* activeZombie = leftToRight[currentZombieIndex];
+			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
+
+			// Update crosshair's position to zombie's position
+			auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+			crosshairTransform.position = zombieTransform.position;
+		}
+
+		// Update crosshair position if zombies are present
+		if (!rightToLeft.empty() && currentZombieIndex < rightToLeft.size()) {
+			Entity* activeZombie = rightToLeft[currentZombieIndex];
 			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
 			// Update crosshair's position to zombie's position
@@ -530,9 +543,18 @@ void Game::update() {
 		// Update hand sprites to reflect the key needed to be pressed
 		updateHandSprites();
 
-		// Iterate through all zombies
-		for (size_t i = 0; i < zombies.size(); ++i) {
-			Entity* zombie = zombies[i];
+		// Check if all left-to-right zombies are transformed before moving right-to-left zombies
+		leftGroupDefeated = true;
+		for (auto* zombie : leftToRight) {
+			if (!zombie->getComponent<TransformStatusComponent>().getTransformed()) {
+				leftGroupDefeated = false;
+				break;
+			}
+		}
+
+		// Iterate through left to right zombies
+		for (size_t i = 0; i < leftToRight.size(); ++i) {
+			Entity* zombie = leftToRight[i];
 			auto& zombieTransform = zombie->getComponent<TransformComponent>();
 			auto& transformStatus = zombie->getComponent<TransformStatusComponent>();
 
@@ -559,9 +581,9 @@ void Game::update() {
 					float closestDistance = std::numeric_limits<float>::max();
 					size_t closestZombieIndex = currentZombieIndex;
 
-					for (size_t j = 0; j < zombies.size(); ++j) {
-						if (!zombies[j]->getComponent<TransformStatusComponent>().getTransformed()) {
-							auto& targetZombieTransform = zombies[j]->getComponent<TransformComponent>();
+					for (size_t j = 0; j < leftToRight.size(); ++j) {
+						if (!leftToRight[j]->getComponent<TransformStatusComponent>().getTransformed()) {
+							auto& targetZombieTransform = leftToRight[j]->getComponent<TransformComponent>();
 							float dx = playerTransform.position.x - targetZombieTransform.position.x;
 							float dy = playerTransform.position.y - targetZombieTransform.position.y;
 							float distance = sqrt(dx * dx + dy * dy);
@@ -581,67 +603,7 @@ void Game::update() {
 
 			// Check if zombie is transformed
 			if (!transformStatus.getTransformed()) {
-				// Move zombie toward the player
-				//float dx = playerTransform.position.x - zombieTransform.position.x;
-				//float dy = playerTransform.position.y - zombieTransform.position.y;
-
-				//float magnitude = sqrt(dx * dx + dy * dy);
-				//if (magnitude > 0) {
-				//	dx /= magnitude;
-				//	dy /= magnitude;
-				//}
-
 				zombieTransform.position.x += bonusSpeed;
-				//zombieTransform.position.y += bonusSpeed;
-
-				// Check for wall collisions
-				if (Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
-					barrier1.getComponent<ColliderComponent>().collider) ||
-					Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
-						barrier2.getComponent<ColliderComponent>().collider) ||
-					Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
-						barrier3.getComponent<ColliderComponent>().collider)) {
-					//zombieTransform.position.x -= dx * speed;
-					//zombieTransform.position.y -= dy * speed;
-
-					// Wall collision is true
-					barrierUnderAttack = true; // Track if zombies are attacking
-
-					// Lower hp if zombie touches barrier
-					barrierHP--;
-					if (barrierHP < 0) barrierHP = 0;
-
-					// Wall hit detected
-					std::cout << "Barrier hit! HP: " << barrierHP << std::endl;
-
-					if (currentTime - lastFlashTime > 200) // Flash every 200ms
-					{
-						flashState = !flashState; // Toggle flash state
-						const char* newTexture = flashState ? "assets/Siren_Green.png" : "assets/Siren_Red.png";
-
-						// Ensure greenSiren1 has a SpriteComponent before setting texture
-						if (greenSiren1.hasComponent<SpriteComponent>())
-						{
-							greenSiren1.getComponent<SpriteComponent>().setTex(newTexture);
-						}
-
-						if (greenSiren2.hasComponent<SpriteComponent>())
-						{
-							greenSiren2.getComponent<SpriteComponent>().setTex(newTexture);
-						}
-
-						lastFlashTime = currentTime;
-					}
-				}
-				else
-				{
-					if (barrierUnderAttack && (currentTime - lastFlashTime > 300)) {
-						barrierUnderAttack = false; // Track if zombies are attacking
-
-						greenSiren1.getComponent<SpriteComponent>().setTex("assets/Siren_Green.png");
-						greenSiren2.getComponent<SpriteComponent>().setTex("assets/Siren_Green.png");
-					}
-				}
 			}
 
 			// Check if zombie's prompt matches user input
@@ -682,9 +644,9 @@ void Game::update() {
 					float closestDistance = std::numeric_limits<float>::max();
 					size_t closestZombieIndex = currentZombieIndex;
 
-					for (size_t j = 0; j < zombies.size(); ++j) {
-						if (!zombies[j]->getComponent<TransformStatusComponent>().getTransformed()) {
-							auto& targetZombieTransform = zombies[j]->getComponent<TransformComponent>();
+					for (size_t j = 0; j < leftToRight.size(); ++j) {
+						if (!leftToRight[j]->getComponent<TransformStatusComponent>().getTransformed()) {
+							auto& targetZombieTransform = leftToRight[j]->getComponent<TransformComponent>();
 							float dx = playerTransform.position.x - targetZombieTransform.position.x;
 							float dy = playerTransform.position.y - targetZombieTransform.position.y;
 							float distance = sqrt(dx * dx + dy * dy);
@@ -703,9 +665,129 @@ void Game::update() {
 			}
 		}
 
+		// Iterate through right to left zombies, only if left group is defeated
+		if (leftGroupDefeated) {
+			for (size_t i = 0; i < rightToLeft.size(); ++i) {
+				Entity* zombie = rightToLeft[i];
+				auto& zombieTransform = zombie->getComponent<TransformComponent>();
+				auto& transformStatus = zombie->getComponent<TransformStatusComponent>();
+
+				// Check if zombie moves past screen, then eliminate if so
+				if (zombieTransform.position.x < -75) {
+					// Transform zombie
+					zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+					transformStatus.setTransformed(true);
+					tombstones.push_back(zombie);
+
+					// Clear user input
+					userInput.clear();
+
+					// Resetting hand sprites
+					resetHandSprites();
+
+					// Move to next closest zombie
+					if (i == currentZombieIndex) {
+						zombieCount--;
+						// Find closest remaining zombie
+						float closestDistance = std::numeric_limits<float>::max();
+						size_t closestZombieIndex = currentZombieIndex;
+
+						for (size_t j = 0; j < rightToLeft.size(); ++j) {
+							if (!rightToLeft[j]->getComponent<TransformStatusComponent>().getTransformed()) {
+								auto& targetZombieTransform = rightToLeft[j]->getComponent<TransformComponent>();
+								float dx = playerTransform.position.x - targetZombieTransform.position.x;
+								float dy = playerTransform.position.y - targetZombieTransform.position.y;
+								float distance = sqrt(dx * dx + dy * dy);
+
+								if (distance < closestDistance) {
+									closestDistance = distance;
+									closestZombieIndex = j;
+								}
+							}
+						}
+
+						// Update current zombie to the closest one
+						currentZombieIndex = closestZombieIndex;
+						targetText = bonusList[currentZombieIndex];
+					}
+				}
+
+				// Check if zombie is transformed
+				if (!transformStatus.getTransformed()) {
+					zombieTransform.position.x -= bonusSpeed;
+				}
+
+				// Check if zombie's prompt matches user input
+				if (userInput == bonusList[i] && !transformStatus.getTransformed()) {
+					for (size_t j = 0; j < userInput.size(); ++j) {
+						if (j >= targetText.size() || userInput[j] != targetText[j]) {
+							// Append to typedWrong only if not already processed
+							if (std::find(typedWrong.begin(), typedWrong.end(), userInput[j]) == typedWrong.end()) {
+								typedWrong.push_back(targetText[j]);
+							}
+						}
+					}
+
+					// Transform zombie
+					zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+					transformStatus.setTransformed(true);
+					tombstones.push_back(zombie);
+
+					// Update zombie count / zombies defeated
+					zombieCount--;
+					zombiesDefeated++;
+
+					// Update bonus zombie count / zombies defeated
+					bonusZombiesDefeated++;
+
+					// Restore some HP or... add this at the results screen...
+					bonusHP += 5;
+
+					// Clear user input
+					userInput.clear();
+
+					// Resetting hand sprites
+					resetHandSprites();
+
+					// Move to next closest zombie
+					if (i == currentZombieIndex) {
+						// Find closest remaining zombie
+						float closestDistance = std::numeric_limits<float>::max();
+						size_t closestZombieIndex = currentZombieIndex;
+
+						for (size_t j = 0; j < rightToLeft.size(); ++j) {
+							if (!rightToLeft[j]->getComponent<TransformStatusComponent>().getTransformed()) {
+								auto& targetZombieTransform = rightToLeft[j]->getComponent<TransformComponent>();
+								float dx = playerTransform.position.x - targetZombieTransform.position.x;
+								float dy = playerTransform.position.y - targetZombieTransform.position.y;
+								float distance = sqrt(dx * dx + dy * dy);
+
+								if (distance < closestDistance) {
+									closestDistance = distance;
+									closestZombieIndex = j;
+								}
+							}
+						}
+
+						// Update current zombie to the closest one
+						currentZombieIndex = closestZombieIndex;
+						targetText = bonusList[currentZombieIndex];
+					}
+				}
+			}
+		}
+
 		// Check if all zombies are transformed
 		allZombiesTransformed = true; // Assume all are defeated
-		for (auto* zombie : zombies) {
+
+		for (auto* zombie : leftToRight) {
+			if (!zombie->getComponent<TransformStatusComponent>().getTransformed()) {
+				allZombiesTransformed = false;
+				break;
+			}
+		}
+
+		for (auto* zombie : rightToLeft) {
 			if (!zombie->getComponent<TransformStatusComponent>().getTransformed()) {
 				allZombiesTransformed = false;
 				break;
@@ -963,69 +1045,142 @@ void Game::render()
 		// Update hand sprites to reflect the key needed to be pressed
 		//updateHandSprites();
 
-		// Render crosshair
-		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
-			Entity* activeZombie = zombies[currentZombieIndex];
-			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
+		// Render crosshair on left group first
+		if (!leftGroupDefeated) {
+			if (!leftToRight.empty() && currentZombieIndex < leftToRight.size()) {
+				Entity* activeZombie = leftToRight[currentZombieIndex];
+				auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-			// Place crosshair on top of current zombie
-			auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
-			crosshairTransform.position = zombieTransform.position;
+				// Place crosshair on top of current zombie
+				auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+				crosshairTransform.position = zombieTransform.position;
 
-			// Draw crosshair sprite
-			crosshair.getComponent<SpriteComponent>().draw();
+				// Draw crosshair sprite
+				crosshair.getComponent<SpriteComponent>().draw();
+			}
 		}
+		else {
+			if (!rightToLeft.empty() && currentZombieIndex < rightToLeft.size()) {
+				Entity* activeZombie = rightToLeft[currentZombieIndex];
+				auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-		if (!allZombiesTransformed && currentZombieIndex < zombies.size()) {
-			// Only render prompt if there are still zombies to be defeated
-			Entity* activeZombie = zombies[currentZombieIndex];
-			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
+				// Place crosshair on top of current zombie
+				auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+				crosshairTransform.position = zombieTransform.position;
 
-			int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
-			int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
+				// Draw crosshair sprite
+				crosshair.getComponent<SpriteComponent>().draw();
+			}
+		}
+	
+		// Render prompt on left group first
+		if (!leftGroupDefeated) {
+			if (!allZombiesTransformed && currentZombieIndex < leftToRight.size()) {
+				// Only render prompt if there are still zombies to be defeated
+				Entity* activeZombie = leftToRight[currentZombieIndex];
+				auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-			if (uiManager) {
-				SDL_Color rectColor = { 255, 178, 102, 255 };
-				uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
+				int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
+				int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
 
-				TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
-				if (font) {
-					int letterX = textX;
-					for (size_t i = 0; i < targetText.size(); ++i) {
-						SDL_Color color = { 255, 255, 255, 255 }; // Default to white
-						if (i < userInput.size()) {
-							if (userInput[i] == targetText[i]) {
-								color = { 0, 255, 0, 255 }; // Green for correct input
-							}
-							else if (!processedInput[i]) {
-								color = { 255, 0, 0, 255 }; // Red for incorrect input
+				if (uiManager) {
+					SDL_Color rectColor = { 255, 178, 102, 255 };
+					uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
 
-								// Append to typedWrong only if not already processed
-								if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
-									typedWrong.push_back(targetText[i]);
+					TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
+					if (font) {
+						int letterX = textX;
+						for (size_t i = 0; i < targetText.size(); ++i) {
+							SDL_Color color = { 255, 255, 255, 255 }; // Default to white
+							if (i < userInput.size()) {
+								if (userInput[i] == targetText[i]) {
+									color = { 0, 255, 0, 255 }; // Green for correct input
 								}
+								else if (!processedInput[i]) {
+									color = { 255, 0, 0, 255 }; // Red for incorrect input
 
-								processedInput[i] = true;
+									// Append to typedWrong only if not already processed
+									if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
+										typedWrong.push_back(targetText[i]);
+									}
+
+									processedInput[i] = true;
+								}
+								else if (processedInput[i]) {
+									color = { 255, 0, 0, 255 }; // Keep red for already processed incorrect input
+								}
 							}
-							else if (processedInput[i]) {
-								color = { 255, 0, 0, 255 }; // Keep red for already processed incorrect input
+
+							std::string letter(1, targetText[i]);
+							SDL_Surface* surface = TTF_RenderText_Solid(font, letter.c_str(), color);
+							if (surface) {
+								SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+								if (texture) {
+									SDL_Rect dst = { letterX, textY, surface->w, surface->h };
+									SDL_RenderCopy(renderer, texture, nullptr, &dst);
+									letterX += surface->w;
+									SDL_DestroyTexture(texture);
+								}
+								SDL_FreeSurface(surface);
 							}
 						}
-
-						std::string letter(1, targetText[i]);
-						SDL_Surface* surface = TTF_RenderText_Solid(font, letter.c_str(), color);
-						if (surface) {
-							SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-							if (texture) {
-								SDL_Rect dst = { letterX, textY, surface->w, surface->h };
-								SDL_RenderCopy(renderer, texture, nullptr, &dst);
-								letterX += surface->w;
-								SDL_DestroyTexture(texture);
-							}
-							SDL_FreeSurface(surface);
-						}
+						TTF_CloseFont(font);
 					}
-					TTF_CloseFont(font);
+				}
+			}
+		}
+		else {
+			if (!allZombiesTransformed && currentZombieIndex < rightToLeft.size()) {
+				// Only render prompt if there are still zombies to be defeated
+				Entity* activeZombie = rightToLeft[currentZombieIndex];
+				auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
+
+				int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
+				int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
+
+				if (uiManager) {
+					SDL_Color rectColor = { 255, 178, 102, 255 };
+					uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
+
+					TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
+					if (font) {
+						int letterX = textX;
+						for (size_t i = 0; i < targetText.size(); ++i) {
+							SDL_Color color = { 255, 255, 255, 255 }; // Default to white
+							if (i < userInput.size()) {
+								if (userInput[i] == targetText[i]) {
+									color = { 0, 255, 0, 255 }; // Green for correct input
+								}
+								else if (!processedInput[i]) {
+									color = { 255, 0, 0, 255 }; // Red for incorrect input
+
+									// Append to typedWrong only if not already processed
+									if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
+										typedWrong.push_back(targetText[i]);
+									}
+
+									processedInput[i] = true;
+								}
+								else if (processedInput[i]) {
+									color = { 255, 0, 0, 255 }; // Keep red for already processed incorrect input
+								}
+							}
+
+							std::string letter(1, targetText[i]);
+							SDL_Surface* surface = TTF_RenderText_Solid(font, letter.c_str(), color);
+							if (surface) {
+								SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+								if (texture) {
+									SDL_Rect dst = { letterX, textY, surface->w, surface->h };
+									SDL_RenderCopy(renderer, texture, nullptr, &dst);
+									letterX += surface->w;
+									SDL_DestroyTexture(texture);
+								}
+								SDL_FreeSurface(surface);
+							}
+						}
+						TTF_CloseFont(font);
+					}
 				}
 			}
 		}
@@ -1311,45 +1466,56 @@ void Game::nextLevel()
 // To set up bonus stage
 void Game::bonusStage()
 {
-	zombies.clear(); // Clear the previous round's zombies
+	// Clear the previous round's zombies
+	leftToRight.clear();
+	rightToLeft.clear();
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
-	int numZombies = bonusList.size();
-	int startY = 200;  // Y-position for the row of zombies
+	//int numZombies = bonusList.size();
+	int numZombies = 6;
 	int spacing = 120; // Space between zombies
+
+	// Generate random y-coordinate for left to right zombie row
+	int yLeft = 200 + (rand() % 500);
 
 	// Left to Right group
 	for (int i = 0; i < numZombies / 2; ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
 		int x = -150 - (i * spacing); // Start just outside the left edge
-		int y = startY;
+		int y = yLeft;
+		//int y = 200 + (rand() % 500);
 
 		newZombie->addComponent<TransformComponent>(x, y);
 		newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
-		zombies.push_back(newZombie);
+		leftToRight.push_back(newZombie);
 		totalBonusZombies++;
 	}
 
-	// Right to Left group
-	//for (int i = 0; i < numZombies / 2; ++i)
-	//{
-	//	Entity* newZombie = &manager.addEntity();
-	//	int x = 1600 + 150; // Start just outside the right edge
-	//	int y = startY + (i * spacing);
+	// Generate random y-coordinate for right to left zombie row
+	int yRight = 200 + (rand() % 500);
 
-	//	newZombie->addComponent<TransformComponent>(x, y);
-	//	newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
-	//	newZombie->addComponent<ColliderComponent>("zombie");
-	//	newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
-	//	zombies.push_back(newZombie);
-	//}
+	// Right to Left group
+	for (int i = numZombies / 2 - 1; i >= 0; --i)
+	{
+		Entity* newZombie = &manager.addEntity();
+		int x = 1600 + (i * spacing); // Start just outside the right edge
+		int y = yRight;
+
+		newZombie->addComponent<TransformComponent>(x, y);
+		newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
+		newZombie->addComponent<ColliderComponent>("zombie");
+		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
+		rightToLeft.push_back(newZombie);
+		totalBonusZombies++;
+	}
 
 	// Intilalize zombies remaining
-	zombieCount = zombies.size();
+	zombieCount += leftToRight.size();
+	zombieCount += rightToLeft.size();
 
 	// Reset the typing target
 	currentPromptIndex = 0;
@@ -1372,7 +1538,7 @@ void Game::bonusStage()
 	bonusZombiesDefeated = 0;
 
 	// Increase zambie speed!!
-	bonusSpeed += 0.5;
+	bonusSpeed += 1.0;
 
 	std::cout << "Zombies reset for bonus round!" << std::endl;
 }
@@ -1388,6 +1554,22 @@ void Game::resetGame()
 		zombie->destroy(); // Mark zombie entity for removal
 	}
 	zombies.clear(); // Clear the zombies vector
+
+	for (auto* zombie : leftToRight) {
+		// Reset zombie sprite and transformation status
+		zombie->getComponent<SpriteComponent>().setTex("assets/Zombie.png");  // Reset to normal zombie sprite
+		zombie->getComponent<TransformStatusComponent>().setTransformed(false); // Reset transformation status
+		zombie->destroy(); // Mark zombie entity for removal
+	}
+	leftToRight.clear(); // Clear the zombies vector
+
+	for (auto* zombie : rightToLeft) {
+		// Reset zombie sprite and transformation status
+		zombie->getComponent<SpriteComponent>().setTex("assets/Zombie.png");  // Reset to normal zombie sprite
+		zombie->getComponent<TransformStatusComponent>().setTransformed(false); // Reset transformation status
+		zombie->destroy(); // Mark zombie entity for removal
+	}
+	rightToLeft.clear(); // Clear the zombies vector
 
 	// Remove tombstone entities
 	for (auto* tombstone : tombstones) {
@@ -1419,11 +1601,11 @@ void Game::resetGame()
 				break;
 			case 1: // Left
 				x = -spawnBuffer;
-				y = rand() % 720; // Keep it within valid height
+				y = rand() % 650; // Keep it within valid height
 				break;
 			case 2: // Right
 				x = 1600 + spawnBuffer; // Force outside screen bounds
-				y = rand() % 720; // Keep within valid height
+				y = rand() % 650; // Keep within valid height
 				break;
 			}
 
