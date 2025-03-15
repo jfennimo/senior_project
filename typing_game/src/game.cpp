@@ -559,11 +559,14 @@ void Game::update() {
 			auto& transformStatus = zombie->getComponent<TransformStatusComponent>();
 
 			// Check if zombie moves past screen, then eliminate if so
-			if (zombieTransform.position.x > 1600) {
+			if (zombieTransform.position.x > 1600 && !transformStatus.getTransformed()) {
 				// Transform zombie
-				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 				transformStatus.setTransformed(true);
+				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 				tombstones.push_back(zombie);
+
+				// Update zombie count
+				zombieCount--;
 
 				// Update zombie count / zombies defeated
 				//zombiesDefeated++;
@@ -576,7 +579,6 @@ void Game::update() {
 
 				// Move to next closest zombie
 				if (i == currentZombieIndex) {
-					zombieCount--;
 					// Find closest remaining zombie
 					float closestDistance = std::numeric_limits<float>::max();
 					size_t closestZombieIndex = currentZombieIndex;
@@ -673,11 +675,14 @@ void Game::update() {
 				auto& transformStatus = zombie->getComponent<TransformStatusComponent>();
 
 				// Check if zombie moves past screen, then eliminate if so
-				if (zombieTransform.position.x < -75) {
+				if (zombieTransform.position.x < -75 && !transformStatus.getTransformed()) {
 					// Transform zombie
-					zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 					transformStatus.setTransformed(true);
+					zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 					tombstones.push_back(zombie);
+
+					// Update zombie count
+					zombieCount--;
 
 					// Clear user input
 					userInput.clear();
@@ -687,7 +692,6 @@ void Game::update() {
 
 					// Move to next closest zombie
 					if (i == currentZombieIndex) {
-						zombieCount--;
 						// Find closest remaining zombie
 						float closestDistance = std::numeric_limits<float>::max();
 						size_t closestZombieIndex = currentZombieIndex;
@@ -937,15 +941,33 @@ void Game::render()
 			Entity* activeZombie = zombies[currentZombieIndex];
 			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-			int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
+			//int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
+			int zombieWidth = 32;
+			int zombieCenterX = static_cast<int>(zombieTransform.position.x + (zombieWidth));
 			int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
 
 			if (uiManager) {
 				SDL_Color rectColor = { 255, 178, 102, 255 };
-				uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
+				//uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
 
 				TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
 				if (font) {
+					// Calculate total text width
+					int totalTextWidth = 0;
+					for (char c : targetText) {
+						int w, h;
+						TTF_SizeText(font, std::string(1, c).c_str(), &w, &h);
+						totalTextWidth += w;
+					}
+
+					// Center textX based on zombie sprite's center and the text width
+					int textX = zombieCenterX - (totalTextWidth / 2);
+
+					// Center background rectangle
+					int rectWidth = totalTextWidth + 20; // with some padding
+					uiManager->drawRectangle(textX - 10, textY - 5, rectWidth, 25, rectColor);
+
+					// Render letters with spacing
 					int letterX = textX;
 					for (size_t i = 0; i < targetText.size(); ++i) {
 						SDL_Color color = { 255, 255, 255, 255 }; // Default to white
@@ -1080,15 +1102,35 @@ void Game::render()
 				Entity* activeZombie = leftToRight[currentZombieIndex];
 				auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-				int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
+				int zombieWidth = 32;
+				int zombieCenterX = static_cast<int>(zombieTransform.position.x + (zombieWidth));
 				int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
+
+				//int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
+				//int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
 
 				if (uiManager) {
 					SDL_Color rectColor = { 255, 178, 102, 255 };
-					uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
+					//uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
 
 					TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
 					if (font) {
+						// Calculate total text width
+						int totalTextWidth = 0;
+						for (char c : targetText) {
+							int w, h;
+							TTF_SizeText(font, std::string(1, c).c_str(), &w, &h);
+							totalTextWidth += w;
+						}
+
+						// Center textX based on zombie sprite's center and the text width
+						int textX = zombieCenterX - (totalTextWidth / 2);
+
+						// Center background rectangle
+						int rectWidth = totalTextWidth + 20; // with some padding
+						uiManager->drawRectangle(textX - 10, textY - 5, rectWidth, 25, rectColor);
+
+						// Render letters with spacing
 						int letterX = textX;
 						for (size_t i = 0; i < targetText.size(); ++i) {
 							SDL_Color color = { 255, 255, 255, 255 }; // Default to white
@@ -1135,15 +1177,35 @@ void Game::render()
 				Entity* activeZombie = rightToLeft[currentZombieIndex];
 				auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-				int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
+				int zombieWidth = 32;
+				int zombieCenterX = static_cast<int>(zombieTransform.position.x + (zombieWidth));
 				int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
+
+				//int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
+				//int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
 
 				if (uiManager) {
 					SDL_Color rectColor = { 255, 178, 102, 255 };
-					uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
+					//uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
 
 					TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
 					if (font) {
+						// Calculate total text width
+						int totalTextWidth = 0;
+						for (char c : targetText) {
+							int w, h;
+							TTF_SizeText(font, std::string(1, c).c_str(), &w, &h);
+							totalTextWidth += w;
+						}
+
+						// Center textX based on zombie sprite's center and the text width
+						int textX = zombieCenterX - (totalTextWidth / 2);
+
+						// Center background rectangle
+						int rectWidth = totalTextWidth + 20; // with some padding
+						uiManager->drawRectangle(textX - 10, textY - 5, rectWidth, 25, rectColor);
+
+						// Render letters with spacing
 						int letterX = textX;
 						for (size_t i = 0; i < targetText.size(); ++i) {
 							SDL_Color color = { 255, 255, 255, 255 }; // Default to white
