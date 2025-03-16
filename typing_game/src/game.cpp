@@ -4,6 +4,7 @@
 #include "ECS/Components.h"
 #include "Vector2D.h"
 #include "Collision.h"
+#include "WordListManager.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -19,6 +20,8 @@ GameState gameState;
 Map* map;
 Manager manager;
 UIManager* uiManager;
+
+WordListManager wordManager;
 
 SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
@@ -43,8 +46,15 @@ TTF_Font* gameOverFont;
 Uint32 currentTime;
 
 // Wordlist stuff
-std::vector<std::string> wordList = { "test", "brains" };
-std::vector<std::string> bonusList = { "a", "b", "c" , "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" };
+//std::vector<std::string> wordList = { "test", "brains" };
+//std::vector<std::string> bonusList = { "a", "b", "c" , "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" };
+
+std::vector<std::string> easyWords = wordManager.getRandomWords(WordListManager::EASY, 3);
+std::vector<std::string> mediumWords = wordManager.getRandomWords(WordListManager::MEDIUM, 3);
+std::vector<std::string> hardWords = wordManager.getRandomWords(WordListManager::HARD, 3);
+std::vector<std::string> bonusLeft = wordManager.getRandomWords(WordListManager::BONUSLEFT, 3);
+std::vector<std::string> bonusRight = wordManager.getRandomWords(WordListManager::BONUSRIGHT, 3);
+
 
 //std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck" };
 size_t currentPromptIndex = 0; // Track the current word prompt
@@ -154,9 +164,12 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	// Initialize random seed
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
+	// TESTING
+	int numZombies = 3;
+
 	// Spawn zombies at random off-screen positions but not too close to player
 	int spawnBuffer = 150; // Distance beyond game window for spawning
-	for (size_t i = 0; i < wordList.size(); ++i)
+	for (size_t i = 0; i < numZombies; ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
 
@@ -202,7 +215,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	zombieCount = zombies.size();
 
 	// Initialize target prompt
-	targetText = wordList[currentPromptIndex];
+	targetText = easyWords[currentPromptIndex];
 
 	// Intialize barrier health and health font
 	barrierHP = maxHP;
@@ -434,7 +447,7 @@ void Game::update() {
 			}
 
 			// Check if zombie's prompt matches user input
-			if (userInput == wordList[i] && !transformStatus.getTransformed()) {
+			if (userInput == easyWords[i] && !transformStatus.getTransformed()) {
 				for (size_t j = 0; j < userInput.size(); ++j) {
 					if (j >= targetText.size() || userInput[j] != targetText[j]) {
 						// Append to typedWrong only if not already processed
@@ -481,7 +494,7 @@ void Game::update() {
 
 					// Update current zombie to the closest one
 					currentZombieIndex = closestZombieIndex;
-					targetText = wordList[currentZombieIndex];
+					targetText = easyWords[currentZombieIndex];
 				}
 			}
 		}
@@ -543,6 +556,13 @@ void Game::update() {
 		// Update hand sprites to reflect the key needed to be pressed
 		updateHandSprites();
 
+		//if (!leftToRight.empty()) {
+		//	targetText = bonusLeft[currentPromptIndex]; // Use words from the left group
+		//}
+		//else if (!rightToLeft.empty()) {
+		//	targetText = bonusRight[currentPromptIndex]; // Use words from the right group
+		//}
+
 		// Check if all left-to-right zombies are transformed before moving right-to-left zombies
 		leftGroupDefeated = true;
 		for (auto* zombie : leftToRight) {
@@ -599,7 +619,7 @@ void Game::update() {
 
 					// Update current zombie to the closest one
 					currentZombieIndex = closestZombieIndex;
-					targetText = bonusList[currentZombieIndex];
+					targetText = bonusLeft[currentZombieIndex];
 				}
 			}
 
@@ -609,7 +629,7 @@ void Game::update() {
 			}
 
 			// Check if zombie's prompt matches user input
-			if (userInput == bonusList[i] && !transformStatus.getTransformed()) {
+			if (userInput == bonusLeft[i] && !transformStatus.getTransformed()) {
 				for (size_t j = 0; j < userInput.size(); ++j) {
 					if (j >= targetText.size() || userInput[j] != targetText[j]) {
 						// Append to typedWrong only if not already processed
@@ -662,13 +682,14 @@ void Game::update() {
 
 					// Update current zombie to the closest one
 					currentZombieIndex = closestZombieIndex;
-					targetText = bonusList[currentZombieIndex];
+					targetText = bonusLeft[currentZombieIndex];
 				}
 			}
 		}
 
 		// Iterate through right to left zombies, only if left group is defeated
 		if (leftGroupDefeated) {
+			targetText = bonusRight[currentZombieIndex]; // Use words from the right group
 			for (size_t i = 0; i < rightToLeft.size(); ++i) {
 				Entity* zombie = rightToLeft[i];
 				auto& zombieTransform = zombie->getComponent<TransformComponent>();
@@ -712,7 +733,7 @@ void Game::update() {
 
 						// Update current zombie to the closest one
 						currentZombieIndex = closestZombieIndex;
-						targetText = bonusList[currentZombieIndex];
+						targetText = bonusRight[currentZombieIndex];
 					}
 				}
 
@@ -722,7 +743,7 @@ void Game::update() {
 				}
 
 				// Check if zombie's prompt matches user input
-				if (userInput == bonusList[i] && !transformStatus.getTransformed()) {
+				if (userInput == bonusRight[i] && !transformStatus.getTransformed()) {
 					for (size_t j = 0; j < userInput.size(); ++j) {
 						if (j >= targetText.size() || userInput[j] != targetText[j]) {
 							// Append to typedWrong only if not already processed
@@ -775,7 +796,7 @@ void Game::update() {
 
 						// Update current zombie to the closest one
 						currentZombieIndex = closestZombieIndex;
-						targetText = bonusList[currentZombieIndex];
+						targetText = bonusRight[currentZombieIndex];
 					}
 				}
 			}
@@ -1450,9 +1471,15 @@ void Game::nextLevel()
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
+	// Randomizing words
+	easyWords = wordManager.getRandomWords(WordListManager::EASY, 3);
+
+	// TESTING
+	int numZombies = 3;
+
 	// Spawn zombies at random off-screen positions but not too close to player
 	int spawnBuffer = 150; // Distance beyond game window for spawning
-	for (size_t i = 0; i < wordList.size(); ++i)
+	for (size_t i = 0; i < numZombies; ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
 
@@ -1499,7 +1526,7 @@ void Game::nextLevel()
 
 	// Reset the typing target
 	currentPromptIndex = 0;
-	targetText = wordList[currentPromptIndex];
+	targetText = easyWords[currentPromptIndex];
 
 	// Reset hand sprites
 	//resetHandSprites();
@@ -1535,6 +1562,11 @@ void Game::bonusStage()
 	allZombiesTransformed = false;
 
 	//int numZombies = bonusList.size();
+
+	// Randomize letters every new bonus round
+	bonusLeft = wordManager.getRandomWords(WordListManager::BONUSLEFT, 3);
+	bonusRight = wordManager.getRandomWords(WordListManager::BONUSRIGHT, 3);
+
 	int numZombies = 6;
 	int spacing = 120; // Space between zombies
 
@@ -1581,7 +1613,7 @@ void Game::bonusStage()
 
 	// Reset the typing target
 	currentPromptIndex = 0;
-	targetText = bonusList[currentPromptIndex];
+	targetText = bonusLeft[currentPromptIndex];
 
 	// Reset hand sprites
 	//resetHandSprites();
@@ -1643,9 +1675,12 @@ void Game::resetGame()
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
+	// TESTING
+	int numZombies = 3;
+
 	// Spawn zombies at random off-screen positions but not too close to player
 	int spawnBuffer = 150; // Distance beyond game window for spawning
-	for (size_t i = 0; i < wordList.size(); ++i)
+	for (size_t i = 0; i < numZombies; ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
 
@@ -1698,10 +1733,10 @@ void Game::resetGame()
 
 	// Reset the typing target
 	currentPromptIndex = 0;
-	targetText = wordList[currentPromptIndex];
+	targetText = easyWords[currentPromptIndex];
 
-	// Reset hand sprites
-	//resetHandSprites();
+	// Clear user input from last game
+	userInput.clear();
 
 	// Reset letters typed incorrectly
 	typedWrong.clear();
@@ -1718,12 +1753,12 @@ void Game::resetGame()
 	// Reset level
 	level = 1;
 
-	std::cout << "Game reset!" << std::endl;
+	std::cout << "Arcade mode reset!" << std::endl;
 }
 
-//// Key-to-finger sprite mapping
-void Game::updateHandSprites() {
-
+// Key-to-finger sprite mapping
+void Game::updateHandSprites() 
+{
 	// Get next letter to be typed and update sprite fingers accordingly
 	for (size_t i = 0; i < targetText.size(); i++) {
 		//std::cout << "Checking key: " << targetText[i] << std::endl;
@@ -1885,7 +1920,6 @@ void Game::updateHandSprites() {
 			}
 		}
 	}
-
 }
 
 void Game::resetHandSprites() {

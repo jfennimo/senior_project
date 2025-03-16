@@ -1,0 +1,5 @@
+puzzle
+sphinx
+battle
+dungeon
+castle
