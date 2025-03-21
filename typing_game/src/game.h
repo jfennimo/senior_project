@@ -101,6 +101,7 @@ private:
 	int finalTotalLetters = 0;
 
 	// Bonus stage
+	int bonusLevel = 0;
 	bool inBonusStage = false;
 	bool leftGroupDefeated = false;
 	float bonusSpeed = 2.0f;

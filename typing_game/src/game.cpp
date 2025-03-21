@@ -588,9 +588,6 @@ void Game::update() {
 				// Update zombie count
 				zombieCount--;
 
-				// Update zombie count / zombies defeated
-				//zombiesDefeated++;
-
 				// Clear user input
 				userInput.clear();
 
@@ -623,10 +620,25 @@ void Game::update() {
 				}
 			}
 
-			// Check if zombie is transformed
+			// Check if zombie is transformed, then move if not
 			if (!transformStatus.getTransformed()) {
 				zombieTransform.position.x += bonusSpeed;
 			}
+			// Possible update to bonus game?
+			// Create random choice of zombie movement, x+= being default
+
+			/*
+				int randLeft = rand() % 1;
+				if (randLeft == 0) {
+					zombieTransform.position.x += bonusSpeed;
+				}
+				else if (randLeft == 1) {
+					zombieTransform.position.x += bonusSpeed;
+					zombieTransform.position.y += bonusSpeed;
+				}
+			}
+			*/
+
 
 			// Check if zombie's prompt matches user input
 			if (userInput == bonusLeft[i] && !transformStatus.getTransformed()) {
@@ -737,7 +749,7 @@ void Game::update() {
 					}
 				}
 
-				// Check if zombie is transformed
+				// Check if zombie is transformed, then move if not
 				if (!transformStatus.getTransformed()) {
 					zombieTransform.position.x -= bonusSpeed;
 				}
@@ -1561,20 +1573,24 @@ void Game::bonusStage()
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
-	//int numZombies = bonusList.size();
+	// Increasing bonus level
+	bonusLevel++;
+
+	// Keeping track of zombie count and increases each bonus round
+	int numZombiesLeft = 3 + (bonusLevel - 1);
+	int numZombiesRight = 3 + (bonusLevel - 1);
 
 	// Randomize letters every new bonus round
-	bonusLeft = wordManager.getRandomWords(WordListManager::BONUSLEFT, 3);
-	bonusRight = wordManager.getRandomWords(WordListManager::BONUSRIGHT, 3);
+	bonusLeft = wordManager.getRandomWords(WordListManager::BONUSLEFT, numZombiesLeft);
+	bonusRight = wordManager.getRandomWords(WordListManager::BONUSRIGHT, numZombiesRight);
 
-	int numZombies = 6;
 	int spacing = 120; // Space between zombies
 
 	// Generate random y-coordinate for left to right zombie row
 	int yLeft = 200 + (rand() % 500);
 
 	// Left to Right group
-	for (int i = 0; i < numZombies / 2; ++i)
+	for (int i = 0; i < numZombiesLeft; ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
 		int x = -150 - (i * spacing); // Start just outside the left edge
@@ -1593,7 +1609,7 @@ void Game::bonusStage()
 	int yRight = 200 + (rand() % 500);
 
 	// Right to Left group
-	for (int i = numZombies / 2 - 1; i >= 0; --i)
+	for (int i = 0; i < numZombiesRight; ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
 		int x = 1600 + (i * spacing); // Start just outside the right edge
@@ -1606,6 +1622,9 @@ void Game::bonusStage()
 		rightToLeft.push_back(newZombie);
 		totalBonusZombies++;
 	}
+
+	// Make sure the leftmost zombie is first in the list
+	std::reverse(rightToLeft.begin(), rightToLeft.end());
 
 	// Intilalize zombies remaining
 	zombieCount += leftToRight.size();
