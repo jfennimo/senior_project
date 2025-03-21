@@ -22,6 +22,7 @@ Manager manager;
 UIManager* uiManager;
 
 WordListManager wordManager;
+WordListManager::Difficulty difficulty;
 
 SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
@@ -49,9 +50,9 @@ Uint32 currentTime;
 //std::vector<std::string> wordList = { "test", "brains" };
 //std::vector<std::string> bonusList = { "a", "b", "c" , "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" };
 
-std::vector<std::string> easyWords = wordManager.getRandomWords(WordListManager::EASY, 3);
-std::vector<std::string> mediumWords = wordManager.getRandomWords(WordListManager::MEDIUM, 3);
-std::vector<std::string> hardWords = wordManager.getRandomWords(WordListManager::HARD, 3);
+std::vector<std::string> words = wordManager.getRandomWords(WordListManager::EASY, 3);
+//std::vector<std::string> mediumWords = wordManager.getRandomWords(WordListManager::MEDIUM, 3);
+//std::vector<std::string> hardWords = wordManager.getRandomWords(WordListManager::HARD, 3);
 std::vector<std::string> bonusLeft = wordManager.getRandomWords(WordListManager::BONUSLEFT, 3);
 std::vector<std::string> bonusRight = wordManager.getRandomWords(WordListManager::BONUSRIGHT, 3);
 
@@ -231,7 +232,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
 	// Set starting target
 	currentZombieIndex = closestZombieIndex;
-	targetText = easyWords[currentZombieIndex];
+	targetText = words[currentZombieIndex];
 
 	
 	// Intilalize zombies remaining
@@ -470,7 +471,7 @@ void Game::update() {
 			}
 
 			// Check if zombie's prompt matches user input
-			if (userInput == easyWords[i] && !transformStatus.getTransformed()) {
+			if (userInput == words[i] && !transformStatus.getTransformed()) {
 				for (size_t j = 0; j < userInput.size(); ++j) {
 					if (j >= targetText.size() || userInput[j] != targetText[j]) {
 						// Append to typedWrong only if not already processed
@@ -517,7 +518,7 @@ void Game::update() {
 
 					// Update current zombie to the closest one
 					currentZombieIndex = closestZombieIndex;
-					targetText = easyWords[currentZombieIndex];
+					targetText = words[currentZombieIndex];
 				}
 			}
 		}
@@ -1494,7 +1495,7 @@ void Game::clean()
 // To set up next level of arcade mode
 void Game::nextLevel()
 {
-	if (level % 2 == 0 && !inBonusStage) {
+	if (level % 10 == 0 && !inBonusStage) {
 		gameState = GameState::BONUS_TITLE; // Transition to bonus title screen
 		inBonusStage = true;
 		return;
@@ -1509,11 +1510,23 @@ void Game::nextLevel()
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
-	// Randomizing words
-	easyWords = wordManager.getRandomWords(WordListManager::EASY, 3);
-
 	// TESTING
 	int numZombies = 3;
+
+	// Randomizing words and updating difficulty every 10 levels 
+	int cycleLevel = level % 30; // Levels 1–30 -> 0–29
+
+	if (cycleLevel >= 1 && cycleLevel <= 10) {
+		difficulty = WordListManager::EASY;
+	}
+	else if (cycleLevel >= 11 && cycleLevel <= 20) {
+		difficulty = WordListManager::MEDIUM;
+	}
+	else {
+		difficulty = WordListManager::HARD;
+	}
+
+	words = wordManager.getRandomWords(difficulty, numZombies);
 
 	// Spawn zombies at random off-screen positions but not too close to player
 	int spawnBuffer = 150; // Distance beyond game window for spawning
@@ -1579,7 +1592,7 @@ void Game::nextLevel()
 
 	// Set starting target
 	currentZombieIndex = closestZombieIndex;
-	targetText = easyWords[currentZombieIndex];
+	targetText = words[currentZombieIndex];
 
 	// Intilalize zombies remaining
 	zombieCount = zombies.size();
@@ -1745,6 +1758,9 @@ void Game::resetGame()
 	// TESTING
 	int numZombies = 3;
 
+	// Randomizing words
+	words = wordManager.getRandomWords(WordListManager::EASY, numZombies);
+
 	// Spawn zombies at random off-screen positions but not too close to player
 	int spawnBuffer = 150; // Distance beyond game window for spawning
 	for (size_t i = 0; i < numZombies; ++i)
@@ -1800,7 +1816,7 @@ void Game::resetGame()
 
 	// Reset the typing target
 	currentPromptIndex = 0;
-	targetText = easyWords[currentPromptIndex];
+	targetText = words[currentPromptIndex];
 
 	// Clear user input from last game
 	userInput.clear();

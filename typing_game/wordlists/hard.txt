@@ -1,4 +1,1 @@
-algorithm
-cryptography
-neuroscience
-philosophy
+hard
