@@ -1510,16 +1510,16 @@ void Game::nextLevel()
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
-	// TESTING
-	int numZombies = 3;
+	// Setting number of zombies to spawn, with a new one appearing every 5 levels
+	int numZombies = 3 + (level / 5);
 
 	// Randomizing words and updating difficulty every 10 levels 
-	int cycleLevel = level % 30; // Levels 1–30 -> 0–29
+	int cycleLevel = (level % 30) + 1; // Ensures levels 1–30 -> 1–30
 
-	if (cycleLevel >= 1 && cycleLevel <= 10) {
+	if (cycleLevel <= 10) {
 		difficulty = WordListManager::EASY;
 	}
-	else if (cycleLevel >= 11 && cycleLevel <= 20) {
+	else if (cycleLevel <= 20) {
 		difficulty = WordListManager::MEDIUM;
 	}
 	else {
@@ -1611,8 +1611,12 @@ void Game::nextLevel()
 	levelCorrectLetters = 0;
 	levelTotalLetters = 0;
 
-	// Increase zambie speed!!
-	speed += 0.1;
+	// Increase zambie speed!! Also decrease slightly every 10 levels...
+	speed += 0.1f;
+
+	if (level % 10 == 0) {
+		speed -= 0.5f;
+	}
 
 	// Increment level
 	level++;

@@ -3,7 +3,7 @@
 
 // previously 23 height, 40 width
 // now 24 height, 50 width
-int lvl1[24][50] = {
+int arcadeMap[24][50] = {
 	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
 	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
 	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
@@ -35,7 +35,7 @@ Map::Map()
 	wall = TextureManager::LoadTexture("assets/Wall.png");
 	floor = TextureManager::LoadTexture("assets/Floor.png");
 
-	loadMap(lvl1);
+	loadMap(arcadeMap);
 
 	src.x = 0;
 	src.y = 0;
