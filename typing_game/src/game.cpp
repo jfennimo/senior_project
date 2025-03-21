@@ -210,12 +210,35 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		zombies.push_back(newZombie);
 	}
+
+	// Find the closest zombie to the player at game start
+	float closestDistance = std::numeric_limits<float>::max();
+	size_t closestZombieIndex = 0;
+
+	for (size_t i = 0; i < zombies.size(); ++i) {
+		if (!zombies[i]->getComponent<TransformStatusComponent>().getTransformed()) {
+			auto& zombieTransform = zombies[i]->getComponent<TransformComponent>();
+			float dx = player.getComponent<TransformComponent>().position.x - zombieTransform.position.x;
+			float dy = player.getComponent<TransformComponent>().position.y - zombieTransform.position.y;
+			float distance = sqrt(dx * dx + dy * dy);
+
+			if (distance < closestDistance) {
+				closestDistance = distance;
+				closestZombieIndex = i;
+			}
+		}
+	}
+
+	// Set starting target
+	currentZombieIndex = closestZombieIndex;
+	targetText = easyWords[currentZombieIndex];
+
 	
 	// Intilalize zombies remaining
 	zombieCount = zombies.size();
 
 	// Initialize target prompt
-	targetText = easyWords[currentPromptIndex];
+	//targetText = easyWords[currentPromptIndex];
 
 	// Intialize barrier health and health font
 	barrierHP = maxHP;
@@ -594,30 +617,31 @@ void Game::update() {
 				// Resetting hand sprites
 				resetHandSprites();
 
-				// Move to next closest zombie
+				// Move to the zombie to the left
 				if (i == currentZombieIndex) {
-					// Find closest remaining zombie
-					float closestDistance = std::numeric_limits<float>::max();
-					size_t closestZombieIndex = currentZombieIndex;
+					float currentX = leftToRight[currentZombieIndex]->getComponent<TransformComponent>().position.x;
+					float nextX = -std::numeric_limits<float>::max();
+					int nextZombieIndex = -1;
 
 					for (size_t j = 0; j < leftToRight.size(); ++j) {
 						if (!leftToRight[j]->getComponent<TransformStatusComponent>().getTransformed()) {
-							auto& targetZombieTransform = leftToRight[j]->getComponent<TransformComponent>();
-							float dx = playerTransform.position.x - targetZombieTransform.position.x;
-							float dy = playerTransform.position.y - targetZombieTransform.position.y;
-							float distance = sqrt(dx * dx + dy * dy);
+							float candidateX = leftToRight[j]->getComponent<TransformComponent>().position.x;
 
-							if (distance < closestDistance) {
-								closestDistance = distance;
-								closestZombieIndex = j;
+							// Looking for left of current zombie
+							if (candidateX < currentX && candidateX > nextX) {
+								nextX = candidateX;
+								nextZombieIndex = static_cast<int>(j);
 							}
 						}
 					}
 
-					// Update current zombie to the closest one
-					currentZombieIndex = closestZombieIndex;
-					targetText = bonusLeft[currentZombieIndex];
+					// Found next zombie, update index and targetText
+					if (nextZombieIndex != -1) {
+						currentZombieIndex = nextZombieIndex;
+						targetText = bonusLeft[currentZombieIndex];
+					}
 				}
+
 			}
 
 			// Check if zombie is transformed, then move if not
@@ -672,29 +696,29 @@ void Game::update() {
 				// Resetting hand sprites
 				resetHandSprites();
 
-				// Move to next closest zombie
+				// Move to the zombie to the left
 				if (i == currentZombieIndex) {
-					// Find closest remaining zombie
-					float closestDistance = std::numeric_limits<float>::max();
-					size_t closestZombieIndex = currentZombieIndex;
+					float currentX = leftToRight[currentZombieIndex]->getComponent<TransformComponent>().position.x;
+					float nextX = -std::numeric_limits<float>::max();
+					int nextZombieIndex = -1;
 
 					for (size_t j = 0; j < leftToRight.size(); ++j) {
 						if (!leftToRight[j]->getComponent<TransformStatusComponent>().getTransformed()) {
-							auto& targetZombieTransform = leftToRight[j]->getComponent<TransformComponent>();
-							float dx = playerTransform.position.x - targetZombieTransform.position.x;
-							float dy = playerTransform.position.y - targetZombieTransform.position.y;
-							float distance = sqrt(dx * dx + dy * dy);
+							float candidateX = leftToRight[j]->getComponent<TransformComponent>().position.x;
 
-							if (distance < closestDistance) {
-								closestDistance = distance;
-								closestZombieIndex = j;
+							// Looking for left of current zombie
+							if (candidateX < currentX && candidateX > nextX) {
+								nextX = candidateX;
+								nextZombieIndex = static_cast<int>(j);
 							}
 						}
 					}
 
-					// Update current zombie to the closest one
-					currentZombieIndex = closestZombieIndex;
-					targetText = bonusLeft[currentZombieIndex];
+					// Found next zombie, update index and targetText
+					if (nextZombieIndex != -1) {
+						currentZombieIndex = nextZombieIndex;
+						targetText = bonusLeft[currentZombieIndex];
+					}
 				}
 			}
 		}
@@ -723,30 +747,31 @@ void Game::update() {
 					// Resetting hand sprites
 					resetHandSprites();
 
-					// Move to next closest zombie
+					// Move to the zombie to the right
 					if (i == currentZombieIndex) {
-						// Find closest remaining zombie
-						float closestDistance = std::numeric_limits<float>::max();
-						size_t closestZombieIndex = currentZombieIndex;
+						float currentX = rightToLeft[currentZombieIndex]->getComponent<TransformComponent>().position.x;
+						float nextX = std::numeric_limits<float>::max(); // Look for the smallest `x` greater than `currentX`
+						int nextZombieIndex = -1;
 
 						for (size_t j = 0; j < rightToLeft.size(); ++j) {
 							if (!rightToLeft[j]->getComponent<TransformStatusComponent>().getTransformed()) {
-								auto& targetZombieTransform = rightToLeft[j]->getComponent<TransformComponent>();
-								float dx = playerTransform.position.x - targetZombieTransform.position.x;
-								float dy = playerTransform.position.y - targetZombieTransform.position.y;
-								float distance = sqrt(dx * dx + dy * dy);
+								float candidateX = rightToLeft[j]->getComponent<TransformComponent>().position.x;
 
-								if (distance < closestDistance) {
-									closestDistance = distance;
-									closestZombieIndex = j;
+								// Looking for right of current zombie
+								if (candidateX > currentX && candidateX < nextX) {
+									nextX = candidateX;
+									nextZombieIndex = static_cast<int>(j);
 								}
 							}
 						}
 
-						// Update current zombie to the closest one
-						currentZombieIndex = closestZombieIndex;
-						targetText = bonusRight[currentZombieIndex];
+						// Found next zombie, update index and targetText
+						if (nextZombieIndex != -1) {
+							currentZombieIndex = nextZombieIndex;
+							targetText = bonusRight[currentZombieIndex];
+						}
 					}
+
 				}
 
 				// Check if zombie is transformed, then move if not
@@ -786,30 +811,31 @@ void Game::update() {
 					// Resetting hand sprites
 					resetHandSprites();
 
-					// Move to next closest zombie
+					// Move to the zombie to the right
 					if (i == currentZombieIndex) {
-						// Find closest remaining zombie
-						float closestDistance = std::numeric_limits<float>::max();
-						size_t closestZombieIndex = currentZombieIndex;
+						float currentX = rightToLeft[currentZombieIndex]->getComponent<TransformComponent>().position.x;
+						float nextX = std::numeric_limits<float>::max(); // Look for the smallest `x` greater than `currentX`
+						int nextZombieIndex = -1;
 
 						for (size_t j = 0; j < rightToLeft.size(); ++j) {
 							if (!rightToLeft[j]->getComponent<TransformStatusComponent>().getTransformed()) {
-								auto& targetZombieTransform = rightToLeft[j]->getComponent<TransformComponent>();
-								float dx = playerTransform.position.x - targetZombieTransform.position.x;
-								float dy = playerTransform.position.y - targetZombieTransform.position.y;
-								float distance = sqrt(dx * dx + dy * dy);
+								float candidateX = rightToLeft[j]->getComponent<TransformComponent>().position.x;
 
-								if (distance < closestDistance) {
-									closestDistance = distance;
-									closestZombieIndex = j;
+								// Looking for right of current zombie
+								if (candidateX > currentX && candidateX < nextX) {
+									nextX = candidateX;
+									nextZombieIndex = static_cast<int>(j);
 								}
 							}
 						}
 
-						// Update current zombie to the closest one
-						currentZombieIndex = closestZombieIndex;
-						targetText = bonusRight[currentZombieIndex];
+						// Found next zombie, update index and targetText
+						if (nextZombieIndex != -1) {
+							currentZombieIndex = nextZombieIndex;
+							targetText = bonusRight[currentZombieIndex];
+						}
 					}
+
 				}
 			}
 		}
@@ -1533,12 +1559,34 @@ void Game::nextLevel()
 		zombies.push_back(newZombie);
 	}
 
+	// Find the closest zombie to the player at game start
+	float closestDistance = std::numeric_limits<float>::max();
+	size_t closestZombieIndex = 0;
+
+	for (size_t i = 0; i < zombies.size(); ++i) {
+		if (!zombies[i]->getComponent<TransformStatusComponent>().getTransformed()) {
+			auto& zombieTransform = zombies[i]->getComponent<TransformComponent>();
+			float dx = player.getComponent<TransformComponent>().position.x - zombieTransform.position.x;
+			float dy = player.getComponent<TransformComponent>().position.y - zombieTransform.position.y;
+			float distance = sqrt(dx * dx + dy * dy);
+
+			if (distance < closestDistance) {
+				closestDistance = distance;
+				closestZombieIndex = i;
+			}
+		}
+	}
+
+	// Set starting target
+	currentZombieIndex = closestZombieIndex;
+	targetText = easyWords[currentZombieIndex];
+
 	// Intilalize zombies remaining
 	zombieCount = zombies.size();
 
 	// Reset the typing target
 	currentPromptIndex = 0;
-	targetText = easyWords[currentPromptIndex];
+	//targetText = easyWords[currentPromptIndex];
 
 	// Reset hand sprites
 	//resetHandSprites();
