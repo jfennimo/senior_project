@@ -202,6 +202,18 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 			float dy = playerTransform.position.y - y;
 			if (sqrt(dx * dx + dy * dy) < 400.0f) {
 				validSpawn = false;
+				continue;
+			}
+
+			// Check distance to other zombies
+			for (Entity* otherZombie : zombies) {
+				auto& otherTransform = otherZombie->getComponent<TransformComponent>();
+				float odx = otherTransform.position.x - x;
+				float ody = otherTransform.position.y - y;
+				if (sqrt(odx * odx + ody * ody) < 60.0f) { // May need to adjust radius
+					validSpawn = false;
+					break;
+				}
 			}
 		}
 
@@ -1562,6 +1574,18 @@ void Game::nextLevel()
 			float dy = playerTransform.position.y - y;
 			if (sqrt(dx * dx + dy * dy) < 400.0f) {
 				validSpawn = false;
+				continue;
+			}
+
+			// Check distance to other zombies
+			for (Entity* otherZombie : zombies) {
+				auto& otherTransform = otherZombie->getComponent<TransformComponent>();
+				float odx = otherTransform.position.x - x;
+				float ody = otherTransform.position.y - y;
+				if (sqrt(odx * odx + ody * ody) < 60.0f) { // May need to adjust radius
+					validSpawn = false;
+					break;
+				}
 			}
 		}
 
@@ -1799,6 +1823,18 @@ void Game::resetGame()
 			float dy = playerTransform.position.y - y;
 			if (sqrt(dx * dx + dy * dy) < 400.0f) {
 				validSpawn = false;
+				continue;
+			}
+
+			// Check distance to other zombies
+			for (Entity* otherZombie : zombies) {
+				auto& otherTransform = otherZombie->getComponent<TransformComponent>();
+				float odx = otherTransform.position.x - x;
+				float ody = otherTransform.position.y - y;
+				if (sqrt(odx * odx + ody * ody) < 60.0f) { // May need to adjust radius
+					validSpawn = false;
+					break;
+				}
 			}
 		}
 
