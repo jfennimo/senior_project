@@ -316,6 +316,11 @@ void Game::handleEvents()
 
 	case SDL_TEXTINPUT:
 		if (gameState == GameState::ARCADE_MODE) {
+			// Prevent typing if word is fully typed AND incorrect
+			if (userInput.size() >= targetText.size() && userInput != targetText) {
+				break; // Lock input until user deletes
+			}
+
 			userInput += event.text.text; // Append typed text
 			processedInput.assign(userInput.size(), false);
 
@@ -334,10 +339,15 @@ void Game::handleEvents()
 		}
 
 		if (gameState == GameState::BONUS_STAGE) {
+			// Prevent typing if word is fully typed AND incorrect
+			if (userInput.size() >= targetText.size() && userInput != targetText) {
+				break; // Lock input until user deletes
+			}
+
 			userInput += event.text.text; // Append typed text
 			processedInput.assign(userInput.size(), false);
 
-			// NEED TO UPDATE
+			// NEED TO UPDATE (with wut? idk)
 			// Increment total number of typed letters
 			levelTotalLetters++;
 			finalTotalLetters++;
@@ -1112,7 +1122,6 @@ void Game::render()
 						SDL_RenderFillRect(renderer, &caretRect);
 					}
 
-
 					TTF_CloseFont(font);
 				}
 			}
@@ -1165,6 +1174,10 @@ void Game::render()
 
 		SDL_SetRenderDrawColor(renderer, 160, 160, 160, 255);
 		SDL_RenderClear(renderer);
+
+		// Cursor rendering
+		cursorBlinkSpeed = 500; // milliseconds
+		showCursor = (SDL_GetTicks() / cursorBlinkSpeed) % 2 == 0;
 
 		// Draw map and game objects
 		map->drawMap();
@@ -1242,6 +1255,8 @@ void Game::render()
 
 						// Render letters with spacing
 						int letterX = textX;
+						int cursorX = textX; // default in case userInput is empty
+
 						for (size_t i = 0; i < targetText.size(); ++i) {
 							SDL_Color color = { 255, 255, 255, 255 }; // Default to white
 							if (i < userInput.size()) {
@@ -1270,12 +1285,48 @@ void Game::render()
 								if (texture) {
 									SDL_Rect dst = { letterX, textY, surface->w, surface->h };
 									SDL_RenderCopy(renderer, texture, nullptr, &dst);
-									letterX += surface->w;
+
+									letterX += surface->w + 1;
+
+									// Update cursorX AFTER rendering the letter
+									if (i + 1 == userInput.size()) {
+										cursorX = letterX - 2;
+									}
+
 									SDL_DestroyTexture(texture);
 								}
 								SDL_FreeSurface(surface);
 							}
 						}
+
+						// Handle fully typed case — cursor at end
+						if (userInput.size() == targetText.size()) {
+							cursorX = letterX; // after last letter
+						}
+
+						// Draw cursor
+						if (showCursor && userInput.size() <= targetText.size()) {
+							// Change caret color if input is fully typed but incorrect
+							SDL_Color caretColor = { 255, 255, 255, 255 }; // default: white
+
+							if (userInput.size() == targetText.size() && userInput != targetText) {
+								caretColor = { 255, 0, 0, 255 }; // red for incorrect full word
+							}
+
+							int caretWidth = 2;
+							int caretHeight = 18;
+
+							SDL_Rect caretRect = {
+								cursorX,
+								textY,
+								caretWidth,
+								caretHeight
+							};
+
+							SDL_SetRenderDrawColor(renderer, caretColor.r, caretColor.g, caretColor.b, caretColor.a);
+							SDL_RenderFillRect(renderer, &caretRect);
+						}
+
 						TTF_CloseFont(font);
 					}
 				}
@@ -1317,6 +1368,8 @@ void Game::render()
 
 						// Render letters with spacing
 						int letterX = textX;
+						int cursorX = textX; // default in case userInput is empty
+
 						for (size_t i = 0; i < targetText.size(); ++i) {
 							SDL_Color color = { 255, 255, 255, 255 }; // Default to white
 							if (i < userInput.size()) {
@@ -1345,12 +1398,48 @@ void Game::render()
 								if (texture) {
 									SDL_Rect dst = { letterX, textY, surface->w, surface->h };
 									SDL_RenderCopy(renderer, texture, nullptr, &dst);
-									letterX += surface->w;
+
+									letterX += surface->w + 1;
+
+									// Update cursorX AFTER rendering the letter
+									if (i + 1 == userInput.size()) {
+										cursorX = letterX - 2;
+									}
+
 									SDL_DestroyTexture(texture);
 								}
 								SDL_FreeSurface(surface);
 							}
 						}
+
+						// Handle fully typed case — cursor at end
+						if (userInput.size() == targetText.size()) {
+							cursorX = letterX; // after last letter
+						}
+
+						// Draw cursor
+						if (showCursor && userInput.size() <= targetText.size()) {
+							// Change caret color if input is fully typed but incorrect
+							SDL_Color caretColor = { 255, 255, 255, 255 }; // default: white
+
+							if (userInput.size() == targetText.size() && userInput != targetText) {
+								caretColor = { 255, 0, 0, 255 }; // red for incorrect full word
+							}
+
+							int caretWidth = 2;
+							int caretHeight = 18;
+
+							SDL_Rect caretRect = {
+								cursorX,
+								textY,
+								caretWidth,
+								caretHeight
+							};
+
+							SDL_SetRenderDrawColor(renderer, caretColor.r, caretColor.g, caretColor.b, caretColor.a);
+							SDL_RenderFillRect(renderer, &caretRect);
+						}
+
 						TTF_CloseFont(font);
 					}
 				}
