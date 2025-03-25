@@ -483,7 +483,7 @@ void Game::update() {
 			}
 
 			// Check if zombie's prompt matches user input
-			if (userInput == words[i] && !transformStatus.getTransformed()) {
+			if (i == currentZombieIndex && userInput == words[i] && !transformStatus.getTransformed()) {
 				for (size_t j = 0; j < userInput.size(); ++j) {
 					if (j >= targetText.size() || userInput[j] != targetText[j]) {
 						// Append to typedWrong only if not already processed
@@ -676,9 +676,8 @@ void Game::update() {
 			}
 			*/
 
-
 			// Check if zombie's prompt matches user input
-			if (userInput == bonusLeft[i] && !transformStatus.getTransformed()) {
+			if (i == currentZombieIndex && userInput == bonusLeft[i] && !transformStatus.getTransformed()) {
 				for (size_t j = 0; j < userInput.size(); ++j) {
 					if (j >= targetText.size() || userInput[j] != targetText[j]) {
 						// Append to typedWrong only if not already processed
@@ -793,7 +792,7 @@ void Game::update() {
 				}
 
 				// Check if zombie's prompt matches user input
-				if (userInput == bonusRight[i] && !transformStatus.getTransformed()) {
+				if (i == currentZombieIndex && userInput == bonusRight[i] && !transformStatus.getTransformed()) {
 					for (size_t j = 0; j < userInput.size(); ++j) {
 						if (j >= targetText.size() || userInput[j] != targetText[j]) {
 							// Append to typedWrong only if not already processed
