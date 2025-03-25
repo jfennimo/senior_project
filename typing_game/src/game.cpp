@@ -306,16 +306,12 @@ void Game::handleEvents()
 				std::cout << "Returning to title screen!" << std::endl;
 			}
 		}
-		if (gameState == GameState::ARCADE_MODE) {
+		if (gameState == GameState::ARCADE_MODE || gameState == GameState::BONUS_STAGE) {
 			if (event.key.keysym.sym == SDLK_BACKSPACE && !userInput.empty()) {
 				userInput.pop_back(); // Remove last character
 			}
 		}
-		if (gameState == GameState::BONUS_STAGE) {
-			if (event.key.keysym.sym == SDLK_BACKSPACE && !userInput.empty()) {
-				userInput.pop_back(); // Remove last character
-			}
-		}
+
 		break;
 
 	case SDL_TEXTINPUT:
@@ -353,7 +349,7 @@ void Game::handleEvents()
 
 				// Resetting hand sprites
 				resetHandSprites();
-			}
+			} 
 		}
 		break;
 
@@ -974,6 +970,10 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 160, 160, 160, 255);
 		SDL_RenderClear(renderer);
 
+		// Cursor rendering
+		cursorBlinkSpeed = 500; // milliseconds
+		showCursor = (SDL_GetTicks() / cursorBlinkSpeed) % 2 == 0;
+
 		// Draw map and game objects
 		map->drawMap();
 		manager.draw();
@@ -1040,6 +1040,8 @@ void Game::render()
 
 					// Render letters with spacing
 					int letterX = textX;
+					int cursorX = textX; // default in case userInput is empty
+
 					for (size_t i = 0; i < targetText.size(); ++i) {
 						SDL_Color color = { 255, 255, 255, 255 }; // Default to white
 						if (i < userInput.size()) {
@@ -1068,12 +1070,49 @@ void Game::render()
 							if (texture) {
 								SDL_Rect dst = { letterX, textY, surface->w, surface->h };
 								SDL_RenderCopy(renderer, texture, nullptr, &dst);
-								letterX += surface->w;
+
+								letterX += surface->w + 1;
+
+								// Update cursorX AFTER rendering the letter
+								if (i + 1 == userInput.size()) {
+									cursorX = letterX - 2;
+								}
+
 								SDL_DestroyTexture(texture);
 							}
 							SDL_FreeSurface(surface);
 						}
 					}
+
+					// Handle fully typed case — cursor at end
+					if (userInput.size() == targetText.size()) {
+						cursorX = letterX; // after last letter
+					}
+
+					// Draw cursor
+					if (showCursor && userInput.size() <= targetText.size()) {
+						// Change caret color if input is fully typed but incorrect
+						SDL_Color caretColor = { 255, 255, 255, 255 }; // default: white
+
+						if (userInput.size() == targetText.size() && userInput != targetText) {
+							caretColor = { 255, 0, 0, 255 }; // red for incorrect full word
+						}
+
+						int caretWidth = 2;
+						int caretHeight = 18;
+
+						SDL_Rect caretRect = {
+							cursorX,
+							textY,
+							caretWidth,
+							caretHeight
+						};
+
+						SDL_SetRenderDrawColor(renderer, caretColor.r, caretColor.g, caretColor.b, caretColor.a);
+						SDL_RenderFillRect(renderer, &caretRect);
+					}
+
+
 					TTF_CloseFont(font);
 				}
 			}

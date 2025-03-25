@@ -64,6 +64,10 @@ private:
 	Uint32 lastFlashTime = 0; // Store last time the sprite switched
 	bool flashState = false;  // Track if the barrier is currently in its "flashed" state
 
+	// For rendering cursor
+	int cursorBlinkSpeed;
+	bool showCursor;
+
 	// Zombie speed!!
 	float speed = 0.5f; // How fast the zombies move towards the player
 
