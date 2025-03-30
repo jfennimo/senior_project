@@ -36,12 +36,19 @@ auto& barrier3(manager.addEntity());
 auto& greenSiren1(manager.addEntity());
 auto& greenSiren2(manager.addEntity());
 auto& crosshair(manager.addEntity());
+auto& laserLeft(manager.addEntity());
+auto& laserRight(manager.addEntity());
+auto& comboMeter(manager.addEntity());
 
 // Fonts
 TTF_Font* titleFont;
 TTF_Font* menuFont;
 TTF_Font* healthFont;
 TTF_Font* gameOverFont;
+TTF_Font* controlPanelFont;
+TTF_Font* statusFont;
+TTF_Font* threatLvlFont;
+TTF_Font* comboStatusFont;
 
 // Frame timer
 Uint32 currentTime;
@@ -129,20 +136,22 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	// previously 1280x720
 		// now 1600x900
 	// Setting player position
-	player.addComponent<TransformComponent>(770, 820);
+	// 820 y
+	player.addComponent<TransformComponent>(770, 700);
 	player.addComponent<SpriteComponent>("assets/Player.png");
 
 	// Setting hand sprites
-	leftHand.addComponent<TransformComponent>(515, 770, 64, 64, 2);
-	rightHand.addComponent<TransformComponent>(970, 770, 64, 64, 2);
+	leftHand.addComponent<TransformComponent>(555, 770, 64, 64, 2);
+	rightHand.addComponent<TransformComponent>(930, 770, 64, 64, 2);
 
 	leftHand.addComponent<SpriteComponent>("assets/Left_Hand.png");
 	rightHand.addComponent<SpriteComponent>("assets/Right_Hand.png");
 
 	// Walls around player
-	barrier1.addComponent<TransformComponent>(650.0f, 768.0f, 32, 280, 1);
-	barrier2.addComponent<TransformComponent>(650.0f, 768.0f, 190, 32, 1);
-	barrier3.addComponent<TransformComponent>(930.0f, 768.0f, 190, 32, 1);
+	// 768 y
+	barrier1.addComponent<TransformComponent>(700.0f, 648.0f, 32, 200, 1);
+	barrier2.addComponent<TransformComponent>(680.0f, 648.0f, 120, 32, 1);
+	barrier3.addComponent<TransformComponent>(900.0f, 648.0f, 120, 32, 1);
 
 	barrier1.addComponent<SpriteComponent>("assets/Barrier1.png");
 	barrier1.addComponent<ColliderComponent>("barrier");
@@ -152,8 +161,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	barrier3.addComponent<ColliderComponent>("barrier");
 
 	// Green and red sirens on barrier
-	greenSiren1.addComponent<TransformComponent>(645, 728, 10, 10, 4);
-	greenSiren2.addComponent<TransformComponent>(926, 728, 10, 10, 4);
+	greenSiren1.addComponent<TransformComponent>(675, 615, 10, 10, 4);
+	greenSiren2.addComponent<TransformComponent>(895, 615, 10, 10, 4);
 
 	greenSiren1.addComponent<SpriteComponent>("assets/Siren_Green.png");
 	greenSiren2.addComponent<SpriteComponent>("assets/Siren_Green.png");
@@ -161,6 +170,17 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	// Initialize crosshair entity
 	crosshair.addComponent<TransformComponent>(0, 0); // Initial position of crosshair
 	crosshair.addComponent<SpriteComponent>("assets/Crosshair.png");
+
+	// Left and right laser cannons
+	laserLeft.addComponent<TransformComponent>(0, 0, 64, 64, 2);
+	laserRight.addComponent<TransformComponent>(1472, 0, 64, 64, 2);
+
+	laserLeft.addComponent<SpriteComponent>("assets/Laser_Cannon_Left.png");
+	laserRight.addComponent<SpriteComponent>("assets/Laser_Cannon_Right.png");
+
+	// Combo meter
+	comboMeter.addComponent<TransformComponent>(1350, 785, 32, 64, 2);
+	comboMeter.addComponent<SpriteComponent>("assets/Combo_Meter_0.png");
 
 	// Initialize random seed
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
@@ -260,6 +280,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	menuFont = TTF_OpenFont("assets/PressStart2P.ttf", 20);
 	healthFont = TTF_OpenFont("assets/PressStart2P.ttf", 20);
 	gameOverFont = TTF_OpenFont("assets/PressStart2P.ttf", 100);
+	controlPanelFont = TTF_OpenFont("assets/Square.ttf", 30);
+	statusFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 40);
+	threatLvlFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 50);
+	comboStatusFont = TTF_OpenFont("assets/Square.TTF", 30);
 }
 
 
@@ -323,6 +347,13 @@ void Game::handleEvents()
 
 			userInput += event.text.text; // Append typed text
 			processedInput.assign(userInput.size(), false);
+
+			// Check for mistakes immediately
+			if (userInput.back() != targetText[userInput.size() - 1]) {
+				brokenCombo = true;
+				comboStatus = "X";
+				comboLevel = 0;
+			}
 
 			// Increment total number of typed letters
 			levelTotalLetters++;
@@ -405,6 +436,28 @@ void Game::update() {
 
 		currentTime = SDL_GetTicks(); // Get current time in milliseconds
 
+		// Reset brokenCombo at the start of a new word
+		if (userInput.empty()) {
+			brokenCombo = false;
+		}
+
+		// Update status text
+		if (barrierUnderAttack) {
+			statusText = "DANGER";
+		}
+
+		if (!barrierUnderAttack) {
+			if (barrierHP <= 50) {
+				statusText = "CAUTION";
+			}
+			else if (barrierHP <= 20) {
+				statusText = "CRITICAL";
+			}
+			else {
+				statusText = "OK";
+			}
+		}
+
 		// Update crosshair position if zombies are present
 		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
 			Entity* activeZombie = zombies[currentZombieIndex];
@@ -417,6 +470,9 @@ void Game::update() {
 
 		// Update hand sprites to reflect the key needed to be pressed
 		updateHandSprites();
+
+		// To update barrier attack status
+		barrierUnderAttack = false;
 
 		// Iterate through all zombies
 		for (size_t i = 0; i < zombies.size(); ++i) {
@@ -452,10 +508,6 @@ void Game::update() {
 					// Wall collision is true
 					barrierUnderAttack = true; // Track if zombies are attacking
 
-					// Lower hp if zombie touches barrier
-					barrierHP--;
-					if (barrierHP < 0) barrierHP = 0;
-
 					// Wall hit detected
 					std::cout << "Barrier hit! HP: " << barrierHP << std::endl;
 
@@ -480,11 +532,21 @@ void Game::update() {
 				} else
 				{
 					if (barrierUnderAttack && (currentTime - lastFlashTime > 300)) {
-						barrierUnderAttack = false; // Track if zombies are attacking
+						//barrierUnderAttack = false; // Track if zombies are attacking
 						
 						greenSiren1.getComponent<SpriteComponent>().setTex("assets/Siren_Green.png");
 						greenSiren2.getComponent<SpriteComponent>().setTex("assets/Siren_Green.png");
 					}
+				}
+			}
+
+			// Lower HP by 10 every second the zombies are attacking the barrier
+			if (barrierUnderAttack && currentTime - lastAttackTime >= 1000) {
+				barrierHP -= 10;
+				lastAttackTime = currentTime;
+
+				if (barrierHP < 0) {
+					barrierHP = 0;
 				}
 			}
 
@@ -498,6 +560,9 @@ void Game::update() {
 						}
 					}
 				}
+
+				// Check if user types in prompt correctly without errors
+				checkCombo(userInput, targetText);
 
 				// Transform zombie
 				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
@@ -705,7 +770,7 @@ void Game::update() {
 				// Update bonus zombie count / zombies defeated
 				bonusZombiesDefeated++;
 
-				// Restore some HP or... add this at the results screen...
+				// Rewards HP that will be added to barrierHP after results screen
 				bonusHP += 5;
 
 				// Clear user input
@@ -1060,6 +1125,7 @@ void Game::render()
 							}
 							else if (!processedInput[i]) {
 								color = { 255, 0, 0, 255 }; // Red for incorrect input
+								//brokenCombo = true;
 
 								// Append to typedWrong only if not already processed
 								if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
@@ -1070,6 +1136,7 @@ void Game::render()
 							}
 							else if (processedInput[i]) {
 								color = { 255, 0, 0, 255 }; // Keep red for already processed incorrect input
+								//brokenCombo = true;
 							}
 						}
 
@@ -1104,6 +1171,14 @@ void Game::render()
 						// Change caret color if input is fully typed but incorrect
 						SDL_Color caretColor = { 255, 255, 255, 255 }; // default: white
 
+						// HERE
+						// 
+						// 
+						// 
+						// 
+						// 
+						// 
+						// Add a bool to make the status alert change for this
 						if (userInput.size() == targetText.size() && userInput != targetText) {
 							caretColor = { 255, 0, 0, 255 }; // red for incorrect full word
 						}
@@ -1129,21 +1204,26 @@ void Game::render()
 
 		// Moving down here so this is drawn over the zombies
 		
-		// Draw HP bar
-		if (uiManager && healthFont) {
+		// Draw control panel
+		if (uiManager) {
 			SDL_Color outlineColor = { 255, 255, 255, 255 };
 			SDL_Color fgColor = { 102, 255, 105, 255 };
 			SDL_Color bgColor = { 255, 102, 102, 255 };
+			SDL_Color comboColor = { 255, 255, 102, 255 };
 			//SDL_Color textColor = { 255, 255, 51, 255 };
 			SDL_Color textColor = { 0, 0, 0, 255 };
-			uiManager->drawHealthbar(50, 35, 250, 30, barrierHP, maxHP, outlineColor, fgColor, bgColor, "Barrier HP", healthFont, textColor);
+
+			uiManager->drawHealthbar(130, 780, 320, 40, barrierHP, maxHP, "SHIELD:", outlineColor, fgColor, bgColor, controlPanelFont, textColor);
+			uiManager->drawStatusBar(130, 840, 320, 40, "STATUS:", statusText, outlineColor, bgColor, controlPanelFont, statusFont, textColor);
+			uiManager->drawThreatLvl(1140, 785, 70, 70, zombieCount, "THREAT LVL", outlineColor, bgColor, controlPanelFont, threatLvlFont, textColor);
+			uiManager->drawComboAlert(1335, 860, 60, 30, comboLevel, "COMBO:", comboStatus, outlineColor, comboColor, controlPanelFont, comboStatusFont, textColor);
 		}
 
 		// Draw level text
-		uiManager->drawText("Level " + std::to_string(level), 715, 10, { 0, 0, 0, 255 }, healthFont);
+		uiManager->drawText("Round " + std::to_string(level), 715, 10, { 0, 0, 0, 255 }, healthFont);
 
 		// Draw zombies remaining text
-		uiManager->drawText("Zombies Remaining: " + std::to_string(zombieCount), 1090, 10, { 0, 0, 0, 255 }, healthFont);
+		//uiManager->drawText("Zombies Remaining: " + std::to_string(zombieCount), 1090, 10, { 0, 0, 0, 255 }, threatLvlFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1262,6 +1342,8 @@ void Game::render()
 							if (i < userInput.size()) {
 								if (userInput[i] == targetText[i]) {
 									color = { 0, 255, 0, 255 }; // Green for correct input
+
+									//brokenCombo = false;
 								}
 								else if (!processedInput[i]) {
 									color = { 255, 0, 0, 255 }; // Red for incorrect input
@@ -1455,7 +1537,7 @@ void Game::render()
 			SDL_Color bgColor = { 255, 102, 102, 255 };
 			//SDL_Color textColor = { 255, 255, 51, 255 };
 			SDL_Color textColor = { 0, 0, 0, 255 };
-			uiManager->drawHealthbar(50, 35, 250, 30, barrierHP, maxHP, outlineColor, fgColor, bgColor, "Barrier HP", healthFont, textColor);
+			uiManager->drawHealthbar(130, 790, 300, 30, barrierHP, maxHP, "SHIELD:", outlineColor, fgColor, bgColor, controlPanelFont, textColor);
 		}
 
 		// Draw level text
@@ -1532,6 +1614,8 @@ void Game::render()
 		SDL_RenderClear(renderer);
 
 		hpResults = "Barrier HP restored: " + std::to_string(bonusHP);
+
+		// maybe add total Barrier HP here
 
 		// Move unique values from typedWrong to wrongResults
 		wrongResults.clear(); // Clear previous values
@@ -1640,9 +1724,9 @@ void Game::nextLevel()
 		return;
 	}
 
-	// Ensuring barrierHP doesn't surpass 500
-	if (barrierHP >= 500) {
-		barrierHP = 500;
+	// Ensuring barrierHP doesn't surpass 100
+	if (barrierHP >= 100) {
+		barrierHP = 100;
 	}
 
 	zombies.clear(); // Clear the previous round's zombies
@@ -2175,4 +2259,24 @@ void Game::updateHandSprites()
 void Game::resetHandSprites() {
 	leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 	rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+}
+
+void Game::checkCombo(const std::string& input, const std::string& target) {
+	if (brokenCombo || input != target) {
+		comboLevel = 0;
+	}
+	else {
+		comboLevel = std::min(comboLevel + 1, 6);
+	}
+
+	// Optional: update the combo status string for the UI
+	switch (comboLevel) {
+		case 0: comboStatus = ""; break;
+		case 1: comboStatus = "x1"; break;
+		case 2: comboStatus = "x2"; break;
+		case 3: comboStatus = "x3"; break;
+		case 4: comboStatus = "x4"; break;
+		case 5: comboStatus = "x5"; break;
+		case 6: comboStatus = "MAX!"; break;
+	}
 }

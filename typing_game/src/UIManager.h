@@ -13,5 +13,8 @@ public:
 
 	void drawText(const std::string& text, int x, int y, SDL_Color color, TTF_Font* font);
 	void drawRectangle(int x, int y, int width, int height, SDL_Color color);
-	void drawHealthbar(int x, int y, int width, int height, int currentHealth, int maxHealth, SDL_Color outlineColor, SDL_Color fgColor, SDL_Color bgColor, const std::string& labelText, TTF_Font* font, SDL_Color textColor);
+	void drawHealthbar(int x, int y, int width, int height, int currentHealth, int maxHealth, const std::string& labelText, SDL_Color outlineColor, SDL_Color fgColor, SDL_Color bgColor, TTF_Font* font, SDL_Color textColor);
+	void drawStatusBar(int x, int y, int width, int height, const std::string& labelText, const std::string& statusText, SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* statusFont, SDL_Color textColor);
+	void drawThreatLvl(int x, int y, int width, int height, int threatLvl, const std::string& labelText, SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* digitFont, SDL_Color textColor);
+	void drawComboAlert(int x, int y, int width, int height, int comboLevel, const std::string& labelText, const std::string& statusText, SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* statusFont, SDL_Color textColor);
 };

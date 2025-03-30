@@ -30,6 +30,8 @@ public:
 
 	void resetHandSprites();
 
+	void checkCombo(const std::string& input, const std::string& target);
+
 	//void updateBarrierSprite();
 
 	bool running() {
@@ -43,6 +45,9 @@ public:
 	TTF_Font* menuFont;
 	TTF_Font* healthFont;
 	TTF_Font* gameOverFont;
+	TTF_Font* controlPanelFont;
+	TTF_Font* statusFont;
+	TTF_Font* threatLvlFont;
 
 	GameState gameState;
 
@@ -59,14 +64,23 @@ private:
 	std::string userInput = ""; // for storing typed text
 	bool isZombieTransformed = false; // to prevent multiple transformations!
 
-	// For barrier UI
+	// For barrier UI / logic
 	bool barrierUnderAttack = false; // Track if zombies are attacking
 	Uint32 lastFlashTime = 0; // Store last time the sprite switched
 	bool flashState = false;  // Track if the barrier is currently in its "flashed" state
+	Uint32 lastAttackTime = 0;
+
+	// Control Panel UI
+	std::string statusText = "OK";
 
 	// For rendering cursor
 	int cursorBlinkSpeed;
 	bool showCursor;
+
+	// Combo
+	bool brokenCombo = false;
+	int comboLevel = 0;
+	std::string comboStatus;
 
 	// Zombie speed!!
 	float speed = 0.5f; // How fast the zombies move towards the player
@@ -81,7 +95,7 @@ private:
 	int resultsHP;
 	int barrierHP;
 	int bonusHP;
-	const int maxHP = 500;
+	const int maxHP = 100;
 
 	// Letters typed incorrectly
 	std::vector<char> typedWrong;
