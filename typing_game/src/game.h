@@ -32,6 +32,11 @@ public:
 
 	void checkCombo(const std::string& input, const std::string& target);
 
+	void fireLaser();
+
+	//void transformZombie(Entity* zombie);
+
+
 	//void updateBarrierSprite();
 
 	bool running() {
@@ -72,6 +77,7 @@ private:
 
 	// Control Panel UI
 	std::string statusText = "OK";
+	bool wordTypedWrong = false;
 
 	// For rendering cursor
 	int cursorBlinkSpeed;
@@ -79,8 +85,14 @@ private:
 
 	// Combo
 	bool brokenCombo = false;
+	bool laserReady = false;
 	int comboLevel = 0;
 	std::string comboStatus;
+
+	// Laser
+	//Entity* laser = nullptr;
+	bool laserActive = false;
+	float laserSpeed = 1.0f; // may need to adjust
 
 	// Zombie speed!!
 	float speed = 0.5f; // How fast the zombies move towards the player

@@ -72,11 +72,17 @@ void UIManager::drawHealthbar(int x, int y, int width, int height, int currentHe
 // Status bar
 void UIManager::drawStatusBar(int x, int y, int width, int height, const std::string& labelText, const std::string& statusText, SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* statusFont, SDL_Color textColor) {
 	Uint32 ticks = SDL_GetTicks();
-	bool showDangerText = true;
+	bool showStatusText = true;
 
-	// Make DANGER flash on/off every 300 ms
-	if (statusText == "DANGER") {
-		showDangerText = (ticks / 300) % 2 == 0;
+	// Make status text flash on/off every 300 ms
+	if (statusText == "LASER READY") {
+		showStatusText = (ticks / 300) % 2 == 0;
+	}
+	else if (statusText == "ERROR") {
+		showStatusText = (ticks / 300) % 2 == 0;
+	}
+	else if (statusText == "DANGER") {
+		showStatusText = (ticks / 300) % 2 == 0;
 	}
 
 	// Determine fill color based on status
@@ -93,6 +99,12 @@ void UIManager::drawStatusBar(int x, int y, int width, int height, const std::st
 	}
 	else if (statusText == "DANGER") {
 		fillColor = { 255, 0, 0, 255 }; // Red
+	}
+	else if (statusText == "ERROR") {
+		fillColor = { 255, 0, 0, 255 }; // Red
+	}
+	else if (statusText == "LASER READY") {
+		fillColor = { 0, 0, 255, 255 }; // Blue
 	}
 	else {
 		fillColor = { 128, 128, 128, 255 }; // Default: gray
@@ -138,7 +150,7 @@ void UIManager::drawStatusBar(int x, int y, int width, int height, const std::st
 	}
 
 	// Render status text centered in the bar
-	if (statusFont && showDangerText) {
+	if (statusFont && showStatusText) {
 		//SDL_Surface* textSurface = TTF_RenderText_Solid(statusFont, statusText.c_str(), textColor);
 		SDL_Surface* textSurface = TTF_RenderText_Blended(statusFont, statusText.c_str(), textColor);
 
@@ -227,12 +239,9 @@ void UIManager::drawThreatLvl(int x, int y, int width, int height, int threatLvl
 
 void UIManager::drawComboAlert(int x, int y, int width, int height, int comboLevel, const std::string& labelText, const std::string& statusText, SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* statusFont, SDL_Color textColor)
 {
-	Uint32 ticks = SDL_GetTicks();
-	bool showMaxText = true;
+	//bool showComboStatus = true;
 
-	// Make MAX! flash on/off every 300 ms
 	if (statusText == "MAX!") {
-		showMaxText = (ticks / 300) % 2 == 0;
 		bgColor = { 102, 255, 105, 255 }; // green
 	} 
 	else if (statusText == "X") {
@@ -274,7 +283,7 @@ void UIManager::drawComboAlert(int x, int y, int width, int height, int comboLev
 				//SDL_Surface* lvlSurface = TTF_RenderText_Blended(digitFont, lvlStr.c_str(), textColor);
 
 				SDL_Surface* statusSurface = TTF_RenderText_Blended(statusFont, statusText.c_str(), textColor);
-				if (statusSurface && showMaxText) {
+				if (statusSurface) {
 					SDL_Texture* statusTexture = SDL_CreateTextureFromSurface(renderer, statusSurface);
 					if (statusTexture) {
 						int statusW = statusSurface->w;

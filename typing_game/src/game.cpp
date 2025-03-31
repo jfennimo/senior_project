@@ -38,7 +38,10 @@ auto& greenSiren2(manager.addEntity());
 auto& crosshair(manager.addEntity());
 auto& laserLeft(manager.addEntity());
 auto& laserRight(manager.addEntity());
+//auto& laser(manager.addEntity());
 auto& comboMeter(manager.addEntity());
+
+Entity* laser = nullptr;
 
 // Fonts
 TTF_Font* titleFont;
@@ -149,9 +152,9 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
 	// Walls around player
 	// 768 y
-	barrier1.addComponent<TransformComponent>(700.0f, 648.0f, 32, 200, 1);
-	barrier2.addComponent<TransformComponent>(680.0f, 648.0f, 120, 32, 1);
-	barrier3.addComponent<TransformComponent>(900.0f, 648.0f, 120, 32, 1);
+	barrier1.addComponent<TransformComponent>(700.0f, 648.0f, 200, 32, 1);
+	barrier2.addComponent<TransformComponent>(680.0f, 648.0f, 32, 120, 1);
+	barrier3.addComponent<TransformComponent>(900.0f, 648.0f, 32, 120, 1);
 
 	barrier1.addComponent<SpriteComponent>("assets/Barrier1.png");
 	barrier1.addComponent<ColliderComponent>("barrier");
@@ -178,8 +181,12 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	laserLeft.addComponent<SpriteComponent>("assets/Laser_Cannon_Left.png");
 	laserRight.addComponent<SpriteComponent>("assets/Laser_Cannon_Right.png");
 
+	// Laser
+	//laser.addComponent<TransformComponent>(0, -100, 64, 1600, 1);
+	//laser.addComponent<SpriteComponent>("assets/Laser.png");
+
 	// Combo meter
-	comboMeter.addComponent<TransformComponent>(1350, 785, 32, 64, 2);
+	comboMeter.addComponent<TransformComponent>(1350, 785, 64, 32, 2);
 	comboMeter.addComponent<SpriteComponent>("assets/Combo_Meter_0.png");
 
 	// Initialize random seed
@@ -230,7 +237,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 				auto& otherTransform = otherZombie->getComponent<TransformComponent>();
 				float odx = otherTransform.position.x - x;
 				float ody = otherTransform.position.y - y;
-				if (sqrt(odx * odx + ody * ody) < 60.0f) { // May need to adjust radius
+				if (sqrt(odx * odx + ody * ody) < 70.0f) { // May need to adjust radius
 					validSpawn = false;
 					break;
 				}
@@ -283,7 +290,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	controlPanelFont = TTF_OpenFont("assets/Square.ttf", 30);
 	statusFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 40);
 	threatLvlFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 50);
-	comboStatusFont = TTF_OpenFont("assets/Square.TTF", 30);
+	comboStatusFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 30);
 }
 
 
@@ -330,6 +337,14 @@ void Game::handleEvents()
 				std::cout << "Returning to title screen!" << std::endl;
 			}
 		}
+		if (gameState == GameState::ARCADE_MODE) {
+			if (event.key.keysym.sym == SDLK_SPACE && laserReady) {
+				fireLaser();  // Fire laser power-up
+				laserReady = false; // Consumes laser charge
+				comboLevel = 0;
+				comboStatus = ""; // Reset display
+			}
+		}
 		if (gameState == GameState::ARCADE_MODE || gameState == GameState::BONUS_STAGE) {
 			if (event.key.keysym.sym == SDLK_BACKSPACE && !userInput.empty()) {
 				userInput.pop_back(); // Remove last character
@@ -340,6 +355,11 @@ void Game::handleEvents()
 
 	case SDL_TEXTINPUT:
 		if (gameState == GameState::ARCADE_MODE) {
+			// Prevent spacebar from being typed as part of input
+			if (event.text.text[0] == ' ') {
+				break; // Skip input
+			}
+
 			// Prevent typing if word is fully typed AND incorrect
 			if (userInput.size() >= targetText.size() && userInput != targetText) {
 				break; // Lock input until user deletes
@@ -370,8 +390,14 @@ void Game::handleEvents()
 		}
 
 		if (gameState == GameState::BONUS_STAGE) {
+			// Prevent spacebar from being typed as part of input
+			if (event.text.text[0] == ' ') {
+				break; // Skip input
+			}
+
 			// Prevent typing if word is fully typed AND incorrect
 			if (userInput.size() >= targetText.size() && userInput != targetText) {
+				//wordTypedWrong = true;
 				break; // Lock input until user deletes
 			}
 
@@ -441,13 +467,29 @@ void Game::update() {
 			brokenCombo = false;
 		}
 
+		// Check if word is fully typed and wrong
+		if (userInput.size() == targetText.size() && userInput != targetText) {
+			wordTypedWrong = true;
+		}
+		else {
+			wordTypedWrong = false;
+		}
+
 		// Update status text
 		if (barrierUnderAttack) {
 			statusText = "DANGER";
+			if (laserReady) {
+				statusText = "LASER READY";
+			}
 		}
-
-		if (!barrierUnderAttack) {
-			if (barrierHP <= 50) {
+		else {
+			if (wordTypedWrong) {
+				statusText = "ERROR";
+			}
+			else if (laserReady) {
+				statusText = "LASER READY";
+			}
+			else if (barrierHP <= 50) {
 				statusText = "CAUTION";
 			}
 			else if (barrierHP <= 20) {
@@ -611,6 +653,59 @@ void Game::update() {
 			if (!zombie->getComponent<TransformStatusComponent>().getTransformed()) {
 				allZombiesTransformed = false;
 				break;
+			}
+		}
+
+		if (laserActive) {
+			auto& laserTransform = laser->getComponent<TransformComponent>();
+			auto& laserCollider = laser->getComponent<ColliderComponent>();
+
+			// Move laser down!
+			laserTransform.position.y += laserSpeed;
+
+			// Check collision with zombies
+			for (auto* zombie : zombies) {
+				if (!zombie->getComponent<TransformStatusComponent>().getTransformed()) {
+					if (Collision::AABB(zombie->getComponent<ColliderComponent>().collider, laserCollider.collider)) {
+						// Get zapped, zambie
+						zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+						zombie->getComponent<TransformStatusComponent>().setTransformed(true);
+						tombstones.push_back(zombie);
+						zombieCount--;
+						// Include this or no?
+						zombiesDefeated++;
+					}
+					// Update next target after laser touches zombie
+					if (zombie == zombies[currentZombieIndex]) {
+						float closestDistance = std::numeric_limits<float>::max();
+						size_t closestZombieIndex = currentZombieIndex;
+
+						for (size_t i = 0; i < zombies.size(); ++i) {
+							if (!zombies[i]->getComponent<TransformStatusComponent>().getTransformed()) {
+								auto& zombieTransform = zombies[i]->getComponent<TransformComponent>();
+								float dx = playerTransform.position.x - zombieTransform.position.x;
+								float dy = playerTransform.position.y - zombieTransform.position.y;
+								float distance = sqrt(dx * dx + dy * dy);
+
+								if (distance < closestDistance) {
+									closestDistance = distance;
+									closestZombieIndex = i;
+								}
+							}
+						}
+
+						currentZombieIndex = closestZombieIndex;
+						if (currentZombieIndex < zombies.size())
+							targetText = words[currentZombieIndex];
+					}
+				}
+			}
+
+			// Remove laser when it reaches bottom of screen or when all zombies are defeated
+			if (laserTransform.position.y > 700 || allZombiesTransformed) {
+				laser->destroy();
+				laser = nullptr;
+				laserActive = false;
 			}
 		}
 
@@ -1222,8 +1317,10 @@ void Game::render()
 		// Draw level text
 		uiManager->drawText("Round " + std::to_string(level), 715, 10, { 0, 0, 0, 255 }, healthFont);
 
-		// Draw zombies remaining text
-		//uiManager->drawText("Zombies Remaining: " + std::to_string(zombieCount), 1090, 10, { 0, 0, 0, 255 }, threatLvlFont);
+		// Draw laser!
+		if (laserActive) {
+			laser->getComponent<SpriteComponent>().draw();
+		}
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1793,7 +1890,7 @@ void Game::nextLevel()
 				auto& otherTransform = otherZombie->getComponent<TransformComponent>();
 				float odx = otherTransform.position.x - x;
 				float ody = otherTransform.position.y - y;
-				if (sqrt(odx * odx + ody * ody) < 60.0f) { // May need to adjust radius
+				if (sqrt(odx * odx + ody * ody) < 70.0f) { // May need to adjust radius
 					validSpawn = false;
 					break;
 				}
@@ -1836,8 +1933,8 @@ void Game::nextLevel()
 	currentPromptIndex = 0;
 	//targetText = easyWords[currentPromptIndex];
 
-	// Reset hand sprites
-	//resetHandSprites();
+	// Clear user input
+	userInput.clear();
 
 	// Reset letters typed incorrectly
 	typedWrong.clear();
@@ -1849,6 +1946,7 @@ void Game::nextLevel()
 	// Increase zambie speed!! Also decrease slightly every 10 levels...
 	speed += 0.1f;
 
+	// Lower speed a bit every 10 levels
 	if (level % 10 == 0) {
 		speed -= 0.5f;
 	}
@@ -2042,7 +2140,7 @@ void Game::resetGame()
 				auto& otherTransform = otherZombie->getComponent<TransformComponent>();
 				float odx = otherTransform.position.x - x;
 				float ody = otherTransform.position.y - y;
-				if (sqrt(odx * odx + ody * ody) < 60.0f) { // May need to adjust radius
+				if (sqrt(odx * odx + ody * ody) < 70.0f) { // May need to adjust radius
 					validSpawn = false;
 					break;
 				}
@@ -2264,19 +2362,48 @@ void Game::resetHandSprites() {
 void Game::checkCombo(const std::string& input, const std::string& target) {
 	if (brokenCombo || input != target) {
 		comboLevel = 0;
+		laserReady = false;
 	}
 	else {
 		comboLevel = std::min(comboLevel + 1, 6);
+		if (comboLevel == 6) {
+			laserReady = true;
+		}
 	}
 
 	// Optional: update the combo status string for the UI
 	switch (comboLevel) {
-		case 0: comboStatus = ""; break;
-		case 1: comboStatus = "x1"; break;
-		case 2: comboStatus = "x2"; break;
-		case 3: comboStatus = "x3"; break;
-		case 4: comboStatus = "x4"; break;
-		case 5: comboStatus = "x5"; break;
-		case 6: comboStatus = "MAX!"; break;
+		case 0: comboStatus = "";
+			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_0.png");
+			break;
+		case 1: comboStatus = "x1";
+			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_1.png");
+			break;
+		case 2: comboStatus = "x2";
+			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_2.png");
+			break;
+		case 3: comboStatus = "x3";
+			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_3.png");
+			break;
+		case 4: comboStatus = "x4";
+			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_4.png");
+			break;
+		case 5: comboStatus = "x5";
+			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_5.png");
+			break;
+		case 6: comboStatus = "MAX!";
+			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_6.png");
+			break;
 	}
+}
+
+void Game::fireLaser() {
+	if (laserActive) return; // to prevent multiple lasers...
+
+	laser = &manager.addEntity();
+	laser->addComponent<TransformComponent>(105, 32, 1390, 64, 1);
+	laser->addComponent<SpriteComponent>("assets/Laser.png");
+	laser->addComponent<ColliderComponent>("laser");
+
+	laserActive = true;
 }
