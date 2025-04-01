@@ -34,15 +34,15 @@ auto& rightHand(manager.addEntity());
 auto& barrier1(manager.addEntity());
 auto& barrier2(manager.addEntity());
 auto& barrier3(manager.addEntity());
-auto& greenSiren1(manager.addEntity());
-auto& greenSiren2(manager.addEntity());
 auto& crosshair(manager.addEntity());
 auto& laserLeft(manager.addEntity());
 auto& laserRight(manager.addEntity());
 //auto& laser(manager.addEntity());
 auto& comboMeter(manager.addEntity());
+//auto& exclamation(manager.addEntity());
 
 Entity* laser = nullptr;
+Entity* exclamation = nullptr;
 
 // Fonts
 TTF_Font* titleFont;
@@ -144,7 +144,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
 	// Setting player position
 	// No sprite for player because player is inside barrier orb
-	player.addComponent<TransformComponent>(barrierX, 650, 64, 64, 2);
+	player.addComponent<TransformComponent>(barrierX, 660, 64, 64, 2);
 	//player.addComponent<SpriteComponent>("assets/Player.png");
 
 	// Setting hand sprites
@@ -158,13 +158,6 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	barrier.addComponent<TransformComponent>(barrierX, 640, 64, 64, 2);
 	barrier.addComponent<SpriteComponent>("assets/Barrier_Orb_0.png");
 	barrier.addComponent<ColliderComponent>("barrier");
-
-	// Green and red sirens on barrier
-	greenSiren1.addComponent<TransformComponent>(675, 615, 10, 10, 4);
-	greenSiren2.addComponent<TransformComponent>(895, 615, 10, 10, 4);
-
-	greenSiren1.addComponent<SpriteComponent>("assets/Siren_Green.png");
-	greenSiren2.addComponent<SpriteComponent>("assets/Siren_Green.png");
 
 	// Initialize crosshair entity
 	crosshair.addComponent<TransformComponent>(0, 0); // Initial position of crosshair
@@ -551,34 +544,7 @@ void Game::update() {
 
 					// Wall hit detected
 					std::cout << "Barrier hit! HP: " << barrierHP << std::endl;
-
-					if (currentTime - lastFlashTime > 200) // Flash every 200ms
-					{
-						flashState = !flashState; // Toggle flash state
-						const char* newTexture = flashState ? "assets/Siren_Green.png" : "assets/Siren_Red.png";
-
-						// Ensure greenSiren1 has a SpriteComponent before setting texture
-						if (greenSiren1.hasComponent<SpriteComponent>())
-						{
-							greenSiren1.getComponent<SpriteComponent>().setTex(newTexture);
-						}
-
-						if (greenSiren2.hasComponent<SpriteComponent>())
-						{
-							greenSiren2.getComponent<SpriteComponent>().setTex(newTexture);
-						}
-
-						lastFlashTime = currentTime;
-					}
-				} else
-				{
-					if (barrierUnderAttack && (currentTime - lastFlashTime > 300)) {
-						//barrierUnderAttack = false; // Track if zombies are attacking
-						
-						greenSiren1.getComponent<SpriteComponent>().setTex("assets/Siren_Green.png");
-						greenSiren2.getComponent<SpriteComponent>().setTex("assets/Siren_Green.png");
-					}
-				}
+				} 
 			}
 
 			// Lower HP by 10 every second the zombies are attacking the barrier
@@ -720,8 +686,35 @@ void Game::update() {
 			gameState = GameState::RESULTS; // Transition to results state
 		}
 
-		if (barrierHP <= 0) {
-			gameState = GameState::GAME_OVER;
+		// Barrier destroyed!
+		if (!barrierDestroyed && barrierHP <= 0) {
+			barrierDestroyed = true;
+			gameOverDelayTimer = 120; // 2 seconds at 60 FPS
+
+			// Create exclamation point above player
+			exclamation = &manager.addEntity();
+
+			int exclaimX = player.getComponent<TransformComponent>().position.x + 47; // adjust for center
+			int exclaimY = player.getComponent<TransformComponent>().position.y - 5; // above player
+			exclamation->addComponent<TransformComponent>(exclaimX, exclaimY, 17, 16, 2);
+			exclamation->addComponent<SpriteComponent>("assets/Exclamation.png");
+		}
+
+		// If the delay timer is counting down
+		if (barrierDestroyed) {
+			if (gameOverDelayTimer > 0) {
+				gameOverDelayTimer--;
+			}
+			else {
+				// Destroy exclamation point
+				if (exclamation) {
+					exclamation->destroy();
+					exclamation = nullptr;
+				}
+
+				barrierDestroyed = false;
+				gameState = GameState::GAME_OVER;
+			}
 		}
 
 		break;
@@ -1090,8 +1083,8 @@ void Game::update() {
 			showBlinkText = !showBlinkText;  // Toggle visibility
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
-		break;
 
+		break;
 
 	default:
 		break;
@@ -1332,6 +1325,11 @@ void Game::render()
 		// Draw laser!
 		if (laserActive) {
 			laser->getComponent<SpriteComponent>().draw();
+		}
+
+		// Draw exclamation point above player
+		if (barrierDestroyed) {
+			exclamation->getComponent<SpriteComponent>().draw();
 		}
 
 		SDL_RenderPresent(renderer);
@@ -2177,9 +2175,9 @@ void Game::resetGame()
 
 	// Reset HP / barrier damage
 	barrierHP = maxHP;
-	//damageLevel = 0;
-
 	updateBarrierDamage(barrierHP);
+	//barrierDestroyed = false;
+	//gameOverDelayTimer = 0;
 
 	// Reset the typing target
 	currentPromptIndex = 0;

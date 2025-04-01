@@ -114,7 +114,7 @@ private:
 	int zombieCount = 0;
 	int zombiesDefeated = 0;
 
-	// Barrier HP
+	// Barrier variables
 	std::string hpResults;
 	int resultsHP;
 	int barrierHP;
@@ -127,6 +127,10 @@ private:
 	int shakeMagnitude = 0;
 	int shakeOffsetX = 0;
 	int shakeOffsetY = 0;
+
+	// For game pause before screen transition after game over
+	bool barrierDestroyed = false;
+	int gameOverDelayTimer = 0; // in frames — e.g. 120 for 2 seconds at 60 FPS
 
 	// Letters typed incorrectly
 	std::vector<char> typedWrong;
