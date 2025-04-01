@@ -35,19 +35,21 @@ auto& barrier1(manager.addEntity());
 auto& barrier2(manager.addEntity());
 auto& barrier3(manager.addEntity());
 auto& crosshair(manager.addEntity());
+auto& laserMiddle(manager.addEntity());
 auto& laserLeft(manager.addEntity());
 auto& laserRight(manager.addEntity());
 //auto& laser(manager.addEntity());
 auto& comboMeter(manager.addEntity());
 //auto& exclamation(manager.addEntity());
 
-Entity* laser = nullptr;
+Entity* laserPowerup = nullptr;
 Entity* exclamation = nullptr;
 
 // Fonts
 TTF_Font* titleFont;
 TTF_Font* menuFont;
 TTF_Font* healthFont;
+TTF_Font* roundFont;
 TTF_Font* gameOverFont;
 TTF_Font* controlPanelFont;
 TTF_Font* statusFont;
@@ -139,12 +141,15 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	screenWidth = width;
 	screenHeight = height;
 	
-	// Ensuring barrier is centered
+	// Ensuring player and barrier are centered
+	playerX = screenWidth / 2;
 	barrierX = (screenWidth / 2) - ((barrierWidth * barrierScale) / 2);
+
+	laserX = (screenWidth / 2) - ((68 * 2) / 2);
 
 	// Setting player position
 	// No sprite for player because player is inside barrier orb
-	player.addComponent<TransformComponent>(barrierX, 660, 64, 64, 2);
+	player.addComponent<TransformComponent>(playerX, 660);
 	//player.addComponent<SpriteComponent>("assets/Player.png");
 
 	// Setting hand sprites
@@ -162,6 +167,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	// Initialize crosshair entity
 	crosshair.addComponent<TransformComponent>(0, 0); // Initial position of crosshair
 	crosshair.addComponent<SpriteComponent>("assets/Crosshair.png");
+
+	// Middle laser cannon
+	laserMiddle.addComponent<TransformComponent>(laserX, 0, 68, 68, 2);
+	laserMiddle.addComponent<SpriteComponent>("assets/Laser_Cannon_Middle.png");
 
 	// Left and right laser cannons
 	laserLeft.addComponent<TransformComponent>(0, 0, 64, 64, 2);
@@ -271,6 +280,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	titleFont = TTF_OpenFont("assets/PressStart2P.ttf", 30);
 	menuFont = TTF_OpenFont("assets/PressStart2P.ttf", 20);
 	healthFont = TTF_OpenFont("assets/PressStart2P.ttf", 20);
+	roundFont = TTF_OpenFont("assets/PressStart2P.ttf", 16);
 	gameOverFont = TTF_OpenFont("assets/PressStart2P.ttf", 100);
 	controlPanelFont = TTF_OpenFont("assets/Square.ttf", 30);
 	statusFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 40);
@@ -496,6 +506,17 @@ void Game::update() {
 			shakeOffsetY = 0;
 		}
 
+		// Laser logic
+		for (auto& laser : activeLasers) {
+			laser.duration--;
+		}
+
+		activeLasers.erase(
+			std::remove_if(activeLasers.begin(), activeLasers.end(),
+				[](const LaserStrike& l) { return l.duration <= 0; }),
+			activeLasers.end());
+
+
 		// Update crosshair position if zombies are present
 		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
 			Entity* activeZombie = zombies[currentZombieIndex];
@@ -579,6 +600,30 @@ void Game::update() {
 				// Check if user types in prompt correctly without errors
 				checkCombo(userInput, targetText);
 
+				int cannonX = laserMiddle.getComponent<TransformComponent>().position.x + 68; // center of 68px cannon
+				int cannonY = laserMiddle.getComponent<TransformComponent>().position.y + 128; // bottom of cannon
+
+				int zombieX = zombie->getComponent<TransformComponent>().position.x + 32;
+				int zombieY = zombie->getComponent<TransformComponent>().position.y + 32;
+
+				LaserStrike laser;
+				laser.startX = cannonX;
+				laser.startY = cannonY;
+				laser.endX = zombieX;
+				laser.endY = zombieY;
+				laser.duration = 6; // Adjust as needed
+
+				activeLasers.push_back(laser);
+
+				// Turn zombie into tombstone
+				//zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+
+
+				// Now transform the zombie (e.g. change sprite to tombstone)
+				//zombie.getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+				// Optional: stop its movement or deactivate AI
+
+
 				// Transform zombie
 				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 				transformStatus.setTransformed(true);
@@ -630,8 +675,8 @@ void Game::update() {
 		}
 
 		if (laserActive) {
-			auto& laserTransform = laser->getComponent<TransformComponent>();
-			auto& laserCollider = laser->getComponent<ColliderComponent>();
+			auto& laserTransform = laserPowerup->getComponent<TransformComponent>();
+			auto& laserCollider = laserPowerup->getComponent<ColliderComponent>();
 
 			// Move laser down!
 			laserTransform.position.y += laserSpeed;
@@ -648,7 +693,7 @@ void Game::update() {
 						// Include this or no?
 						zombiesDefeated++;
 					}
-					// Update next target after laser touches zombie
+					// Update next target after laser powerup touches zombie
 					if (zombie == zombies[currentZombieIndex]) {
 						float closestDistance = std::numeric_limits<float>::max();
 						size_t closestZombieIndex = currentZombieIndex;
@@ -674,16 +719,28 @@ void Game::update() {
 				}
 			}
 
-			// Remove laser when it reaches bottom of screen or when all zombies are defeated
+			// Remove laser powerup when it reaches bottom of screen or when all zombies are defeated
 			if (laserTransform.position.y > 700 || allZombiesTransformed) {
-				laser->destroy();
-				laser = nullptr;
+				laserPowerup->destroy();
+				laserPowerup = nullptr;
 				laserActive = false;
 			}
 		}
 
+		// Add delay to results screen
 		if (allZombiesTransformed && gameState == GameState::ARCADE_MODE) {
-			gameState = GameState::RESULTS; // Transition to results state
+			if (!nextLevelDelayStarted) {
+				nextLevelDelayStarted = true;
+				nextLevelDelayTimer = 120;
+			}
+
+			if (nextLevelDelayTimer > 0) {
+				nextLevelDelayTimer--;
+			}
+			else {
+				gameState = GameState::RESULTS;
+				nextLevelDelayStarted = false; // Reset for next level
+			}
 		}
 
 		// Barrier destroyed!
@@ -694,7 +751,7 @@ void Game::update() {
 			// Create exclamation point above player
 			exclamation = &manager.addEntity();
 
-			int exclaimX = player.getComponent<TransformComponent>().position.x + 47; // adjust for center
+			int exclaimX = player.getComponent<TransformComponent>().position.x - 17; // adjust for center
 			int exclaimY = player.getComponent<TransformComponent>().position.y - 5; // above player
 			exclamation->addComponent<TransformComponent>(exclaimX, exclaimY, 17, 16, 2);
 			exclamation->addComponent<SpriteComponent>("assets/Exclamation.png");
@@ -1303,6 +1360,29 @@ void Game::render()
 		}
 
 		// Moving down here so this is drawn over the zombies
+
+		// Draw laser
+		for (const auto& laser : activeLasers) {
+			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red
+
+			int thickness = 4;
+
+			// Draw 'thickness' number of lines offset horizontally
+			for (int i = -thickness / 2; i <= thickness / 2; ++i) {
+				SDL_RenderDrawLine(
+					renderer,
+					laser.startX + i,
+					laser.startY,
+					laser.endX + i,
+					laser.endY
+				);
+			}
+		}
+
+		// Draw laser cannons LAST
+		laserLeft.getComponent<SpriteComponent>().draw();
+		laserRight.getComponent<SpriteComponent>().draw();
+		laserMiddle.getComponent<SpriteComponent>().draw();
 		
 		// Draw control panel
 		if (uiManager) {
@@ -1320,11 +1400,11 @@ void Game::render()
 
 		// Draw level text
 		//uiManager->drawText("Round " + std::to_string(level), 750, 10, { 0, 0, 0, 255 }, healthFont);
-		uiManager->drawCenteredText("Round " + std::to_string(level), 10, { 0, 0, 0, 255 }, healthFont, screenWidth);
+		uiManager->drawCenteredText("Round " + std::to_string(level), 10, { 0, 0, 0, 255 }, roundFont, screenWidth);
 
-		// Draw laser!
+		// Draw laser powerup!
 		if (laserActive) {
-			laser->getComponent<SpriteComponent>().draw();
+			laserPowerup->getComponent<SpriteComponent>().draw();
 		}
 
 		// Draw exclamation point above player
@@ -1843,6 +1923,9 @@ void Game::nextLevel()
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
+	// Clear active lasers
+	activeLasers.clear();
+
 	// Setting number of zombies to spawn, with a new one appearing every 5 levels
 	int numZombies = 3 + (level / 5);
 
@@ -2100,6 +2183,9 @@ void Game::resetGame()
 		tombstone->destroy(); // Mark tombstone entity for removal
 	}
 	tombstones.clear(); // Clear the tombstone vector
+
+	// Clear active lasers
+	activeLasers.clear();
 
 	// Reset zombie spawn mechanics
 	currentZombieIndex = 0;
@@ -2427,13 +2513,14 @@ void Game::checkCombo(const std::string& input, const std::string& target) {
 	}
 }
 
+// Fires laser powerup
 void Game::fireLaser() {
 	if (laserActive) return; // to prevent multiple lasers...
 
-	laser = &manager.addEntity();
-	laser->addComponent<TransformComponent>(105, 32, 1390, 64, 1);
-	laser->addComponent<SpriteComponent>("assets/Laser.png");
-	laser->addComponent<ColliderComponent>("laser");
+	laserPowerup = &manager.addEntity();
+	laserPowerup->addComponent<TransformComponent>(105, 32, 1390, 64, 1);
+	laserPowerup->addComponent<SpriteComponent>("assets/Laser.png");
+	laserPowerup->addComponent<ColliderComponent>("laser");
 
 	laserActive = true;
 }

@@ -48,13 +48,16 @@ public:
 	static SDL_Renderer *renderer;
 	static SDL_Event event;
 
+	// Fonts
 	TTF_Font* titleFont;
 	TTF_Font* menuFont;
 	TTF_Font* healthFont;
+	TTF_Font* roundFont;
 	TTF_Font* gameOverFont;
 	TTF_Font* controlPanelFont;
 	TTF_Font* statusFont;
 	TTF_Font* threatLvlFont;
+	TTF_Font* comboStatusFont;
 
 	GameState gameState;
 
@@ -79,7 +82,10 @@ private:
 	// Barrier orb (player) dimensions / placement
 	const int barrierWidth = 64;
 	const int barrierScale = 2;
+	int playerX;
 	int barrierX;
+
+	int laserX;
 
 	// For barrier UI / logic
 	bool barrierUnderAttack = false; // Track if zombies are attacking
@@ -101,7 +107,16 @@ private:
 	int comboLevel = 0;
 	std::string comboStatus;
 
-	// Laser
+	// Basic laser
+	struct LaserStrike {
+		int startX, startY; // Laser source (e.g. from the cannon)
+		int endX, endY;     // Target position (zombie's center)
+		int duration;       // How long the beam lasts (in frames)
+	};
+
+	std::vector<LaserStrike> activeLasers;
+
+	// Laser power up
 	//Entity* laser = nullptr;
 	bool laserActive = false;
 	float laserSpeed = 1.0f; // may need to adjust
@@ -128,7 +143,11 @@ private:
 	int shakeOffsetX = 0;
 	int shakeOffsetY = 0;
 
-	// For game pause before screen transition after game over
+	// For game pause before screen transition to results screen
+	bool nextLevelDelayStarted = false;
+	int nextLevelDelayTimer = 0;
+
+	// For game pause before screen transition to game over
 	bool barrierDestroyed = false;
 	int gameOverDelayTimer = 0; // in frames — e.g. 120 for 2 seconds at 60 FPS
 
