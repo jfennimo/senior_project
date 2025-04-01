@@ -144,7 +144,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
 	// Setting player position
 	// No sprite for player because player is inside barrier orb
-	player.addComponent<TransformComponent>(barrierX, 640, 64, 64, 2);
+	player.addComponent<TransformComponent>(barrierX, 650, 64, 64, 2);
 	//player.addComponent<SpriteComponent>("assets/Player.png");
 
 	// Setting hand sprites
@@ -492,6 +492,17 @@ void Game::update() {
 			}
 		}
 
+		// Screen shake logic
+		if (shakeDuration > 0) {
+			shakeOffsetX = (std::rand() % (shakeMagnitude * 2)) - shakeMagnitude;
+			shakeOffsetY = (std::rand() % (shakeMagnitude * 2)) - shakeMagnitude;
+			shakeDuration--;
+		}
+		else {
+			shakeOffsetX = 0;
+			shakeOffsetY = 0;
+		}
+
 		// Update crosshair position if zombies are present
 		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
 			Entity* activeZombie = zombies[currentZombieIndex];
@@ -576,6 +587,10 @@ void Game::update() {
 				lastAttackTime = currentTime;
 
 				updateBarrierDamage(barrierHP);
+
+				// Trigger screen shake!
+				shakeDuration = 3;    // frames to shake
+				shakeMagnitude = 3;    // how far to shake
 
 				if (barrierHP < 0) {
 					barrierHP = 0;
@@ -1142,7 +1157,7 @@ void Game::render()
 		showCursor = (SDL_GetTicks() / cursorBlinkSpeed) % 2 == 0;
 
 		// Draw map and game objects
-		map->drawMap();
+		map->drawMap(shakeOffsetX, shakeOffsetY);
 		manager.draw();
 
 		// Render sprite hands over tombstones

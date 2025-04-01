@@ -122,6 +122,12 @@ private:
 	const int maxHP = 100;
 	int damageLevel = 0;
 
+	// For screen shake
+	int shakeDuration = 0;
+	int shakeMagnitude = 0;
+	int shakeOffsetX = 0;
+	int shakeOffsetY = 0;
+
 	// Letters typed incorrectly
 	std::vector<char> typedWrong;
 	std::vector<bool> processedInput;

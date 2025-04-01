@@ -63,7 +63,7 @@ void Map::loadMap(int arr[24][50])
 	}
 }
 
-void Map::drawMap()
+void Map::drawMap(int offsetX, int offsetY)
 {
 	int type = 0;
 
@@ -73,8 +73,8 @@ void Map::drawMap()
 		{
 			type = map[row][column];
 
-			dest.x = column * 32;
-			dest.y = row * 32;
+			dest.x = column * 32 + offsetX;
+			dest.y = row * 32 + offsetY;
 
 			switch (type)
 			{
