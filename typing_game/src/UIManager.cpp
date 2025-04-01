@@ -26,6 +26,14 @@ void UIManager::drawRectangle(int x, int y, int width, int height, SDL_Color col
 	SDL_RenderFillRect(renderer, &rect);
 }
 
+// Center text on the screen
+void UIManager::drawCenteredText(const std::string& text, int y, SDL_Color color, TTF_Font* font, int screenWidth) {
+	int textWidth, textHeight;
+	TTF_SizeText(font, text.c_str(), &textWidth, &textHeight);
+	int x = (screenWidth / 2) - (textWidth / 2);
+	drawText(text, x, y, color, font);
+}
+
 // Health bar
 void UIManager::drawHealthbar(int x, int y, int width, int height, int currentHealth, int maxHealth, const std::string& labelText, SDL_Color outlineColor, SDL_Color fgColor, SDL_Color bgColor, TTF_Font* font, SDL_Color textColor) {
 	// Outline around bar

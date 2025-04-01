@@ -30,6 +30,8 @@ public:
 
 	void resetHandSprites();
 
+	void updateBarrierDamage(int barrierHP);
+
 	void checkCombo(const std::string& input, const std::string& target);
 
 	void fireLaser();
@@ -68,6 +70,16 @@ private:
 	UIManager* uiManager;
 	std::string userInput = ""; // for storing typed text
 	bool isZombieTransformed = false; // to prevent multiple transformations!
+
+	// Screen size
+	int screenWidth;
+	int screenHeight;
+	int centerX = 800;
+
+	// Barrier orb (player) dimensions / placement
+	const int barrierWidth = 64;
+	const int barrierScale = 2;
+	int barrierX;
 
 	// For barrier UI / logic
 	bool barrierUnderAttack = false; // Track if zombies are attacking
@@ -108,6 +120,7 @@ private:
 	int barrierHP;
 	int bonusHP;
 	const int maxHP = 100;
+	int damageLevel = 0;
 
 	// Letters typed incorrectly
 	std::vector<char> typedWrong;

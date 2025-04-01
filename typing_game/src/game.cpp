@@ -28,6 +28,7 @@ SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
 
 auto& player(manager.addEntity());
+auto& barrier(manager.addEntity());
 auto& leftHand(manager.addEntity());
 auto& rightHand(manager.addEntity());
 auto& barrier1(manager.addEntity());
@@ -135,13 +136,16 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	uiManager = new UIManager(renderer);
 	map = new Map();
 
+	screenWidth = width;
+	screenHeight = height;
+	
+	// Ensuring barrier is centered
+	barrierX = (screenWidth / 2) - ((barrierWidth * barrierScale) / 2);
 
-	// previously 1280x720
-		// now 1600x900
 	// Setting player position
-	// 820 y
-	player.addComponent<TransformComponent>(770, 700);
-	player.addComponent<SpriteComponent>("assets/Player.png");
+	// No sprite for player because player is inside barrier orb
+	player.addComponent<TransformComponent>(barrierX, 640, 64, 64, 2);
+	//player.addComponent<SpriteComponent>("assets/Player.png");
 
 	// Setting hand sprites
 	leftHand.addComponent<TransformComponent>(555, 770, 64, 64, 2);
@@ -150,18 +154,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	leftHand.addComponent<SpriteComponent>("assets/Left_Hand.png");
 	rightHand.addComponent<SpriteComponent>("assets/Right_Hand.png");
 
-	// Walls around player
-	// 768 y
-	barrier1.addComponent<TransformComponent>(700.0f, 648.0f, 200, 32, 1);
-	barrier2.addComponent<TransformComponent>(680.0f, 648.0f, 32, 120, 1);
-	barrier3.addComponent<TransformComponent>(900.0f, 648.0f, 32, 120, 1);
-
-	barrier1.addComponent<SpriteComponent>("assets/Barrier1.png");
-	barrier1.addComponent<ColliderComponent>("barrier");
-	barrier2.addComponent<SpriteComponent>("assets/Barrier2.png");
-	barrier2.addComponent<ColliderComponent>("barrier");
-	barrier3.addComponent<SpriteComponent>("assets/Barrier3.png");
-	barrier3.addComponent<ColliderComponent>("barrier");
+	// Barrier orb
+	barrier.addComponent<TransformComponent>(barrierX, 640, 64, 64, 2);
+	barrier.addComponent<SpriteComponent>("assets/Barrier_Orb_0.png");
+	barrier.addComponent<ColliderComponent>("barrier");
 
 	// Green and red sirens on barrier
 	greenSiren1.addComponent<TransformComponent>(675, 615, 10, 10, 4);
@@ -180,10 +176,6 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
 	laserLeft.addComponent<SpriteComponent>("assets/Laser_Cannon_Left.png");
 	laserRight.addComponent<SpriteComponent>("assets/Laser_Cannon_Right.png");
-
-	// Laser
-	//laser.addComponent<TransformComponent>(0, -100, 64, 1600, 1);
-	//laser.addComponent<SpriteComponent>("assets/Laser.png");
 
 	// Combo meter
 	comboMeter.addComponent<TransformComponent>(1350, 785, 64, 32, 2);
@@ -539,11 +531,7 @@ void Game::update() {
 
 				// Check for wall collisions
 				if (Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
-					barrier1.getComponent<ColliderComponent>().collider) ||
-					Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
-						barrier2.getComponent<ColliderComponent>().collider) ||
-					Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
-						barrier3.getComponent<ColliderComponent>().collider)) {
+					barrier.getComponent<ColliderComponent>().collider)) {
 					zombieTransform.position.x -= dx * speed;
 					zombieTransform.position.y -= dy * speed;
 
@@ -587,8 +575,12 @@ void Game::update() {
 				barrierHP -= 10;
 				lastAttackTime = currentTime;
 
+				updateBarrierDamage(barrierHP);
+
 				if (barrierHP < 0) {
 					barrierHP = 0;
+
+					updateBarrierDamage(barrierHP);
 				}
 			}
 
@@ -1140,6 +1132,11 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 160, 160, 160, 255);
 		SDL_RenderClear(renderer);
 
+		// To ensure dimensions are correct
+		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
+		SDL_RenderDrawLine(renderer, 800, 0, 800, 900);   // vertical center line
+		SDL_RenderDrawLine(renderer, 1599, 0, 1599, 900); // far right edge
+
 		// Cursor rendering
 		cursorBlinkSpeed = 500; // milliseconds
 		showCursor = (SDL_GetTicks() / cursorBlinkSpeed) % 2 == 0;
@@ -1305,7 +1302,6 @@ void Game::render()
 			SDL_Color fgColor = { 102, 255, 105, 255 };
 			SDL_Color bgColor = { 255, 102, 102, 255 };
 			SDL_Color comboColor = { 255, 255, 102, 255 };
-			//SDL_Color textColor = { 255, 255, 51, 255 };
 			SDL_Color textColor = { 0, 0, 0, 255 };
 
 			uiManager->drawHealthbar(130, 780, 320, 40, barrierHP, maxHP, "SHIELD:", outlineColor, fgColor, bgColor, controlPanelFont, textColor);
@@ -1315,7 +1311,8 @@ void Game::render()
 		}
 
 		// Draw level text
-		uiManager->drawText("Round " + std::to_string(level), 715, 10, { 0, 0, 0, 255 }, healthFont);
+		//uiManager->drawText("Round " + std::to_string(level), 750, 10, { 0, 0, 0, 255 }, healthFont);
+		uiManager->drawCenteredText("Round " + std::to_string(level), 10, { 0, 0, 0, 255 }, healthFont, screenWidth);
 
 		// Draw laser!
 		if (laserActive) {
@@ -1826,6 +1823,9 @@ void Game::nextLevel()
 		barrierHP = 100;
 	}
 
+	// Update barrier sprite damage
+	updateBarrierDamage(barrierHP);
+
 	zombies.clear(); // Clear the previous round's zombies
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
@@ -2160,8 +2160,11 @@ void Game::resetGame()
 	zombieCount = zombies.size();
 	zombiesDefeated = 0;
 
-	// Reset HP
+	// Reset HP / barrier damage
 	barrierHP = maxHP;
+	//damageLevel = 0;
+
+	updateBarrierDamage(barrierHP);
 
 	// Reset the typing target
 	currentPromptIndex = 0;
@@ -2357,6 +2360,20 @@ void Game::updateHandSprites()
 void Game::resetHandSprites() {
 	leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 	rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
+}
+
+void Game::updateBarrierDamage(int barrierHP) {
+	// Convert HP (0–100) to damage level (0–10)
+	int damageLevel = 10 - (barrierHP / 10);
+
+	// Clamp damage level at 10
+	damageLevel = std::max(0, std::min(damageLevel, 10));
+
+	// Build file path
+	std::string texturePath = "assets/Barrier_Orb_" + std::to_string(damageLevel) + ".png";
+
+	// Set texture using c_str()
+	barrier.getComponent<SpriteComponent>().setTex(texturePath.c_str());
 }
 
 void Game::checkCombo(const std::string& input, const std::string& target) {
