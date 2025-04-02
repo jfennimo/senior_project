@@ -751,8 +751,8 @@ void Game::update() {
 			// Create exclamation point above player
 			exclamation = &manager.addEntity();
 
-			int exclaimX = player.getComponent<TransformComponent>().position.x - 17; // adjust for center
-			int exclaimY = player.getComponent<TransformComponent>().position.y - 5; // above player
+			int exclaimX = player.getComponent<TransformComponent>().position.x - 17; // centered
+			int exclaimY = player.getComponent<TransformComponent>().position.y - 5; // slightly above player
 			exclamation->addComponent<TransformComponent>(exclaimX, exclaimY, 17, 16, 2);
 			exclamation->addComponent<SpriteComponent>("assets/Exclamation.png");
 		}
@@ -1934,12 +1934,15 @@ void Game::nextLevel()
 
 	if (cycleLevel <= 10) {
 		difficulty = WordListManager::EASY;
+		map->setDifficulty(MapLevel::EASY);
 	}
 	else if (cycleLevel <= 20) {
 		difficulty = WordListManager::MEDIUM;
+		map->setDifficulty(MapLevel::MEDIUM);
 	}
 	else {
 		difficulty = WordListManager::HARD;
+		map->setDifficulty(MapLevel::HARD);
 	}
 
 	words = wordManager.getRandomWords(difficulty, numZombies);
@@ -2196,6 +2199,9 @@ void Game::resetGame()
 
 	// Randomizing words
 	words = wordManager.getRandomWords(WordListManager::EASY, numZombies);
+
+	// Reset map visual
+	map->setDifficulty(MapLevel::EASY);
 
 	// Spawn zombies at random off-screen positions but not too close to player
 	int spawnBuffer = 150; // Distance beyond game window for spawning

@@ -23,17 +23,20 @@ int arcadeMap[24][50] = {
 	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
 	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
 	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
-	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
-	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
-	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
-	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
-	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
+	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
+	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
+	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
+	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 };
 
 Map::Map()
 {
 	wall = TextureManager::LoadTexture("assets/Wall.png");
-	floor = TextureManager::LoadTexture("assets/Floor.png");
+	floorEasy = TextureManager::LoadTexture("assets/Floor_Green.png");
+	floorMedium = TextureManager::LoadTexture("assets/Floor_Yellow.png");
+	floorHard = TextureManager::LoadTexture("assets/Floor_Red.png");
+	floorCaution = TextureManager::LoadTexture("assets/Floor_Caution.png");
 
 	loadMap(arcadeMap);
 
@@ -49,7 +52,10 @@ Map::Map()
 Map::~Map()
 {
 	SDL_DestroyTexture(wall);
-	SDL_DestroyTexture(floor);
+	SDL_DestroyTexture(floorEasy);
+	SDL_DestroyTexture(floorMedium);
+	SDL_DestroyTexture(floorHard);
+	SDL_DestroyTexture(floorCaution);
 }
 
 void Map::loadMap(int arr[24][50])
@@ -81,12 +87,37 @@ void Map::drawMap(int offsetX, int offsetY)
 			case 0:
 				TextureManager::Draw(wall, src, dest);
 				break;
-			case 1:
-				TextureManager::Draw(floor, src, dest);
+			case 1: {
+				SDL_Texture* selectedFloor = nullptr;
+
+				switch (currentDifficulty) {
+				case MapLevel::EASY:
+					selectedFloor = floorEasy;
+					break;
+				case MapLevel::MEDIUM:
+					selectedFloor = floorMedium;
+					break;
+				case MapLevel::HARD:
+					selectedFloor = floorHard;
+					break;
+				}
+
+				TextureManager::Draw(selectedFloor, src, dest);
+				break;
+			}
+			case 2:
+				TextureManager::Draw(floorCaution, src, dest);
 				break;
 			default:
 				break;
 			}
 		}
 	}
+}
+
+void Map::setDifficulty(MapLevel difficulty) {
+	currentDifficulty = difficulty;
+
+	std::cout << "Map difficulty set to: " << static_cast<int>(difficulty) << std::endl;
+
 }
