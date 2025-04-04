@@ -66,7 +66,7 @@ private:
 	int cnt = 0;
 	bool showBlinkText = true;       // Controls whether the text is visible
 	Uint32 lastBlinkTime = 0;        // Tracks the last time the blink toggled
-	const Uint32 BLINK_DELAY = 1000; // 1000 ms = 1 second
+	const Uint32 BLINK_DELAY = 1200; // 1000 ms = 1 second
 	Uint32 currentTime;
 
 	SDL_Window* window;
@@ -119,7 +119,7 @@ private:
 	// Laser power up
 	//Entity* laser = nullptr;
 	bool laserActive = false;
-	float laserSpeed = 1.0f; // may need to adjust
+	float laserSpeed = 1.5f; // may need to adjust
 
 	// Zombie speed!!
 	float speed = 0.5f; // How fast the zombies move towards the player

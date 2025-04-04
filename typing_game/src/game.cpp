@@ -153,7 +153,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	//player.addComponent<SpriteComponent>("assets/Player.png");
 
 	// Setting hand sprites
-	leftHand.addComponent<TransformComponent>(555, 770, 64, 64, 2);
+	leftHand.addComponent<TransformComponent>(545, 770, 64, 64, 2);
 	rightHand.addComponent<TransformComponent>(930, 770, 64, 64, 2);
 
 	leftHand.addComponent<SpriteComponent>("assets/Left_Hand.png");
@@ -239,7 +239,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 		}
 
 		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
+		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", 4, 100);
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		zombies.push_back(newZombie);
@@ -625,6 +625,7 @@ void Game::update() {
 
 
 				// Transform zombie
+				zombie->getComponent<SpriteComponent>().setFrames(1);
 				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 				transformStatus.setTransformed(true);
 				tombstones.push_back(zombie);
