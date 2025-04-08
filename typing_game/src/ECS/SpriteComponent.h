@@ -2,6 +2,8 @@
 #include "Components.h"
 #include "SDL.h"
 #include "../TextureManager.h"
+#include "Animation.h"
+#include <map>
 
 class SpriteComponent : public Component
 {
@@ -9,23 +11,55 @@ private:
 	TransformComponent *transform;
 	SDL_Texture *texture;
 	SDL_Rect srcRect, destRect;
+	Uint32 animationStartTime = 0;
 
 	bool animated = false;
 	int frames = 0;
 	int speed = 100;
+	bool loop = true;
+	int currentFrame = 0;
 
 public:
+
+	int animIndex = 0;
+
+	std::map<const char*, Animation> animations;
+
 	SpriteComponent() = default;
 	SpriteComponent(const char* path)
 	{
 		setTex(path);
 	}
 
-	SpriteComponent(const char* path, int nFrames, int mSpeed)
+	SpriteComponent(const char* path, bool isAnimated)
 	{
-		animated = true;
-		frames = nFrames;
-		speed = mSpeed;
+		animated = isAnimated;
+
+		// Zombie animations
+		Animation walkDown = Animation(0, 4, 100);
+		Animation attackDown = Animation(1, 4, 100);
+		Animation walkRight = Animation(2, 4, 100);
+		Animation attackRight = Animation(3, 4, 100);
+		Animation walkLeft = Animation(4, 4, 100);
+		Animation attackLeft = Animation(5, 4, 100);
+		Animation defeat = Animation(6, 19, 100, false);
+
+		animations.emplace("Walk Down", walkDown);
+		animations.emplace("Attack Down", attackDown);
+		animations.emplace("Walk Right", walkRight);
+		animations.emplace("Attack Right", attackRight);
+		animations.emplace("Walk Left", walkLeft);
+		animations.emplace("Attack Left", attackLeft);
+		animations.emplace("Defeat", defeat);
+
+		// Laser
+		Animation laser = Animation(0, 3, 100);
+		animations.emplace("Laser", laser);
+
+		Play("Walk Down");
+
+		//frames = nFrames;
+		//speed = mSpeed;
 		setTex(path);
 	}
 
@@ -56,8 +90,21 @@ public:
 	void update() override
 	{
 		if (animated) {
-			srcRect.x = srcRect.w * static_cast<int>((SDL_GetTicks() / speed) % frames);
+			if (loop) {
+				// Looping animation: use total time
+				currentFrame = static_cast<int>((SDL_GetTicks() / speed) % frames);
+			}
+			else {
+				// Non-looping: use time since animation started
+				Uint32 elapsedTime = SDL_GetTicks() - animationStartTime;
+				int frameIndex = elapsedTime / speed;
+				currentFrame = std::min(frameIndex, frames - 1);
+			}
+
+			srcRect.x = srcRect.w * currentFrame;
 		}
+
+		srcRect.y = animIndex * transform->height;
 
 		destRect.x = static_cast<int>(transform->position.x);
 		destRect.y = static_cast<int>(transform->position.y);
@@ -76,6 +123,18 @@ public:
 		destRect.x = x;
 		destRect.y = y;
 		TextureManager::Draw(texture, srcRect, destRect);
+	}
+
+	void Play(const char* animName)
+	{
+		const Animation& anim = animations[animName];
+		frames = anim.frames;
+		animIndex = anim.index;
+		speed = anim.speed;
+		loop = anim.loop;
+		currentFrame = 0;
+
+		animationStartTime = SDL_GetTicks();
 	}
 
 };

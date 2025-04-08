@@ -239,7 +239,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 		}
 
 		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", 4, 100);
+		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		zombies.push_back(newZombie);
@@ -554,6 +554,23 @@ void Game::update() {
 				zombieTransform.position.x += dx * speed;
 				zombieTransform.position.y += dy * speed;
 
+				// Directional animation
+				auto& sprite = zombie->getComponent<SpriteComponent>();
+
+				if (std::abs(dx) > std::abs(dy)) {
+					if (dx > 0) {
+						sprite.Play("Walk Right");
+					}
+					else {
+						sprite.Play("Walk Left");
+					}
+				}
+				else {
+					if (dy > 0) {
+						sprite.Play("Walk Down");
+					}
+				}
+
 				// Check for wall collisions
 				if (Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
 					barrier.getComponent<ColliderComponent>().collider)) {
@@ -562,6 +579,23 @@ void Game::update() {
 
 					// Wall collision is true
 					barrierUnderAttack = true; // Track if zombies are attacking
+
+					// Attacking animation
+					auto& sprite = zombie->getComponent<SpriteComponent>();
+
+					if (std::abs(dx) > std::abs(dy)) {
+						if (dx > 0) {
+							sprite.Play("Attack Right");
+						}
+						else {
+							sprite.Play("Attack Left");
+						}
+					}
+					else {
+						if (dy > 0) {
+							sprite.Play("Attack Down");
+						}
+					}
 
 					// Wall hit detected
 					std::cout << "Barrier hit! HP: " << barrierHP << std::endl;
@@ -625,8 +659,11 @@ void Game::update() {
 
 
 				// Transform zombie
-				zombie->getComponent<SpriteComponent>().setFrames(1);
-				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+				//zombie->getComponent<SpriteComponent>().setFrames(1);
+				auto& sprite = zombie->getComponent<SpriteComponent>();
+
+				sprite.Play("Defeat");
+				//zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 				transformStatus.setTransformed(true);
 				tombstones.push_back(zombie);
 
@@ -687,7 +724,10 @@ void Game::update() {
 				if (!zombie->getComponent<TransformStatusComponent>().getTransformed()) {
 					if (Collision::AABB(zombie->getComponent<ColliderComponent>().collider, laserCollider.collider)) {
 						// Get zapped, zambie
-						zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+						//zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+						auto& sprite = zombie->getComponent<SpriteComponent>();
+
+						sprite.Play("Defeat");
 						zombie->getComponent<TransformStatusComponent>().setTransformed(true);
 						tombstones.push_back(zombie);
 						zombieCount--;
@@ -720,8 +760,8 @@ void Game::update() {
 				}
 			}
 
-			// Remove laser powerup when it reaches bottom of screen or when all zombies are defeated
-			if (laserTransform.position.y > 700 || allZombiesTransformed) {
+			// Remove laser powerup when it reaches bottom of screen
+			if (laserTransform.position.y > 700) {
 				laserPowerup->destroy();
 				laserPowerup = nullptr;
 				laserActive = false;
@@ -1405,7 +1445,7 @@ void Game::render()
 
 		// Draw laser powerup!
 		if (laserActive) {
-			laserPowerup->getComponent<SpriteComponent>().draw();
+			laserPowerup->getComponent<SpriteComponent>().Play("Laser");
 		}
 
 		// Draw exclamation point above player
@@ -1927,6 +1967,13 @@ void Game::nextLevel()
 	// Clear active lasers
 	activeLasers.clear();
 
+	// Clear laser power-up if still active
+	if (laserActive) {
+		laserPowerup->destroy();
+		laserPowerup = nullptr;
+		laserActive = false;
+	}
+
 	// Setting number of zombies to spawn, with a new one appearing every 5 levels
 	int numZombies = 3 + (level / 5);
 
@@ -1998,7 +2045,7 @@ void Game::nextLevel()
 		}
 
 		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
+		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		zombies.push_back(newZombie);
@@ -2096,7 +2143,7 @@ void Game::bonusStage()
 		//int y = 200 + (rand() % 500);
 
 		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
+		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		leftToRight.push_back(newZombie);
@@ -2114,7 +2161,7 @@ void Game::bonusStage()
 		int y = yRight;
 
 		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
+		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		rightToLeft.push_back(newZombie);
@@ -2254,7 +2301,7 @@ void Game::resetGame()
 		}
 
 		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zombie.png");
+		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		zombies.push_back(newZombie);
@@ -2525,8 +2572,8 @@ void Game::fireLaser() {
 	if (laserActive) return; // to prevent multiple lasers...
 
 	laserPowerup = &manager.addEntity();
-	laserPowerup->addComponent<TransformComponent>(105, 32, 1390, 64, 1);
-	laserPowerup->addComponent<SpriteComponent>("assets/Laser.png");
+	laserPowerup->addComponent<TransformComponent>(80, 32, 1472, 64, 1);
+	laserPowerup->addComponent<SpriteComponent>("assets/Laser-Sheet.png", true);
 	laserPowerup->addComponent<ColliderComponent>("laser");
 
 	laserActive = true;
