@@ -53,7 +53,7 @@ public:
 		animations.emplace("Defeat", defeat);
 
 		// Laser
-		Animation laser = Animation(0, 3, 100);
+		Animation laser = Animation(0, 3, 80);
 		animations.emplace("Laser", laser);
 
 		Play("Walk Down");

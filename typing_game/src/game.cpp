@@ -634,6 +634,7 @@ void Game::update() {
 				// Check if user types in prompt correctly without errors
 				checkCombo(userInput, targetText);
 
+				// Simple laser animation for eliminating zombie
 				int cannonX = laserMiddle.getComponent<TransformComponent>().position.x + 68; // center of 68px cannon
 				int cannonY = laserMiddle.getComponent<TransformComponent>().position.y + 128; // bottom of cannon
 
@@ -833,6 +834,39 @@ void Game::update() {
 		// Bonus stage logic
 		currentTime = SDL_GetTicks(); // Get current time in milliseconds
 
+		// Check if word is fully typed and wrong
+		if (userInput.size() == targetText.size() && userInput != targetText) {
+			wordTypedWrong = true;
+		}
+		else {
+			wordTypedWrong = false;
+		}
+
+		// Update status text
+		if (wordTypedWrong) {
+			statusText = "ERROR";
+		}
+		else if (barrierHP <= 50) {
+			statusText = "CAUTION";
+		}
+		else if (barrierHP <= 20) {
+			statusText = "CRITICAL";
+		}
+		else {
+			statusText = "OK";
+		}
+
+		// Laser logic
+		for (auto& laser : activeLasers) {
+			laser.duration--;
+		}
+
+		activeLasers.erase(
+			std::remove_if(activeLasers.begin(), activeLasers.end(),
+				[](const LaserStrike& l) { return l.duration <= 0; }),
+			activeLasers.end());
+
+
 		// Update crosshair position if zombies are present
 		if (!leftToRight.empty() &&  currentZombieIndex < leftToRight.size()) {
 			Entity* activeZombie = leftToRight[currentZombieIndex];
@@ -882,7 +916,7 @@ void Game::update() {
 			if (zombieTransform.position.x > 1600 && !transformStatus.getTransformed()) {
 				// Transform zombie
 				transformStatus.setTransformed(true);
-				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+				//zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 				tombstones.push_back(zombie);
 
 				// Update zombie count
@@ -923,6 +957,9 @@ void Game::update() {
 
 			// Check if zombie is transformed, then move if not
 			if (!transformStatus.getTransformed()) {
+				auto& sprite = zombie->getComponent<SpriteComponent>();
+				sprite.Play("Walk Right");
+
 				zombieTransform.position.x += bonusSpeed;
 			}
 			// Possible update to bonus game?
@@ -951,8 +988,25 @@ void Game::update() {
 					}
 				}
 
+				// Simple laser animation for eliminating zombie
+				int cannonX = laserMiddle.getComponent<TransformComponent>().position.x + 68; // center of 68px cannon
+				int cannonY = laserMiddle.getComponent<TransformComponent>().position.y + 128; // bottom of cannon
+
+				int zombieX = zombie->getComponent<TransformComponent>().position.x + 32;
+				int zombieY = zombie->getComponent<TransformComponent>().position.y + 32;
+
+				LaserStrike laser;
+				laser.startX = cannonX;
+				laser.startY = cannonY;
+				laser.endX = zombieX;
+				laser.endY = zombieY;
+				laser.duration = 6; // Adjust as needed
+
+				activeLasers.push_back(laser);
+
 				// Transform zombie
-				zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+				auto& sprite = zombie->getComponent<SpriteComponent>();
+				sprite.Play("Defeat");
 				transformStatus.setTransformed(true);
 				tombstones.push_back(zombie);
 
@@ -1011,7 +1065,7 @@ void Game::update() {
 				if (zombieTransform.position.x < -75 && !transformStatus.getTransformed()) {
 					// Transform zombie
 					transformStatus.setTransformed(true);
-					zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+					//zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 					tombstones.push_back(zombie);
 
 					// Update zombie count
@@ -1052,6 +1106,9 @@ void Game::update() {
 
 				// Check if zombie is transformed, then move if not
 				if (!transformStatus.getTransformed()) {
+					auto& sprite = zombie->getComponent<SpriteComponent>();
+					sprite.Play("Walk Left");
+
 					zombieTransform.position.x -= bonusSpeed;
 				}
 
@@ -1066,8 +1123,25 @@ void Game::update() {
 						}
 					}
 
+					// Simple laser animation for eliminating zombie
+					int cannonX = laserMiddle.getComponent<TransformComponent>().position.x + 68; // center of 68px cannon
+					int cannonY = laserMiddle.getComponent<TransformComponent>().position.y + 128; // bottom of cannon
+
+					int zombieX = zombie->getComponent<TransformComponent>().position.x + 32;
+					int zombieY = zombie->getComponent<TransformComponent>().position.y + 32;
+
+					LaserStrike laser;
+					laser.startX = cannonX;
+					laser.startY = cannonY;
+					laser.endX = zombieX;
+					laser.endY = zombieY;
+					laser.duration = 6; // Adjust as needed
+
+					activeLasers.push_back(laser);
+
 					// Transform zombie
-					zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+					auto& sprite = zombie->getComponent<SpriteComponent>();
+					sprite.Play("Defeat");
 					transformStatus.setTransformed(true);
 					tombstones.push_back(zombie);
 
@@ -1133,14 +1207,27 @@ void Game::update() {
 			}
 		}
 
+		// Add delay to results screen
 		if (allZombiesTransformed && gameState == GameState::BONUS_STAGE) {
-			barrierHP += bonusHP;
-			gameState = GameState::BONUS_RESULTS; // Transition to results state
+			if (!nextLevelDelayStarted) {
+				nextLevelDelayStarted = true;
+				nextLevelDelayTimer = 120;
+			}
+
+			if (nextLevelDelayTimer > 0) {
+				nextLevelDelayTimer--;
+			}
+			else {
+				barrierHP += bonusHP;
+				gameState = GameState::BONUS_RESULTS; // Transition to results state
+				nextLevelDelayStarted = false; // Reset for next level
+			}
 		}
 
-		if (barrierHP <= 0) {
-			gameState = GameState::BONUS_RESULTS;
-		}
+		//if (allZombiesTransformed && gameState == GameState::BONUS_STAGE) {
+		//	barrierHP += bonusHP;
+		//	gameState = GameState::BONUS_RESULTS; // Transition to results state
+		//}
 
 		break;
 
@@ -1758,21 +1845,45 @@ void Game::render()
 
 		// Moving down here so this is drawn over the zombies
 
-		// Draw HP bar
-		if (uiManager && healthFont) {
+		// Draw laser
+		for (const auto& laser : activeLasers) {
+			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red
+
+			int thickness = 4;
+
+			// Draw 'thickness' number of lines offset horizontally
+			for (int i = -thickness / 2; i <= thickness / 2; ++i) {
+				SDL_RenderDrawLine(
+					renderer,
+					laser.startX + i,
+					laser.startY,
+					laser.endX + i,
+					laser.endY
+				);
+			}
+		}
+
+		// Draw laser cannons LAST
+		laserLeft.getComponent<SpriteComponent>().draw();
+		laserRight.getComponent<SpriteComponent>().draw();
+		laserMiddle.getComponent<SpriteComponent>().draw();
+
+		// Draw control panel
+		if (uiManager) {
 			SDL_Color outlineColor = { 255, 255, 255, 255 };
 			SDL_Color fgColor = { 102, 255, 105, 255 };
 			SDL_Color bgColor = { 255, 102, 102, 255 };
-			//SDL_Color textColor = { 255, 255, 51, 255 };
+			SDL_Color comboColor = { 255, 255, 102, 255 };
 			SDL_Color textColor = { 0, 0, 0, 255 };
-			uiManager->drawHealthbar(130, 790, 300, 30, barrierHP, maxHP, "SHIELD:", outlineColor, fgColor, bgColor, controlPanelFont, textColor);
+
+			uiManager->drawHealthbar(130, 780, 320, 40, barrierHP, maxHP, "SHIELD:", outlineColor, fgColor, bgColor, controlPanelFont, textColor);
+			uiManager->drawStatusBar(130, 840, 320, 40, "STATUS:", statusText, outlineColor, bgColor, controlPanelFont, statusFont, textColor);
+			uiManager->drawThreatLvl(1140, 785, 70, 70, zombieCount, "THREAT LVL", outlineColor, bgColor, controlPanelFont, threatLvlFont, textColor);
+			uiManager->drawComboAlert(1335, 860, 60, 30, comboLevel, "COMBO:", comboStatus, outlineColor, comboColor, controlPanelFont, comboStatusFont, textColor);
 		}
 
 		// Draw level text
-		uiManager->drawText("BONUS STAGE", 700, 10, { 0, 0, 0, 255 }, healthFont);
-
-		// Draw zombies remaining text
-		uiManager->drawText("Zombies Remaining: " + std::to_string(zombieCount), 1090, 10, { 0, 0, 0, 255 }, healthFont);
+		uiManager->drawCenteredText("BONUS", 10, { 0, 0, 0, 255 }, roundFont, screenWidth);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1946,7 +2057,7 @@ void Game::clean()
 // To set up next level of arcade mode
 void Game::nextLevel()
 {
-	if (level % 10 == 0 && !inBonusStage) {
+	if (level % 2 == 0 && !inBonusStage) {
 		gameState = GameState::BONUS_TITLE; // Transition to bonus title screen
 		inBonusStage = true;
 		return;
@@ -2118,6 +2229,16 @@ void Game::bonusStage()
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
+	// Clear active lasers
+	activeLasers.clear();
+
+	// Clear laser power-up if still active
+	if (laserActive) {
+		laserPowerup->destroy();
+		laserPowerup = nullptr;
+		laserActive = false;
+	}
+
 	// Increasing bonus level
 	bonusLevel++;
 
@@ -2132,7 +2253,7 @@ void Game::bonusStage()
 	int spacing = 120; // Space between zombies
 
 	// Generate random y-coordinate for left to right zombie row
-	int yLeft = 200 + (rand() % 500);
+	int yLeft = 150 + (rand() % 360); // 150–559
 
 	// Left to Right group
 	for (int i = 0; i < numZombiesLeft; ++i)
@@ -2140,7 +2261,6 @@ void Game::bonusStage()
 		Entity* newZombie = &manager.addEntity();
 		int x = -150 - (i * spacing); // Start just outside the left edge
 		int y = yLeft;
-		//int y = 200 + (rand() % 500);
 
 		newZombie->addComponent<TransformComponent>(x, y);
 		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
@@ -2151,7 +2271,7 @@ void Game::bonusStage()
 	}
 
 	// Generate random y-coordinate for right to left zombie row
-	int yRight = 200 + (rand() % 500);
+	int yRight = 150 + (rand() % 360); // 150-559
 
 	// Right to Left group
 	for (int i = 0; i < numZombiesRight; ++i)
@@ -2238,11 +2358,18 @@ void Game::resetGame()
 	// Clear active lasers
 	activeLasers.clear();
 
+	// Clear laser power-up if still active
+	if (laserActive) {
+		laserPowerup->destroy();
+		laserPowerup = nullptr;
+		laserActive = false;
+	}
+
 	// Reset zombie spawn mechanics
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
-	// TESTING
+	// Reset zombies that spawn
 	int numZombies = 3;
 
 	// Randomizing words
@@ -2340,6 +2467,17 @@ void Game::resetGame()
 
 	// Reset level
 	level = 1;
+
+	// Reset combo variables
+	brokenCombo = false;
+	laserReady = false;
+	comboLevel = 0;
+	checkCombo("", targetText);
+
+	// Reset bonus stage variables
+	bonusLevel = 0;
+	inBonusStage = false;
+	bonusSpeed = 2.0f;
 
 	std::cout << "Arcade mode reset!" << std::endl;
 }
@@ -2572,7 +2710,7 @@ void Game::fireLaser() {
 	if (laserActive) return; // to prevent multiple lasers...
 
 	laserPowerup = &manager.addEntity();
-	laserPowerup->addComponent<TransformComponent>(80, 32, 1472, 64, 1);
+	laserPowerup->addComponent<TransformComponent>(60, 32, 1472, 64, 1);
 	laserPowerup->addComponent<SpriteComponent>("assets/Laser-Sheet.png", true);
 	laserPowerup->addComponent<ColliderComponent>("laser");
 
