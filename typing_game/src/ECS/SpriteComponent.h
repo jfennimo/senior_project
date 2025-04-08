@@ -43,6 +43,7 @@ public:
 		Animation walkLeft = Animation(4, 4, 100);
 		Animation attackLeft = Animation(5, 4, 100);
 		Animation defeat = Animation(6, 19, 100, false);
+		Animation stun = Animation(7, 8, 100);
 
 		animations.emplace("Walk Down", walkDown);
 		animations.emplace("Attack Down", attackDown);
@@ -51,7 +52,8 @@ public:
 		animations.emplace("Walk Left", walkLeft);
 		animations.emplace("Attack Left", attackLeft);
 		animations.emplace("Defeat", defeat);
-
+		animations.emplace("Stun", stun);
+		
 		// Laser
 		Animation laser = Animation(0, 3, 80);
 		animations.emplace("Laser", laser);
@@ -142,11 +144,33 @@ public:
 class TransformStatusComponent : public Component {
 public:
 	bool isTransformed = false; // Default to false
+	bool stunned = false;
+	int stunTimer = 0;
 
 	void setTransformed(bool status) {
 		isTransformed = status;
 	}
+
 	bool getTransformed() const {
 		return isTransformed;
 	}
+
+	void setStunned(bool value, int duration = 0) {
+		stunned = value;
+		stunTimer = duration;
+	}
+
+	bool isStunned() const {
+		return stunned;
+	}
+
+	void updateStun() {
+		if (stunned && stunTimer > 0) {
+			stunTimer--;
+			if (stunTimer == 0) {
+				stunned = false;
+			}
+		}
+	}
+
 };

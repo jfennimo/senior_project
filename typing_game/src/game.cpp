@@ -539,8 +539,16 @@ void Game::update() {
 			auto& zombieTransform = zombie->getComponent<TransformComponent>();
 			auto& transformStatus = zombie->getComponent<TransformStatusComponent>();
 
+			// Update stun status and timer
+			transformStatus.updateStun();
+
+			// If stunned and not transformed, play stun animation (but still allow prompt logic)
+			if (transformStatus.isStunned() && !transformStatus.getTransformed()) {
+				zombie->getComponent<SpriteComponent>().Play("Stun");
+			}
+
 			// Check if zombie is transformed
-			if (!transformStatus.getTransformed()) {
+			if (!transformStatus.getTransformed() && !transformStatus.isStunned()) {
 				// Move zombie toward the player
 				float dx = playerTransform.position.x - zombieTransform.position.x;
 				float dy = playerTransform.position.y - zombieTransform.position.y;
@@ -724,18 +732,19 @@ void Game::update() {
 			for (auto* zombie : zombies) {
 				if (!zombie->getComponent<TransformStatusComponent>().getTransformed()) {
 					if (Collision::AABB(zombie->getComponent<ColliderComponent>().collider, laserCollider.collider)) {
-						// Get zapped, zambie
-						//zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
-						auto& sprite = zombie->getComponent<SpriteComponent>();
+						
+						// Get zapped, zambie (stuns the zombie, making it unable to move or attack for 5 seconds)
+						auto& status = zombie->getComponent<TransformStatusComponent>();
+						if (!status.isStunned()) {
+							auto& sprite = zombie->getComponent<SpriteComponent>();
+							sprite.Play("Stun");
 
-						sprite.Play("Defeat");
-						zombie->getComponent<TransformStatusComponent>().setTransformed(true);
-						tombstones.push_back(zombie);
-						zombieCount--;
-						// Include this or no?
-						zombiesDefeated++;
+							status.setStunned(true, 300); // 5 seconds at 60 FPS
+						}
 					}
-					// Update next target after laser powerup touches zombie
+
+					/*
+					* 					// Update next target after laser powerup touches zombie
 					if (zombie == zombies[currentZombieIndex]) {
 						float closestDistance = std::numeric_limits<float>::max();
 						size_t closestZombieIndex = currentZombieIndex;
@@ -758,6 +767,8 @@ void Game::update() {
 						if (currentZombieIndex < zombies.size())
 							targetText = words[currentZombieIndex];
 					}
+					*/
+
 				}
 			}
 
@@ -1018,7 +1029,7 @@ void Game::update() {
 				bonusZombiesDefeated++;
 
 				// Rewards HP that will be added to barrierHP after results screen
-				bonusHP += 5;
+				bonusHP += 10;
 
 				// Clear user input
 				userInput.clear();
@@ -1153,7 +1164,7 @@ void Game::update() {
 					bonusZombiesDefeated++;
 
 					// Restore some HP or... add this at the results screen...
-					bonusHP += 5;
+					bonusHP += 10;
 
 					// Clear user input
 					userInput.clear();
@@ -2057,7 +2068,8 @@ void Game::clean()
 // To set up next level of arcade mode
 void Game::nextLevel()
 {
-	if (level % 2 == 0 && !inBonusStage) {
+	// Go to bonus stage every ten rounds
+	if (level % 10 == 0 && !inBonusStage) {
 		gameState = GameState::BONUS_TITLE; // Transition to bonus title screen
 		inBonusStage = true;
 		return;
@@ -2201,12 +2213,12 @@ void Game::nextLevel()
 	levelCorrectLetters = 0;
 	levelTotalLetters = 0;
 
-	// Increase zambie speed!! Also decrease slightly every 10 levels...
+	// Increase zambie speed!!
 	speed += 0.1f;
 
-	// Lower speed a bit every 10 levels
+	// Reset speed every 10 levels
 	if (level % 10 == 0) {
-		speed -= 0.5f;
+		speed = 0.5f;
 	}
 
 	// Increment level

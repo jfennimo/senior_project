@@ -119,7 +119,7 @@ private:
 	// Laser power up
 	//Entity* laser = nullptr;
 	bool laserActive = false;
-	float laserSpeed = 1.5f; // may need to adjust
+	float laserSpeed = 2.0f; // may need to adjust
 
 	// Zombie speed!!
 	float speed = 0.5f; // How fast the zombies move towards the player
@@ -176,7 +176,7 @@ private:
 	int bonusLevel = 0;
 	bool inBonusStage = false;
 	bool leftGroupDefeated = false;
-	float bonusSpeed = 2.0f;
+	float bonusSpeed = 3.0f;
 	int bonusZombiesDefeated;
 	int totalBonusZombies;
 	std::string totalBonusZombiesDefeated;
