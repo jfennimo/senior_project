@@ -13,13 +13,10 @@ public:
 	Map();
 	~Map();
 
-	//void loadMap(int** arr, int rows, int columns);
 	void loadMap(int arr[24][50]);
 	void drawMap(int offsetX = 0, int offsetY = 0);
 
 	void setDifficulty(MapLevel currentDifficulty);
-
-	//int map[23][40];
 
 
 private:
