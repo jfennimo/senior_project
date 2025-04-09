@@ -4,6 +4,8 @@
 #include "SDL_image.h"
 #include "UIManager.h"
 #include "GameState.h"
+#include "GameMode.h"
+#include <memory>
 #include <vector>
 #include <iostream>
 #include <sstream>
@@ -40,8 +42,11 @@ public:
 		return isRunning;
 	}
 
+	void changeState(GameState newState);
+
 	static SDL_Renderer *renderer;
 	static SDL_Event event;
+	UIManager* uiManager;
 
 	// Fonts
 	TTF_Font* titleFont;
@@ -55,6 +60,7 @@ public:
 	TTF_Font* comboStatusFont;
 
 	GameState gameState;
+	std::unique_ptr<GameMode> currentMode;
 
 private:
 	bool isRunning = false;
@@ -65,7 +71,6 @@ private:
 	Uint32 currentTime;
 
 	SDL_Window* window;
-	UIManager* uiManager;
 
 	// For storing typed text
 	std::string userInput = ""; 
@@ -128,7 +133,7 @@ private:
 
 	// Barrier variables
 	std::string hpResults;
-	int resultsHP;
+	//int resultsHP;
 	int barrierHP;
 	int bonusHP;
 	const int maxHP = 100;

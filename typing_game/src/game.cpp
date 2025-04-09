@@ -15,6 +15,9 @@
 #include <cstdlib> // For rand() and srand()
 #include <ctime>   // For time()
 
+#include "TitleScreen.h"
+#include "MainMenu.h"
+
 GameState gameState;
 
 Map* map;
@@ -81,6 +84,7 @@ Game::Game()
 {
 	uiManager = nullptr;
 }
+
 Game::~Game()
 {
 	delete uiManager;
@@ -125,7 +129,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 		isRunning = false;
 	}
 
-	gameState = GameState::TITLE_SCREEN; // Initial state
+	//gameState = GameState::TITLE_SCREEN; // Initial state
 
 	uiManager = new UIManager(renderer);
 	map = new Map();
@@ -269,12 +273,40 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	statusFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 40);
 	threatLvlFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 50);
 	comboStatusFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 30);
+
+	changeState(GameState::TITLE_SCREEN);
+}
+
+void Game::changeState(GameState newState)
+{
+	gameState = newState;
+
+	switch (newState) {
+	case GameState::TITLE_SCREEN:
+		currentMode = std::make_unique<TitleScreen>(this);
+		break;
+	case GameState::MAIN_MENU:
+		currentMode = std::make_unique<MainMenu>(this);
+		break;
+	case GameState::ARCADE_MODE:
+		// currentMode = std::make_unique<ArcadeMode>(this); // Placeholder
+		currentMode = nullptr;
+		break;
+	default:
+		currentMode = nullptr;
+		break;
+	}
 }
 
 
 void Game::handleEvents()
 {
 	SDL_PollEvent(&event);
+	if (event.type == SDL_QUIT) {
+		isRunning = false;
+	}
+	if (currentMode) currentMode->handleEvent(event);
+
 	switch (event.type) {
 	case SDL_QUIT:
 		isRunning = false;
@@ -282,15 +314,21 @@ void Game::handleEvents()
 
 	case SDL_KEYDOWN:
 		if (event.key.keysym.sym == SDLK_RETURN) {
+			/*
 			if (gameState == GameState::TITLE_SCREEN) {
 				gameState = GameState::MAIN_MENU; // Transition main menu
 				std::cout << "Navigating to main menu!" << std::endl;
 			}
+			*/
+			/*
 			else if (gameState == GameState::MAIN_MENU) {
 				gameState = GameState::ARCADE_MODE; // Transition to arcade mode
 				std::cout << "Navigating to arcade mode!" << std::endl;
 			}
-			else if (gameState == GameState::RESULTS) {
+			*/
+
+			// else if
+			if (gameState == GameState::RESULTS) {
 				gameState = GameState::ARCADE_MODE; // Start next level of arcade mode
 				nextLevel();
 				std::cout << "Starting next round!" << std::endl;
@@ -400,13 +438,26 @@ void Game::handleEvents()
 
 
 void Game::update() {
-	manager.refresh();
-	manager.update();
+	if (currentMode) {
+		currentMode->update();
+	}
+
+	std::cout << "Blink toggled: " << (showBlinkText ? "ON" : "OFF") << " at " << currentTime << "\n";
+
+	// Only run ECS updates when not on title screen
+	if (gameState != GameState::TITLE_SCREEN && gameState != GameState::MAIN_MENU) {
+		manager.refresh();
+		manager.update();
+
+		//auto& playerTransform = player.getComponent<TransformComponent>();
+	}
 
 	auto& playerTransform = player.getComponent<TransformComponent>();
 
 	switch (gameState) {
-	case GameState::TITLE_SCREEN:
+		/*
+		case GameState::TITLE_SCREEN:
+
 		// Title screen logic
 
 		// Blink counter logic
@@ -416,10 +467,14 @@ void Game::update() {
 			showBlinkText = !showBlinkText;  // Toggle visibility
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
-
 		break;
 
-	case GameState::MAIN_MENU:
+		*/
+
+
+		/*
+		case GameState::MAIN_MENU:
+
 		// Main menu logic
 
 		// Blink counter logic
@@ -429,8 +484,9 @@ void Game::update() {
 			showBlinkText = !showBlinkText;  // Toggle visibility
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
-
 		break;
+
+		*/
 
 	case GameState::ARCADE_MODE:
 		// Game logic
@@ -1207,9 +1263,11 @@ void Game::update() {
 void Game::render()
 {
 	SDL_RenderClear(renderer);
+	if (currentMode) currentMode->render();
 
 	switch (gameState) {
-	case GameState::TITLE_SCREEN:
+		/*
+		case GameState::TITLE_SCREEN:
 		// Draw title screen
 		if (!titleFont) {
 			std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
@@ -1226,8 +1284,11 @@ void Game::render()
 		}
 		SDL_RenderPresent(renderer);
 		break;
+		*/
 
-	case GameState::MAIN_MENU:
+
+		/*
+		case GameState::MAIN_MENU:
 		// Draw main menu
 		if (!titleFont) {
 			std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
@@ -1245,6 +1306,8 @@ void Game::render()
 
 		SDL_RenderPresent(renderer);
 		break;
+		*/
+
 
 	case GameState::ARCADE_MODE:
 		// Draw game
