@@ -15,15 +15,17 @@
 #include <cstdlib> // For rand() and srand()
 #include <ctime>   // For time()
 
+// For switching game states (modes)
 GameState gameState;
 
+// Map / Managers
 Map* map;
 Manager manager;
 UIManager* uiManager;
-
 WordListManager wordManager;
 WordListManager::Difficulty difficulty;
 
+// Renderer and Event structures
 SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
 
@@ -38,12 +40,13 @@ auto& rightHand(manager.addEntity());
 auto& barrier1(manager.addEntity());
 auto& barrier2(manager.addEntity());
 auto& barrier3(manager.addEntity());
-auto& crosshair(manager.addEntity());
+//auto& crosshair(manager.addEntity());
 auto& laserMiddle(manager.addEntity());
 auto& laserLeft(manager.addEntity());
 auto& laserRight(manager.addEntity());
 auto& comboMeter(manager.addEntity());
 
+Entity* crosshair = nullptr;
 Entity* laserPowerup = nullptr;
 Entity* exclamation = nullptr;
 
@@ -139,130 +142,6 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
 	laserX = (screenWidth / 2) - ((68 * 2) / 2);
 
-	// Setting player position (No sprite for player because player is inside barrier orb)
-	player.addComponent<TransformComponent>(playerX, 660);
-
-	// Setting hand sprites
-	leftHand.addComponent<TransformComponent>(545, 770, 64, 64, 2);
-	rightHand.addComponent<TransformComponent>(930, 770, 64, 64, 2);
-
-	leftHand.addComponent<SpriteComponent>("assets/Left_Hand.png");
-	rightHand.addComponent<SpriteComponent>("assets/Right_Hand.png");
-
-	// Barrier orb
-	barrier.addComponent<TransformComponent>(barrierX, 640, 64, 64, 2);
-	barrier.addComponent<SpriteComponent>("assets/Barrier_Orb_0.png");
-	barrier.addComponent<ColliderComponent>("barrier");
-
-	// Initialize crosshair entity
-	crosshair.addComponent<TransformComponent>(0, 0); // Initial position of crosshair
-	crosshair.addComponent<SpriteComponent>("assets/Crosshair.png");
-
-	// Middle laser cannon
-	laserMiddle.addComponent<TransformComponent>(laserX, 0, 68, 68, 2);
-	laserMiddle.addComponent<SpriteComponent>("assets/Laser_Cannon_Middle.png");
-
-	// Left and right laser cannons
-	laserLeft.addComponent<TransformComponent>(0, 0, 64, 64, 2);
-	laserRight.addComponent<TransformComponent>(1472, 0, 64, 64, 2);
-
-	laserLeft.addComponent<SpriteComponent>("assets/Laser_Cannon_Left.png");
-	laserRight.addComponent<SpriteComponent>("assets/Laser_Cannon_Right.png");
-
-	// Combo meter
-	comboMeter.addComponent<TransformComponent>(1350, 785, 64, 32, 2);
-	comboMeter.addComponent<SpriteComponent>("assets/Combo_Meter_0.png");
-
-	// Initialize random seed for zombie spawn
-	std::srand(static_cast<unsigned int>(std::time(nullptr)));
-
-	// Initial number of zombies to spawn
-	int numZombies = 3;
-
-	// Spawn zombies at random off-screen positions but not too close to player
-	int spawnBuffer = 150; // Distance beyond game window for spawning
-	for (size_t i = 0; i < numZombies; ++i)
-	{
-		Entity* newZombie = &manager.addEntity();
-
-		int spawnEdge = rand() % 3; // 0: top, 1: left, 2: right
-		int x, y;
-		bool validSpawn = false;
-
-		while (!validSpawn) {
-			validSpawn = true;
-			switch (spawnEdge)
-			{
-			case 0: // Top
-				x = rand() % width; // Full width range
-				y = -spawnBuffer;
-				break;
-			case 1: // Left
-				x = -spawnBuffer;
-				y = rand() % 650; // Ensures zombies spawn above the barrier orb
-				break;
-			case 2: // Right
-				x = width + spawnBuffer; // Force outside screen bounds
-				y = rand() % 650; // Ensures zombies spawn above the barrier orb
-				break;
-			}
-
-			// Ensure zombie spawn is not too close to player
-			auto& playerTransform = player.getComponent<TransformComponent>();
-			float dx = playerTransform.position.x - x;
-			float dy = playerTransform.position.y - y;
-			if (sqrt(dx * dx + dy * dy) < 400.0f) {
-				validSpawn = false;
-				continue;
-			}
-
-			// Check distance to other zombies
-			for (Entity* otherZombie : zombies) {
-				auto& otherTransform = otherZombie->getComponent<TransformComponent>();
-				float odx = otherTransform.position.x - x;
-				float ody = otherTransform.position.y - y;
-				if (sqrt(odx * odx + ody * ody) < 70.0f) { // Radius for how far zombies spawn from each other
-					validSpawn = false;
-					break;
-				}
-			}
-		}
-
-		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
-		newZombie->addComponent<ColliderComponent>("zombie");
-		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
-		zombies.push_back(newZombie);
-	}
-
-	// Find the closest zombie to the player at game start
-	float closestDistance = std::numeric_limits<float>::max();
-	size_t closestZombieIndex = 0;
-
-	for (size_t i = 0; i < zombies.size(); ++i) {
-		if (!zombies[i]->getComponent<TransformStatusComponent>().getTransformed()) {
-			auto& zombieTransform = zombies[i]->getComponent<TransformComponent>();
-			float dx = player.getComponent<TransformComponent>().position.x - zombieTransform.position.x;
-			float dy = player.getComponent<TransformComponent>().position.y - zombieTransform.position.y;
-			float distance = sqrt(dx * dx + dy * dy);
-
-			if (distance < closestDistance) {
-				closestDistance = distance;
-				closestZombieIndex = i;
-			}
-		}
-	}
-
-	// Set starting target
-	currentZombieIndex = closestZombieIndex;
-	targetText = words[currentZombieIndex];
-
-	// Intilalize zombies remaining
-	zombieCount = zombies.size();
-
-	// Intialize barrier health and health font
-	barrierHP = maxHP;
-
 	titleFont = TTF_OpenFont("assets/PressStart2P.ttf", 30);
 	menuFont = TTF_OpenFont("assets/PressStart2P.ttf", 20);
 	healthFont = TTF_OpenFont("assets/PressStart2P.ttf", 20);
@@ -284,16 +163,30 @@ void Game::handleEvents()
 		break;
 
 	case SDL_KEYDOWN:
-		if (event.key.keysym.sym == SDLK_RETURN) {
+		switch (event.key.keysym.sym) {
+
+		// For pressing enter/return (for menus)
+		case SDLK_RETURN:
 			if (gameState == GameState::TITLE_SCREEN) {
 				gameState = GameState::MAIN_MENU; // Transition main menu
 				std::cout << "Navigating to main menu!" << std::endl;
 			}
 			else if (gameState == GameState::MAIN_MENU) {
-				gameState = GameState::ARCADE_MODE; // Transition to arcade mode
-				std::cout << "Navigating to arcade mode!" << std::endl;
+				gameState = GameState::ARCADE_TITLE; // Transition to arcade mode
+				resetArcadeMode(); // Reset arcade mode as state is changing to arcade title
+				std::cout << "Navigating to arcade title!" << std::endl;
 			}
-			else if (gameState == GameState::RESULTS) {
+			else if (gameState == GameState::ARCADE_TITLE) {
+				if (menuSelection == 0) {
+					gameState = GameState::ARCADE_HTP;
+					std::cout << "Navigating to arcade how to play!" << std::endl;
+				}
+				else if (menuSelection == 1) {
+					gameState = GameState::ARCADE_MODE;
+					std::cout << "Navigating to arcade mode!" << std::endl;
+				}
+			}
+			else if (gameState == GameState::ARCADE_RESULTS) {
 				gameState = GameState::ARCADE_MODE; // Start next level of arcade mode
 				nextLevel();
 				std::cout << "Starting next round!" << std::endl;
@@ -309,26 +202,57 @@ void Game::handleEvents()
 				std::cout << "Starting next round!" << std::endl;
 			}
 			else if (gameState == GameState::GAME_OVER) {
-				gameState = GameState::TITLE_SCREEN;
-				resetGame();
+				gameState = GameState::MAIN_MENU;
+				//resetGame();
 				// Need to update final correct letters / total correct letters... (?!)
-				std::cout << "Returning to title screen!" << std::endl;
+				std::cout << "Returning to main menu!" << std::endl;
 			}
-		}
-		if (gameState == GameState::ARCADE_MODE) {
-			if (event.key.keysym.sym == SDLK_SPACE && laserReady) {
-				fireLaser();  // Fire laser power-up
-				laserReady = false; // Consumes laser charge
-				comboLevel = 0;
-				comboStatus = ""; // Reset display
-			}
-		}
-		if (gameState == GameState::ARCADE_MODE || gameState == GameState::BONUS_STAGE) {
-			if (event.key.keysym.sym == SDLK_BACKSPACE && !userInput.empty()) {
-				userInput.pop_back(); // Remove last character
-			}
-		}
+			break;
 
+		case SDLK_LEFT:
+			if (gameState == GameState::ARCADE_TITLE) {
+				menuSelection = std::max(0, menuSelection - 1);  // Prevent going below 0
+			}
+			break;
+
+		case SDLK_RIGHT:
+			if (gameState == GameState::ARCADE_TITLE) {
+				menuSelection = std::min(1, menuSelection + 1);  // Prevent going above 1
+			}
+			break;
+
+		// To backup a menu
+		case SDLK_ESCAPE:
+			if (gameState == GameState::MAIN_MENU) {
+				gameState = GameState::TITLE_SCREEN;
+			}
+			else if (gameState == GameState::ARCADE_TITLE) {
+				gameState = GameState::MAIN_MENU;
+			}
+			else if (gameState == GameState::ARCADE_HTP) {
+				gameState = GameState::ARCADE_TITLE;
+			}
+			break;
+
+		case SDLK_SPACE:
+			if (gameState == GameState::ARCADE_MODE) {
+				if (laserReady) {
+					fireLaser();  // Fire laser power-up
+					laserReady = false; // Consumes laser charge
+					comboLevel = 0;
+					comboStatus = ""; // Reset display
+				}
+			}
+			break;
+
+		case SDLK_BACKSPACE:
+			if (gameState == GameState::ARCADE_MODE || gameState == GameState::BONUS_STAGE) {
+				if (!userInput.empty()) {
+					userInput.pop_back(); // Remove last character
+				}
+			}
+			break;
+		}
 		break;
 
 	case SDL_TEXTINPUT:
@@ -435,6 +359,32 @@ void Game::update() {
 
 		break;
 
+	case GameState::ARCADE_TITLE:
+		// Arcade title screen logic
+
+		// Blink counter logic
+		currentTime = SDL_GetTicks(); // Get current time in milliseconds
+
+		if (currentTime > lastBlinkTime + BLINK_DELAY) {
+			showBlinkText = !showBlinkText;  // Toggle visibility
+			lastBlinkTime = currentTime;    // Update last blink time
+		}
+
+		break;
+
+	case GameState::ARCADE_HTP:
+		// Arcade "how to play" screen logic
+
+		// Blink counter logic
+		currentTime = SDL_GetTicks(); // Get current time in milliseconds
+
+		if (currentTime > lastBlinkTime + BLINK_DELAY) {
+			showBlinkText = !showBlinkText;  // Toggle visibility
+			lastBlinkTime = currentTime;    // Update last blink time
+		}
+
+		break;
+
 	case GameState::ARCADE_MODE:
 		// Game logic
 
@@ -506,7 +456,7 @@ void Game::update() {
 			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
 			// Update crosshair's position to zombie's position
-			auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+			auto& crosshairTransform = crosshair->getComponent<TransformComponent>();
 			crosshairTransform.position = zombieTransform.position;
 		}
 
@@ -738,7 +688,7 @@ void Game::update() {
 				nextLevelDelayTimer--;
 			}
 			else {
-				gameState = GameState::RESULTS;
+				gameState = GameState::ARCADE_RESULTS;
 				nextLevelDelayStarted = false; // Reset for next level
 			}
 		}
@@ -832,7 +782,7 @@ void Game::update() {
 			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
 			// Update crosshair's position to zombie's position
-			auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+			auto& crosshairTransform = crosshair->getComponent<TransformComponent>();
 			crosshairTransform.position = zombieTransform.position;
 		}
 
@@ -842,7 +792,7 @@ void Game::update() {
 			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
 			// Update crosshair's position to zombie's position
-			auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+			auto& crosshairTransform = crosshair->getComponent<TransformComponent>();
 			crosshairTransform.position = zombieTransform.position;
 		}
 
@@ -1162,7 +1112,7 @@ void Game::update() {
 
 		break;
 
-	case GameState::RESULTS:
+	case GameState::ARCADE_RESULTS:
 		// Results screen logic
 
 		// Blink counter logic
@@ -1249,6 +1199,46 @@ void Game::render()
 		SDL_RenderPresent(renderer);
 		break;
 
+	case GameState::ARCADE_TITLE:
+		// Draw arcade mode title screen
+		if (!titleFont) {
+			std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
+			return;
+		}
+
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		SDL_RenderClear(renderer);
+
+		uiManager->drawText("Arcade Mode", 660, 60, { 255, 255, 255, 255 }, titleFont);
+
+		SDL_Color howToColor = menuSelection == 0 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+		SDL_Color startColor = menuSelection == 1 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+
+		uiManager->drawText("How To Play", 500, 450, howToColor, titleFont);
+		uiManager->drawText("Start", 900, 450, startColor, titleFont);
+
+		//uiManager->drawText("How To Play", 500, 450, { 255, 255, 255, 255 }, titleFont);
+		//uiManager->drawText("Start", 900, 450, { 255, 255, 255, 255 }, titleFont);
+
+
+		SDL_RenderPresent(renderer);
+		break;
+
+	case GameState::ARCADE_HTP:
+		// Draw arcade mode "how to play" screen
+		if (!titleFont) {
+			std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
+			return;
+		}
+
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		SDL_RenderClear(renderer);
+
+		uiManager->drawText("How To Play", 660, 60, { 255, 255, 255, 255 }, titleFont);
+
+		SDL_RenderPresent(renderer);
+		break;
+
 	case GameState::ARCADE_MODE:
 		// Draw game
 
@@ -1278,11 +1268,11 @@ void Game::render()
 			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
 			// Place crosshair on top of current zombie
-			auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+			auto& crosshairTransform = crosshair->getComponent<TransformComponent>();
 			crosshairTransform.position = zombieTransform.position;
 
 			// Draw crosshair sprite
-			crosshair.getComponent<SpriteComponent>().draw();
+			crosshair->getComponent<SpriteComponent>().draw();
 		}
 
 		if (!allZombiesTransformed && currentZombieIndex < zombies.size()) {
@@ -1501,11 +1491,11 @@ void Game::render()
 				auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
 				// Place crosshair on top of current zombie
-				auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+				auto& crosshairTransform = crosshair->getComponent<TransformComponent>();
 				crosshairTransform.position = zombieTransform.position;
 
 				// Draw crosshair sprite
-				crosshair.getComponent<SpriteComponent>().draw();
+				crosshair->getComponent<SpriteComponent>().draw();
 			}
 		}
 		else {
@@ -1514,11 +1504,11 @@ void Game::render()
 				auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
 				// Place crosshair on top of current zombie
-				auto& crosshairTransform = crosshair.getComponent<TransformComponent>();
+				auto& crosshairTransform = crosshair->getComponent<TransformComponent>();
 				crosshairTransform.position = zombieTransform.position;
 
 				// Draw crosshair sprite
-				crosshair.getComponent<SpriteComponent>().draw();
+				crosshair->getComponent<SpriteComponent>().draw();
 			}
 		}
 
@@ -1787,7 +1777,7 @@ void Game::render()
 		SDL_RenderPresent(renderer);
 		break;
 
-	case GameState::RESULTS:
+	case GameState::ARCADE_RESULTS:
 		// Draw results screen
 		if (!titleFont) {
 			std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
@@ -2237,8 +2227,10 @@ void Game::bonusStage()
 }
 
 // Reset all elements of arcade mode for a fresh playthrough
-void Game::resetGame()
+void Game::resetArcadeMode()
 {
+	//manager.refresh();
+
 	// Remove zombie entities
 	for (auto* zombie : zombies) {
 		// Reset zombie sprite and transformation status
@@ -2270,28 +2262,53 @@ void Game::resetGame()
 	}
 	tombstones.clear(); // Clear the tombstone vector
 
-	// Clear active basic lasers
-	activeLasers.clear();
+	// Setting player position (No sprite for player because player is inside barrier orb)
+	player.addComponent<TransformComponent>(playerX, 660);
 
-	// Clear laser power-up if still active
-	if (laserActive) {
-		laserPowerup->destroy();
-		laserPowerup = nullptr;
-		laserActive = false;
+	// Setting hand sprites
+	leftHand.addComponent<TransformComponent>(545, 770, 64, 64, 2);
+	rightHand.addComponent<TransformComponent>(930, 770, 64, 64, 2);
+
+	leftHand.addComponent<SpriteComponent>("assets/Left_Hand.png");
+	rightHand.addComponent<SpriteComponent>("assets/Right_Hand.png");
+
+	// Barrier orb
+	barrier.addComponent<TransformComponent>(barrierX, 640, 64, 64, 2);
+	barrier.addComponent<SpriteComponent>("assets/Barrier_Orb_0.png");
+	barrier.addComponent<ColliderComponent>("barrier");
+
+	//// Initialize crosshair entity
+	if (crosshair) {
+		crosshair->destroy();
 	}
+	crosshair = &manager.addEntity();
+	crosshair->addComponent<TransformComponent>(0, 0); // Initial position of crosshair
+	crosshair->addComponent<SpriteComponent>("assets/crosshair.png");
+
+	// Middle laser cannon
+	laserMiddle.addComponent<TransformComponent>(laserX, 0, 68, 68, 2);
+	laserMiddle.addComponent<SpriteComponent>("assets/Laser_Cannon_Middle.png");
+
+	// Left and right laser cannons
+	laserLeft.addComponent<TransformComponent>(0, 0, 64, 64, 2);
+	laserRight.addComponent<TransformComponent>(1472, 0, 64, 64, 2);
+
+	laserLeft.addComponent<SpriteComponent>("assets/Laser_Cannon_Left.png");
+	laserRight.addComponent<SpriteComponent>("assets/Laser_Cannon_Right.png");
+
+	// Combo meter
+	comboMeter.addComponent<TransformComponent>(1350, 785, 64, 32, 2);
+	comboMeter.addComponent<SpriteComponent>("assets/Combo_Meter_0.png");
+
+	// Initialize random seed for zombie spawn
+	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
 	// Reset zombie spawn mechanics
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
-	// Reset zombies that spawn
+	// Initial number of zombies to spawn
 	int numZombies = 3;
-
-	// Randomizing words
-	words = wordManager.getRandomWords(WordListManager::EASY, numZombies);
-
-	// Reset map visual
-	map->setDifficulty(MapLevel::EASY);
 
 	// Spawn zombies at random off-screen positions but not too close to player
 	int spawnBuffer = 150; // Distance beyond game window for spawning
@@ -2308,7 +2325,7 @@ void Game::resetGame()
 			switch (spawnEdge)
 			{
 			case 0: // Top
-				x = rand() % 1600; // Full width range
+				x = rand() % screenWidth; // Full width range
 				y = -spawnBuffer;
 				break;
 			case 1: // Left
@@ -2316,7 +2333,7 @@ void Game::resetGame()
 				y = rand() % 650; // Ensures zombies spawn above the barrier orb
 				break;
 			case 2: // Right
-				x = 1600 + spawnBuffer; // Force outside screen bounds
+				x = screenWidth + spawnBuffer; // Force outside screen bounds
 				y = rand() % 650; // Ensures zombies spawn above the barrier orb
 				break;
 			}
@@ -2335,7 +2352,7 @@ void Game::resetGame()
 				auto& otherTransform = otherZombie->getComponent<TransformComponent>();
 				float odx = otherTransform.position.x - x;
 				float ody = otherTransform.position.y - y;
-				if (sqrt(odx * odx + ody * ody) < 70.0f) { // May need to adjust radius
+				if (sqrt(odx * odx + ody * ody) < 70.0f) { // Radius for how far zombies spawn from each other
 					validSpawn = false;
 					break;
 				}
@@ -2348,6 +2365,54 @@ void Game::resetGame()
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		zombies.push_back(newZombie);
 	}
+
+	// Find the closest zombie to the player at game start
+	float closestDistance = std::numeric_limits<float>::max();
+	size_t closestZombieIndex = 0;
+
+	for (size_t i = 0; i < zombies.size(); ++i) {
+		if (!zombies[i]->getComponent<TransformStatusComponent>().getTransformed()) {
+			auto& zombieTransform = zombies[i]->getComponent<TransformComponent>();
+			float dx = player.getComponent<TransformComponent>().position.x - zombieTransform.position.x;
+			float dy = player.getComponent<TransformComponent>().position.y - zombieTransform.position.y;
+			float distance = sqrt(dx * dx + dy * dy);
+
+			if (distance < closestDistance) {
+				closestDistance = distance;
+				closestZombieIndex = i;
+			}
+		}
+	}
+
+
+
+	// Set starting target
+	currentZombieIndex = closestZombieIndex;
+
+	// Intilalize zombies remaining
+
+	// Intialize barrier health and health font
+
+	// Clear active basic lasers
+	activeLasers.clear();
+
+	// Clear laser power-up if still active
+	if (laserActive) {
+		laserPowerup->destroy();
+		laserPowerup = nullptr;
+		laserActive = false;
+	}
+
+
+
+
+	// Randomizing words
+	words = wordManager.getRandomWords(WordListManager::EASY, numZombies);
+
+	// Reset map visual
+	map->setDifficulty(MapLevel::EASY);
+
+	
 
 	// Reset game variables
 

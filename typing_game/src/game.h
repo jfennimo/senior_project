@@ -21,23 +21,19 @@ public:
 	void render();
 	void clean();
 
-	void nextLevel();
-	void bonusStage();
-	void resetGame();
-
-	void updateHandSprites();
-
-	void resetHandSprites();
-
-	void updateBarrierDamage(int barrierHP);
-
-	void checkCombo(const std::string& input, const std::string& target);
-
-	void fireLaser();
-
 	bool running() {
 		return isRunning;
 	}
+
+	// Arcade Mode methods
+	void nextLevel();
+	void bonusStage();
+	void resetArcadeMode();
+	void updateHandSprites();
+	void resetHandSprites();
+	void updateBarrierDamage(int barrierHP);
+	void checkCombo(const std::string& input, const std::string& target);
+	void fireLaser();
 
 	static SDL_Renderer* renderer;
 	static SDL_Event event;
@@ -64,8 +60,20 @@ private:
 	Uint32 currentTime;
 
 	SDL_Window* window;
-	UIManager* uiManager;
+	//UIManager* uiManager;
 
+	// MAIN MENU VARIABLES
+	int menuSelection = 0;  // 0 = "How To Play", 1 = "Start"
+
+
+	//Entity* player = nullptr;
+
+
+
+	// ARCADE MODE VARIABLES BELOW:
+	// 
+	// 
+	// 
 	// For storing typed text
 	std::string userInput = "";
 
