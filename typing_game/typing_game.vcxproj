@@ -137,8 +137,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ArcadeMode.cpp" />
+    <ClCompile Include="src\ArcadeResults.cpp" />
+    <ClCompile Include="src\BonusResults.cpp" />
+    <ClCompile Include="src\BonusTitle.cpp" />
     <ClCompile Include="src\Collision.cpp" />
     <ClCompile Include="src\Game.cpp" />
+    <ClCompile Include="src\GameOver.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\MainMenu.cpp" />
     <ClCompile Include="src\Map.cpp" />
@@ -149,6 +154,10 @@
     <ClCompile Include="src\WordListManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ArcadeMode.h" />
+    <ClInclude Include="src\ArcadeResults.h" />
+    <ClInclude Include="src\BonusResults.h" />
+    <ClInclude Include="src\BonusTitle.h" />
     <ClInclude Include="src\Collision.h" />
     <ClInclude Include="src\ECS\Animation.h" />
     <ClInclude Include="src\ECS\ColliderComponent.h" />
@@ -158,6 +167,7 @@
     <ClInclude Include="src\ECS\SpriteComponent.h" />
     <ClInclude Include="src\Game.h" />
     <ClInclude Include="src\GameMode.h" />
+    <ClInclude Include="src\GameOver.h" />
     <ClInclude Include="src\GameState.h" />
     <ClInclude Include="src\MainMenu.h" />
     <ClInclude Include="src\Map.h" />

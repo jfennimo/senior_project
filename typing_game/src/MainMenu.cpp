@@ -5,8 +5,7 @@ MainMenu::MainMenu(Game* game)
     : game(game),
     lastBlinkTime(SDL_GetTicks()),
     showBlinkText(true)
-{
-}
+{}
 
 void MainMenu::update() {
     // Main menu logic
@@ -43,6 +42,7 @@ void MainMenu::render() {
 void MainMenu::handleEvent(SDL_Event& event) {
     if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_RETURN) {
         std::cout << "Navigating to arcade mode!" << std::endl;
+        game->arcadeJustStarted = true;
         game->changeState(GameState::ARCADE_MODE);
     }
 }
