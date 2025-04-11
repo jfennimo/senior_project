@@ -27,6 +27,10 @@ WordListManager::Difficulty difficulty;
 SDL_Renderer* Game::renderer = nullptr;
 SDL_Event Game::event;
 
+// Frame timer
+Uint32 currentTime;
+
+// Arcade Mode Entities
 auto& player(manager.addEntity());
 auto& barrier(manager.addEntity());
 auto& leftHand(manager.addEntity());
@@ -38,9 +42,7 @@ auto& crosshair(manager.addEntity());
 auto& laserMiddle(manager.addEntity());
 auto& laserLeft(manager.addEntity());
 auto& laserRight(manager.addEntity());
-//auto& laser(manager.addEntity());
 auto& comboMeter(manager.addEntity());
-//auto& exclamation(manager.addEntity());
 
 Entity* laserPowerup = nullptr;
 Entity* exclamation = nullptr;
@@ -56,33 +58,22 @@ TTF_Font* statusFont;
 TTF_Font* threatLvlFont;
 TTF_Font* comboStatusFont;
 
-// Frame timer
-Uint32 currentTime;
-
-// Wordlist stuff
-//std::vector<std::string> wordList = { "test", "brains" };
-//std::vector<std::string> bonusList = { "a", "b", "c" , "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" };
-
+// Wordlists
 std::vector<std::string> words = wordManager.getRandomWords(WordListManager::EASY, 3);
-//std::vector<std::string> mediumWords = wordManager.getRandomWords(WordListManager::MEDIUM, 3);
-//std::vector<std::string> hardWords = wordManager.getRandomWords(WordListManager::HARD, 3);
 std::vector<std::string> bonusLeft = wordManager.getRandomWords(WordListManager::BONUSLEFT, 3);
 std::vector<std::string> bonusRight = wordManager.getRandomWords(WordListManager::BONUSRIGHT, 3);
 
-
-//std::vector<std::string> wordList = { "test", "brains", "yum", "howdy", "yuck" };
-size_t currentPromptIndex = 0; // Track the current word prompt
-std::string targetText; // Holds current target prompt
-
+// Holds current target prompt
+std::string targetText;
 
 // Zombie entities and active zombie index
 std::vector<Entity*> zombies;
 std::vector<Entity*> leftToRight;
 std::vector<Entity*> rightToLeft;
- 
 std::vector<Entity*> tombstones;
 size_t currentZombieIndex = 0; // Tracks the currently active zombie
 
+// Zombie logic booleans
 bool allZombiesTransformed = false;
 bool barrierUnderAttack = false; // Track if zombies are attacking
 
@@ -95,6 +86,7 @@ Game::~Game()
 	delete uiManager;
 }
 
+// Arcade mode initiliazation (may move to reset game function)
 void Game::init(const char* title, int width, int height, bool fullscreen)
 {
 	int flags = 0;
@@ -140,17 +132,15 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 
 	screenWidth = width;
 	screenHeight = height;
-	
+
 	// Ensuring player and barrier are centered
 	playerX = screenWidth / 2;
 	barrierX = (screenWidth / 2) - ((barrierWidth * barrierScale) / 2);
 
 	laserX = (screenWidth / 2) - ((68 * 2) / 2);
 
-	// Setting player position
-	// No sprite for player because player is inside barrier orb
+	// Setting player position (No sprite for player because player is inside barrier orb)
 	player.addComponent<TransformComponent>(playerX, 660);
-	//player.addComponent<SpriteComponent>("assets/Player.png");
 
 	// Setting hand sprites
 	leftHand.addComponent<TransformComponent>(545, 770, 64, 64, 2);
@@ -183,10 +173,10 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	comboMeter.addComponent<TransformComponent>(1350, 785, 64, 32, 2);
 	comboMeter.addComponent<SpriteComponent>("assets/Combo_Meter_0.png");
 
-	// Initialize random seed
+	// Initialize random seed for zombie spawn
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-	// TESTING
+	// Initial number of zombies to spawn
 	int numZombies = 3;
 
 	// Spawn zombies at random off-screen positions but not too close to player
@@ -209,11 +199,11 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 				break;
 			case 1: // Left
 				x = -spawnBuffer;
-				y = rand() % 650; // Keep it within valid height
+				y = rand() % 650; // Ensures zombies spawn above the barrier orb
 				break;
 			case 2: // Right
 				x = width + spawnBuffer; // Force outside screen bounds
-				y = rand() % 650; // Keep within valid height
+				y = rand() % 650; // Ensures zombies spawn above the barrier orb
 				break;
 			}
 
@@ -231,7 +221,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 				auto& otherTransform = otherZombie->getComponent<TransformComponent>();
 				float odx = otherTransform.position.x - x;
 				float ody = otherTransform.position.y - y;
-				if (sqrt(odx * odx + ody * ody) < 70.0f) { // May need to adjust radius
+				if (sqrt(odx * odx + ody * ody) < 70.0f) { // Radius for how far zombies spawn from each other
 					validSpawn = false;
 					break;
 				}
@@ -267,12 +257,8 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	currentZombieIndex = closestZombieIndex;
 	targetText = words[currentZombieIndex];
 
-	
 	// Intilalize zombies remaining
 	zombieCount = zombies.size();
-
-	// Initialize target prompt
-	//targetText = easyWords[currentPromptIndex];
 
 	// Intialize barrier health and health font
 	barrierHP = maxHP;
@@ -309,26 +295,23 @@ void Game::handleEvents()
 			}
 			else if (gameState == GameState::RESULTS) {
 				gameState = GameState::ARCADE_MODE; // Start next level of arcade mode
-				//allZombiesTransformed = false;
 				nextLevel();
 				std::cout << "Starting next round!" << std::endl;
 			}
 			else if (gameState == GameState::BONUS_TITLE) {
 				gameState = GameState::BONUS_STAGE; // Start bonus round
-				//allZombiesTransformed = false;
 				bonusStage();
 				std::cout << "Starting bonus round!" << std::endl;
 			}
 			else if (gameState == GameState::BONUS_RESULTS) {
 				gameState = GameState::ARCADE_MODE; // Start next level of arcade mode
-				//allZombiesTransformed = false;
 				nextLevel();
 				std::cout << "Starting next round!" << std::endl;
 			}
 			else if (gameState == GameState::GAME_OVER) {
 				gameState = GameState::TITLE_SCREEN;
 				resetGame();
-				// Need to update final correct letters / total correct letters...
+				// Need to update final correct letters / total correct letters... (?!)
 				std::cout << "Returning to title screen!" << std::endl;
 			}
 		}
@@ -363,7 +346,7 @@ void Game::handleEvents()
 			userInput += event.text.text; // Append typed text
 			processedInput.assign(userInput.size(), false);
 
-			// Check for mistakes immediately
+			// Check for mistakes immediately, for combo system
 			if (userInput.back() != targetText[userInput.size() - 1]) {
 				brokenCombo = true;
 				comboStatus = "X";
@@ -392,14 +375,12 @@ void Game::handleEvents()
 
 			// Prevent typing if word is fully typed AND incorrect
 			if (userInput.size() >= targetText.size() && userInput != targetText) {
-				//wordTypedWrong = true;
 				break; // Lock input until user deletes
 			}
 
 			userInput += event.text.text; // Append typed text
 			processedInput.assign(userInput.size(), false);
 
-			// NEED TO UPDATE (with wut? idk)
 			// Increment total number of typed letters
 			levelTotalLetters++;
 			finalTotalLetters++;
@@ -411,7 +392,7 @@ void Game::handleEvents()
 
 				// Resetting hand sprites
 				resetHandSprites();
-			} 
+			}
 		}
 		break;
 
@@ -432,24 +413,26 @@ void Game::update() {
 		// Title screen logic
 
 		// Blink counter logic
-		currentTime = SDL_GetTicks(); // Get current time
+		currentTime = SDL_GetTicks(); // Get current time in milliseconds
 
 		if (currentTime > lastBlinkTime + BLINK_DELAY) {
 			showBlinkText = !showBlinkText;  // Toggle visibility
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
+
 		break;
 
 	case GameState::MAIN_MENU:
 		// Main menu logic
 
 		// Blink counter logic
-		currentTime = SDL_GetTicks(); // Get current time
+		currentTime = SDL_GetTicks(); // Get current time in milliseconds
 
 		if (currentTime > lastBlinkTime + BLINK_DELAY) {
 			showBlinkText = !showBlinkText;  // Toggle visibility
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
+
 		break;
 
 	case GameState::ARCADE_MODE:
@@ -462,7 +445,7 @@ void Game::update() {
 			brokenCombo = false;
 		}
 
-		// Check if word is fully typed and wrong
+		// Check if word is fully typed and wrong, for status alert
 		if (userInput.size() == targetText.size() && userInput != targetText) {
 			wordTypedWrong = true;
 		}
@@ -495,7 +478,7 @@ void Game::update() {
 			}
 		}
 
-		// Screen shake logic
+		// Screen shake logic, for when zombies attack barrier
 		if (shakeDuration > 0) {
 			shakeOffsetX = (std::rand() % (shakeMagnitude * 2)) - shakeMagnitude;
 			shakeOffsetY = (std::rand() % (shakeMagnitude * 2)) - shakeMagnitude;
@@ -506,7 +489,7 @@ void Game::update() {
 			shakeOffsetY = 0;
 		}
 
-		// Laser logic
+		// Basic laser logic (as in, laser that shoots when a prompt is typed correctly)
 		for (auto& laser : activeLasers) {
 			laser.duration--;
 		}
@@ -549,7 +532,7 @@ void Game::update() {
 
 			// Check if zombie is transformed
 			if (!transformStatus.getTransformed() && !transformStatus.isStunned()) {
-				// Move zombie toward the player
+				// Move zombie toward the player if not stunned
 				float dx = playerTransform.position.x - zombieTransform.position.x;
 				float dy = playerTransform.position.y - zombieTransform.position.y;
 
@@ -607,7 +590,7 @@ void Game::update() {
 
 					// Wall hit detected
 					std::cout << "Barrier hit! HP: " << barrierHP << std::endl;
-				} 
+				}
 			}
 
 			// Lower HP by 10 every second the zombies are attacking the barrier
@@ -624,7 +607,7 @@ void Game::update() {
 				if (barrierHP < 0) {
 					barrierHP = 0;
 
-					updateBarrierDamage(barrierHP);
+					updateBarrierDamage(barrierHP); // Updates barrier sprite based on amount of damage taken
 				}
 			}
 
@@ -639,10 +622,10 @@ void Game::update() {
 					}
 				}
 
-				// Check if user types in prompt correctly without errors
+				// Check if user types in prompt correctly without errors, to update combo
 				checkCombo(userInput, targetText);
 
-				// Simple laser animation for eliminating zombie
+				// Basic laser animation for eliminating zombie
 				int cannonX = laserMiddle.getComponent<TransformComponent>().position.x + 68; // center of 68px cannon
 				int cannonY = laserMiddle.getComponent<TransformComponent>().position.y + 128; // bottom of cannon
 
@@ -654,29 +637,19 @@ void Game::update() {
 				laser.startY = cannonY;
 				laser.endX = zombieX;
 				laser.endY = zombieY;
-				laser.duration = 6; // Adjust as needed
+				laser.duration = 6;
 
 				activeLasers.push_back(laser);
 
-				// Turn zombie into tombstone
-				//zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
-
-
-				// Now transform the zombie (e.g. change sprite to tombstone)
-				//zombie.getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
-				// Optional: stop its movement or deactivate AI
-
-
-				// Transform zombie
-				//zombie->getComponent<SpriteComponent>().setFrames(1);
+				// Transform zombie and play defeat animation
 				auto& sprite = zombie->getComponent<SpriteComponent>();
-
 				sprite.Play("Defeat");
-				//zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
+
+				// Update transformation status and account for how many zombies are inactive
 				transformStatus.setTransformed(true);
 				tombstones.push_back(zombie);
 
-				// Update zombie count / zombies defeated
+				// Update zombie count (for threat level) / zombies defeated
 				zombieCount--;
 				zombiesDefeated++;
 
@@ -721,6 +694,7 @@ void Game::update() {
 			}
 		}
 
+		// Laser power-up logic
 		if (laserActive) {
 			auto& laserTransform = laserPowerup->getComponent<TransformComponent>();
 			auto& laserCollider = laserPowerup->getComponent<ColliderComponent>();
@@ -732,8 +706,8 @@ void Game::update() {
 			for (auto* zombie : zombies) {
 				if (!zombie->getComponent<TransformStatusComponent>().getTransformed()) {
 					if (Collision::AABB(zombie->getComponent<ColliderComponent>().collider, laserCollider.collider)) {
-						
-						// Get zapped, zambie (stuns the zombie, making it unable to move or attack for 5 seconds)
+
+						// Get zapped, zambie! (stuns the zombie, making it unable to move or attack for 5 seconds)
 						auto& status = zombie->getComponent<TransformStatusComponent>();
 						if (!status.isStunned()) {
 							auto& sprite = zombie->getComponent<SpriteComponent>();
@@ -742,37 +716,10 @@ void Game::update() {
 							status.setStunned(true, 300); // 5 seconds at 60 FPS
 						}
 					}
-
-					/*
-					* 					// Update next target after laser powerup touches zombie
-					if (zombie == zombies[currentZombieIndex]) {
-						float closestDistance = std::numeric_limits<float>::max();
-						size_t closestZombieIndex = currentZombieIndex;
-
-						for (size_t i = 0; i < zombies.size(); ++i) {
-							if (!zombies[i]->getComponent<TransformStatusComponent>().getTransformed()) {
-								auto& zombieTransform = zombies[i]->getComponent<TransformComponent>();
-								float dx = playerTransform.position.x - zombieTransform.position.x;
-								float dy = playerTransform.position.y - zombieTransform.position.y;
-								float distance = sqrt(dx * dx + dy * dy);
-
-								if (distance < closestDistance) {
-									closestDistance = distance;
-									closestZombieIndex = i;
-								}
-							}
-						}
-
-						currentZombieIndex = closestZombieIndex;
-						if (currentZombieIndex < zombies.size())
-							targetText = words[currentZombieIndex];
-					}
-					*/
-
 				}
 			}
 
-			// Remove laser powerup when it reaches bottom of screen
+			// Remove laser power-up when it reaches bottom of screen
 			if (laserTransform.position.y > 700) {
 				laserPowerup->destroy();
 				laserPowerup = nullptr;
@@ -804,7 +751,7 @@ void Game::update() {
 			// Create exclamation point above player
 			exclamation = &manager.addEntity();
 
-			int exclaimX = player.getComponent<TransformComponent>().position.x - 17; // centered
+			int exclaimX = player.getComponent<TransformComponent>().position.x - 17; // centered..?!
 			int exclaimY = player.getComponent<TransformComponent>().position.y - 5; // slightly above player
 			exclamation->addComponent<TransformComponent>(exclaimX, exclaimY, 17, 16, 2);
 			exclamation->addComponent<SpriteComponent>("assets/Exclamation.png");
@@ -833,12 +780,13 @@ void Game::update() {
 		// Bonus title logic
 
 		// Blink counter logic
-		currentTime = SDL_GetTicks(); // Get current time
+		currentTime = SDL_GetTicks(); // Get current time in milliseconds
 
 		if (currentTime > lastBlinkTime + BLINK_DELAY) {
 			showBlinkText = !showBlinkText;  // Toggle visibility
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
+
 		break;
 
 	case GameState::BONUS_STAGE:
@@ -853,7 +801,7 @@ void Game::update() {
 			wordTypedWrong = false;
 		}
 
-		// Update status text
+		// Update status text (without some of the other status options, for bonus mode simplicity)
 		if (wordTypedWrong) {
 			statusText = "ERROR";
 		}
@@ -867,7 +815,7 @@ void Game::update() {
 			statusText = "OK";
 		}
 
-		// Laser logic
+		// Basic laser logic
 		for (auto& laser : activeLasers) {
 			laser.duration--;
 		}
@@ -878,8 +826,8 @@ void Game::update() {
 			activeLasers.end());
 
 
-		// Update crosshair position if zombies are present
-		if (!leftToRight.empty() &&  currentZombieIndex < leftToRight.size()) {
+		// Update crosshair position if zombies are present in the left group
+		if (!leftToRight.empty() && currentZombieIndex < leftToRight.size()) {
 			Entity* activeZombie = leftToRight[currentZombieIndex];
 			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
@@ -888,7 +836,7 @@ void Game::update() {
 			crosshairTransform.position = zombieTransform.position;
 		}
 
-		// Update crosshair position if zombies are present
+		// Update crosshair position if zombies are present in the right group
 		if (!rightToLeft.empty() && currentZombieIndex < rightToLeft.size()) {
 			Entity* activeZombie = rightToLeft[currentZombieIndex];
 			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
@@ -901,13 +849,6 @@ void Game::update() {
 		// Update hand sprites to reflect the key needed to be pressed
 		updateHandSprites();
 
-		//if (!leftToRight.empty()) {
-		//	targetText = bonusLeft[currentPromptIndex]; // Use words from the left group
-		//}
-		//else if (!rightToLeft.empty()) {
-		//	targetText = bonusRight[currentPromptIndex]; // Use words from the right group
-		//}
-
 		// Check if all left-to-right zombies are transformed before moving right-to-left zombies
 		leftGroupDefeated = true;
 		for (auto* zombie : leftToRight) {
@@ -917,17 +858,16 @@ void Game::update() {
 			}
 		}
 
-		// Iterate through left to right zombies
+		// Iterate through left-to-right zombies
 		for (size_t i = 0; i < leftToRight.size(); ++i) {
 			Entity* zombie = leftToRight[i];
 			auto& zombieTransform = zombie->getComponent<TransformComponent>();
 			auto& transformStatus = zombie->getComponent<TransformStatusComponent>();
 
-			// Check if zombie moves past screen, then eliminate if so
+			// Check if zombie moves past screen, then eliminate if so (arcade-style!)
 			if (zombieTransform.position.x > 1600 && !transformStatus.getTransformed()) {
 				// Transform zombie
 				transformStatus.setTransformed(true);
-				//zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 				tombstones.push_back(zombie);
 
 				// Update zombie count
@@ -939,7 +879,7 @@ void Game::update() {
 				// Resetting hand sprites
 				resetHandSprites();
 
-				// Move to the zombie to the left
+				// Move to the zombie to the left (next in the group)
 				if (i == currentZombieIndex) {
 					float currentX = leftToRight[currentZombieIndex]->getComponent<TransformComponent>().position.x;
 					float nextX = -std::numeric_limits<float>::max();
@@ -973,20 +913,6 @@ void Game::update() {
 
 				zombieTransform.position.x += bonusSpeed;
 			}
-			// Possible update to bonus game?
-			// Create random choice of zombie movement, x+= being default
-
-			/*
-				int randLeft = rand() % 1;
-				if (randLeft == 0) {
-					zombieTransform.position.x += bonusSpeed;
-				}
-				else if (randLeft == 1) {
-					zombieTransform.position.x += bonusSpeed;
-					zombieTransform.position.y += bonusSpeed;
-				}
-			}
-			*/
 
 			// Check if zombie's prompt matches user input
 			if (i == currentZombieIndex && userInput == bonusLeft[i] && !transformStatus.getTransformed()) {
@@ -999,8 +925,8 @@ void Game::update() {
 					}
 				}
 
-				// Simple laser animation for eliminating zombie
-				int cannonX = laserMiddle.getComponent<TransformComponent>().position.x + 68; // center of 68px cannon
+				// Basic laser animation for eliminating zombie
+				int cannonX = laserMiddle.getComponent<TransformComponent>().position.x + 68; // center of cannon
 				int cannonY = laserMiddle.getComponent<TransformComponent>().position.y + 128; // bottom of cannon
 
 				int zombieX = zombie->getComponent<TransformComponent>().position.x + 32;
@@ -1011,11 +937,11 @@ void Game::update() {
 				laser.startY = cannonY;
 				laser.endX = zombieX;
 				laser.endY = zombieY;
-				laser.duration = 6; // Adjust as needed
+				laser.duration = 6;
 
 				activeLasers.push_back(laser);
 
-				// Transform zombie
+				// Transform zombie, play defeat animation
 				auto& sprite = zombie->getComponent<SpriteComponent>();
 				sprite.Play("Defeat");
 				transformStatus.setTransformed(true);
@@ -1064,7 +990,7 @@ void Game::update() {
 			}
 		}
 
-		// Iterate through right to left zombies, only if left group is defeated
+		// Iterate through right-to-left zombies, only if left group is defeated
 		if (leftGroupDefeated) {
 			targetText = bonusRight[currentZombieIndex]; // Use words from the right group
 			for (size_t i = 0; i < rightToLeft.size(); ++i) {
@@ -1076,7 +1002,6 @@ void Game::update() {
 				if (zombieTransform.position.x < -75 && !transformStatus.getTransformed()) {
 					// Transform zombie
 					transformStatus.setTransformed(true);
-					//zombie->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
 					tombstones.push_back(zombie);
 
 					// Update zombie count
@@ -1091,7 +1016,7 @@ void Game::update() {
 					// Move to the zombie to the right
 					if (i == currentZombieIndex) {
 						float currentX = rightToLeft[currentZombieIndex]->getComponent<TransformComponent>().position.x;
-						float nextX = std::numeric_limits<float>::max(); // Look for the smallest `x` greater than `currentX`
+						float nextX = std::numeric_limits<float>::max();
 						int nextZombieIndex = -1;
 
 						for (size_t j = 0; j < rightToLeft.size(); ++j) {
@@ -1134,7 +1059,7 @@ void Game::update() {
 						}
 					}
 
-					// Simple laser animation for eliminating zombie
+					// Basic laser animation for eliminating zombie
 					int cannonX = laserMiddle.getComponent<TransformComponent>().position.x + 68; // center of 68px cannon
 					int cannonY = laserMiddle.getComponent<TransformComponent>().position.y + 128; // bottom of cannon
 
@@ -1146,11 +1071,11 @@ void Game::update() {
 					laser.startY = cannonY;
 					laser.endX = zombieX;
 					laser.endY = zombieY;
-					laser.duration = 6; // Adjust as needed
+					laser.duration = 6;
 
 					activeLasers.push_back(laser);
 
-					// Transform zombie
+					// Transform zombie and play defeat animation
 					auto& sprite = zombie->getComponent<SpriteComponent>();
 					sprite.Play("Defeat");
 					transformStatus.setTransformed(true);
@@ -1163,7 +1088,7 @@ void Game::update() {
 					// Update bonus zombie count / zombies defeated
 					bonusZombiesDefeated++;
 
-					// Restore some HP or... add this at the results screen...
+					// Rewards HP that will be added to barrierHP after results screen
 					bonusHP += 10;
 
 					// Clear user input
@@ -1175,7 +1100,7 @@ void Game::update() {
 					// Move to the zombie to the right
 					if (i == currentZombieIndex) {
 						float currentX = rightToLeft[currentZombieIndex]->getComponent<TransformComponent>().position.x;
-						float nextX = std::numeric_limits<float>::max(); // Look for the smallest `x` greater than `currentX`
+						float nextX = std::numeric_limits<float>::max();
 						int nextZombieIndex = -1;
 
 						for (size_t j = 0; j < rightToLeft.size(); ++j) {
@@ -1235,16 +1160,11 @@ void Game::update() {
 			}
 		}
 
-		//if (allZombiesTransformed && gameState == GameState::BONUS_STAGE) {
-		//	barrierHP += bonusHP;
-		//	gameState = GameState::BONUS_RESULTS; // Transition to results state
-		//}
-
 		break;
 
 	case GameState::RESULTS:
 		// Results screen logic
-		
+
 		// Blink counter logic
 		currentTime = SDL_GetTicks(); // Get current time
 
@@ -1252,6 +1172,7 @@ void Game::update() {
 			showBlinkText = !showBlinkText;  // Toggle visibility
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
+
 		break;
 
 	case GameState::BONUS_RESULTS:
@@ -1263,14 +1184,12 @@ void Game::update() {
 		if (currentTime > lastBlinkTime + BLINK_DELAY) {
 			showBlinkText = !showBlinkText;  // Toggle visibility
 			lastBlinkTime = currentTime;    // Update last blink time
-		}	
-
-		//inBonusStage = false; // Reset the flag when exiting the bonus stage
+		}
 
 		break;
 
 	case GameState::GAME_OVER:
-		// Game over logic
+		// Game over screen logic
 
 		// Blink counter logic
 		currentTime = SDL_GetTicks(); // Get current time
@@ -1336,7 +1255,7 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 160, 160, 160, 255);
 		SDL_RenderClear(renderer);
 
-		// To ensure dimensions are correct
+		// TESTING LINES TO ENSURE DIMENSIONS ARE CORRECT
 		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
 		SDL_RenderDrawLine(renderer, 800, 0, 800, 900);   // vertical center line
 		SDL_RenderDrawLine(renderer, 1599, 0, 1599, 900); // far right edge
@@ -1353,9 +1272,6 @@ void Game::render()
 		leftHand.getComponent<SpriteComponent>().draw();
 		rightHand.getComponent<SpriteComponent>().draw();
 
-		// Update hand sprites to reflect the key needed to be pressed
-		//updateHandSprites();
-
 		// Render crosshair
 		if (!zombies.empty() && currentZombieIndex < zombies.size()) {
 			Entity* activeZombie = zombies[currentZombieIndex];
@@ -1369,30 +1285,26 @@ void Game::render()
 			crosshair.getComponent<SpriteComponent>().draw();
 		}
 
-		// Check if all zombies have been defeated (transformed)
-		//allZombiesTransformed = true;
-		//for (size_t i = 0; i < zombies.size(); ++i) {
-		//    if (!zombies[i]->getComponent<TransformStatusComponent>().getTransformed()) {
-		//        allZombiesTransformed = false;
-		//        break;
-		//    }
-		//}
-
 		if (!allZombiesTransformed && currentZombieIndex < zombies.size()) {
 			// Only render prompt if there are still zombies to be defeated
 			Entity* activeZombie = zombies[currentZombieIndex];
 			auto& zombieTransform = activeZombie->getComponent<TransformComponent>();
 
-			//int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
 			int zombieWidth = 32;
 			int zombieCenterX = static_cast<int>(zombieTransform.position.x + (zombieWidth));
 			int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
 
 			if (uiManager) {
+				// HERE ya goob
+				//
+				//
+				// 
+				// 
+				// 
+				// NEED TO UPDATE PROMPT BOX AND POSSIBLY TEXT SIZE !
 				SDL_Color rectColor = { 255, 178, 102, 255 };
-				//uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
-
 				TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
+
 				if (font) {
 					// Calculate total text width
 					int totalTextWidth = 0;
@@ -1411,7 +1323,7 @@ void Game::render()
 
 					// Render letters with spacing
 					int letterX = textX;
-					int cursorX = textX; // default in case userInput is empty
+					int cursorX = textX; // default in case userInput is empty (for whatever reason !)
 
 					for (size_t i = 0; i < targetText.size(); ++i) {
 						SDL_Color color = { 255, 255, 255, 255 }; // Default to white
@@ -1421,7 +1333,6 @@ void Game::render()
 							}
 							else if (!processedInput[i]) {
 								color = { 255, 0, 0, 255 }; // Red for incorrect input
-								//brokenCombo = true;
 
 								// Append to typedWrong only if not already processed
 								if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
@@ -1432,7 +1343,6 @@ void Game::render()
 							}
 							else if (processedInput[i]) {
 								color = { 255, 0, 0, 255 }; // Keep red for already processed incorrect input
-								//brokenCombo = true;
 							}
 						}
 
@@ -1457,7 +1367,7 @@ void Game::render()
 						}
 					}
 
-					// Handle fully typed case — cursor at end
+					// Handle fully typed case cursor at end
 					if (userInput.size() == targetText.size()) {
 						cursorX = letterX; // after last letter
 					}
@@ -1467,14 +1377,6 @@ void Game::render()
 						// Change caret color if input is fully typed but incorrect
 						SDL_Color caretColor = { 255, 255, 255, 255 }; // default: white
 
-						// HERE
-						// 
-						// 
-						// 
-						// 
-						// 
-						// 
-						// Add a bool to make the status alert change for this
 						if (userInput.size() == targetText.size() && userInput != targetText) {
 							caretColor = { 255, 0, 0, 255 }; // red for incorrect full word
 						}
@@ -1498,15 +1400,15 @@ void Game::render()
 			}
 		}
 
-		// Moving down here so this is drawn over the zombies
+		// These are lower so they are drawn over the zombies!
 
-		// Draw laser
+		// Draw basic laser
 		for (const auto& laser : activeLasers) {
 			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red
 
 			int thickness = 4;
 
-			// Draw 'thickness' number of lines offset horizontally
+			// Draw 'thickness' of laser (number of lines offset horizontally)
 			for (int i = -thickness / 2; i <= thickness / 2; ++i) {
 				SDL_RenderDrawLine(
 					renderer,
@@ -1518,11 +1420,11 @@ void Game::render()
 			}
 		}
 
-		// Draw laser cannons LAST
+		// Draw laser cannons LAST (or else the zombies walk over them and that just looks plain silly)
 		laserLeft.getComponent<SpriteComponent>().draw();
 		laserRight.getComponent<SpriteComponent>().draw();
 		laserMiddle.getComponent<SpriteComponent>().draw();
-		
+
 		// Draw control panel
 		if (uiManager) {
 			SDL_Color outlineColor = { 255, 255, 255, 255 };
@@ -1537,16 +1439,15 @@ void Game::render()
 			uiManager->drawComboAlert(1335, 860, 60, 30, comboLevel, "COMBO:", comboStatus, outlineColor, comboColor, controlPanelFont, comboStatusFont, textColor);
 		}
 
-		// Draw level text
-		//uiManager->drawText("Round " + std::to_string(level), 750, 10, { 0, 0, 0, 255 }, healthFont);
+		// Draw level (round) text at top of screen in the middle
 		uiManager->drawCenteredText("Round " + std::to_string(level), 10, { 0, 0, 0, 255 }, roundFont, screenWidth);
 
-		// Draw laser powerup!
+		// Draw laser power-up!
 		if (laserActive) {
 			laserPowerup->getComponent<SpriteComponent>().Play("Laser");
 		}
 
-		// Draw exclamation point above player
+		// Draw exclamation point above player when barrier is destroyed
 		if (barrierDestroyed) {
 			exclamation->getComponent<SpriteComponent>().draw();
 		}
@@ -1589,12 +1490,9 @@ void Game::render()
 		map->drawMap();
 		manager.draw();
 
-		// Render sprite hands over tombstones
+		// Draw sprite hands
 		leftHand.getComponent<SpriteComponent>().draw();
 		rightHand.getComponent<SpriteComponent>().draw();
-
-		// Update hand sprites to reflect the key needed to be pressed
-		//updateHandSprites();
 
 		// Render crosshair on left group first
 		if (!leftGroupDefeated) {
@@ -1623,7 +1521,7 @@ void Game::render()
 				crosshair.getComponent<SpriteComponent>().draw();
 			}
 		}
-	
+
 		// Render prompt on left group first
 		if (!leftGroupDefeated) {
 			if (!allZombiesTransformed && currentZombieIndex < leftToRight.size()) {
@@ -1635,14 +1533,10 @@ void Game::render()
 				int zombieCenterX = static_cast<int>(zombieTransform.position.x + (zombieWidth));
 				int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
 
-				//int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
-				//int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
-
 				if (uiManager) {
 					SDL_Color rectColor = { 255, 178, 102, 255 };
-					//uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
-
 					TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
+
 					if (font) {
 						// Calculate total text width
 						int totalTextWidth = 0;
@@ -1668,8 +1562,6 @@ void Game::render()
 							if (i < userInput.size()) {
 								if (userInput[i] == targetText[i]) {
 									color = { 0, 255, 0, 255 }; // Green for correct input
-
-									//brokenCombo = false;
 								}
 								else if (!processedInput[i]) {
 									color = { 255, 0, 0, 255 }; // Red for incorrect input
@@ -1707,7 +1599,7 @@ void Game::render()
 							}
 						}
 
-						// Handle fully typed case — cursor at end
+						// Handle fully typed case cursor at end
 						if (userInput.size() == targetText.size()) {
 							cursorX = letterX; // after last letter
 						}
@@ -1750,14 +1642,10 @@ void Game::render()
 				int zombieCenterX = static_cast<int>(zombieTransform.position.x + (zombieWidth));
 				int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
 
-				//int textX = static_cast<int>(zombieTransform.position.x); // Zombie's x position
-				//int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
-
 				if (uiManager) {
 					SDL_Color rectColor = { 255, 178, 102, 255 };
-					//uiManager->drawRectangle(textX - 25, textY - 5, 125, 25, rectColor);
-
 					TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
+
 					if (font) {
 						// Calculate total text width
 						int totalTextWidth = 0;
@@ -1820,7 +1708,7 @@ void Game::render()
 							}
 						}
 
-						// Handle fully typed case — cursor at end
+						// Handle fully typed case   cursor at end
 						if (userInput.size() == targetText.size()) {
 							cursorX = letterX; // after last letter
 						}
@@ -1856,13 +1744,13 @@ void Game::render()
 
 		// Moving down here so this is drawn over the zombies
 
-		// Draw laser
+		// Draw basic laser
 		for (const auto& laser : activeLasers) {
 			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red
 
 			int thickness = 4;
 
-			// Draw 'thickness' number of lines offset horizontally
+			// Draw 'thickness' of laser (number of lines offset horizontally)
 			for (int i = -thickness / 2; i <= thickness / 2; ++i) {
 				SDL_RenderDrawLine(
 					renderer,
@@ -1893,7 +1781,7 @@ void Game::render()
 			uiManager->drawComboAlert(1335, 860, 60, 30, comboLevel, "COMBO:", comboStatus, outlineColor, comboColor, controlPanelFont, comboStatusFont, textColor);
 		}
 
-		// Draw level text
+		// Draw bonus text at top of screen in the center
 		uiManager->drawCenteredText("BONUS", 10, { 0, 0, 0, 255 }, roundFont, screenWidth);
 
 		SDL_RenderPresent(renderer);
@@ -1931,7 +1819,7 @@ void Game::render()
 
 		finalWrongResults = "Letters Typed Incorrectly: " + formattedResults.str();
 
-		// Calculate accuracy (avoiding division by zero for testing)
+		// Calculate accuracy
 		if (levelTotalLetters > 0) {
 			levelAccuracy = (static_cast<double>(levelCorrectLetters) / levelTotalLetters) * 100;
 		}
@@ -1945,6 +1833,15 @@ void Game::render()
 		uiManager->drawText(hpResults, 40, 200, { 255, 255, 255, 255 }, menuFont);
 		uiManager->drawText(finalWrongResults, 40, 400, { 255, 255, 255, 255 }, menuFont);
 		uiManager->drawText(overallAccuracy, 40, 600, { 255, 255, 255, 255 }, menuFont);
+
+		// heeeree
+		//
+		//
+		//
+		//
+		//
+		//
+		// Add alert when another zombie is spawning
 
 		if (showBlinkText) {
 			uiManager->drawText("Press Enter to Start the Next Level!", 500, 750, { 255, 255, 255, 255 }, menuFont);
@@ -1965,6 +1862,13 @@ void Game::render()
 
 		hpResults = "Barrier HP restored: " + std::to_string(bonusHP);
 
+		// heeerreeeee
+		// 
+		// 
+		// 
+		// 
+		// 
+		// 
 		// maybe add total Barrier HP here
 
 		// Move unique values from typedWrong to wrongResults
@@ -1987,7 +1891,7 @@ void Game::render()
 
 		finalWrongResults = "Letters Typed Incorrectly: " + formattedResults.str();
 
-		// Calculate accuracy (avoiding division by zero for testing)
+		// Calculate accuracy
 		if (levelTotalLetters > 0) {
 			levelAccuracy = (static_cast<double>(levelCorrectLetters) / levelTotalLetters) * 100;
 		}
@@ -2022,7 +1926,7 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 255, 51, 51, 255);
 		SDL_RenderClear(renderer);
 
-		// Calculate accuracy (avoiding division by zero for testing)
+		// Calculate accuracy
 		if (finalTotalLetters > 0) {
 			levelAccuracy = (static_cast<double>(finalCorrectLetters) / finalTotalLetters) * 100;
 		}
@@ -2056,7 +1960,12 @@ void Game::clean()
 {
 	// Clean game/free memory on exit
 
-	// TODO (add more items to free)
+	// heerree
+	// 
+	// 
+	// 
+	// 
+	// TODO (add more items to free?!)
 	delete uiManager;
 	SDL_DestroyWindow(window);
 	SDL_DestroyRenderer(renderer);
@@ -2083,11 +1992,12 @@ void Game::nextLevel()
 	// Update barrier sprite damage
 	updateBarrierDamage(barrierHP);
 
-	zombies.clear(); // Clear the previous round's zombies
+	// Clear the previous round's zombies and reset zombie index and transformation status
+	zombies.clear();
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
-	// Clear active lasers
+	// Clear active basic lasers
 	activeLasers.clear();
 
 	// Clear laser power-up if still active
@@ -2101,7 +2011,7 @@ void Game::nextLevel()
 	int numZombies = 3 + (level / 5);
 
 	// Randomizing words and updating difficulty every 10 levels 
-	int cycleLevel = (level % 30) + 1; // Ensures levels 1–30 -> 1–30
+	int cycleLevel = (level % 30) + 1; // Ensures difficulty cycles every 30 rounds
 
 	if (cycleLevel <= 10) {
 		difficulty = WordListManager::EASY;
@@ -2116,6 +2026,7 @@ void Game::nextLevel()
 		map->setDifficulty(MapLevel::HARD);
 	}
 
+	// Get random words for the next level, based on the current difficulty and number of zombies spawning
 	words = wordManager.getRandomWords(difficulty, numZombies);
 
 	// Spawn zombies at random off-screen positions but not too close to player
@@ -2138,11 +2049,11 @@ void Game::nextLevel()
 				break;
 			case 1: // Left
 				x = -spawnBuffer;
-				y = rand() % 650; // Keep it within valid height
+				y = rand() % 650; // Ensures zombies spawn above the barrier orb
 				break;
 			case 2: // Right
 				x = 1600 + spawnBuffer; // Force outside screen bounds
-				y = rand() % 650; // Keep within valid height
+				y = rand() % 650; // Ensures zombies spawn above the barrier orb
 				break;
 			}
 
@@ -2199,10 +2110,6 @@ void Game::nextLevel()
 	// Intilalize zombies remaining
 	zombieCount = zombies.size();
 
-	// Reset the typing target
-	currentPromptIndex = 0;
-	//targetText = easyWords[currentPromptIndex];
-
 	// Clear user input
 	userInput.clear();
 
@@ -2221,7 +2128,7 @@ void Game::nextLevel()
 		speed = 0.5f;
 	}
 
-	// Increment level
+	// Increment level (round)
 	level++;
 
 	// Reset bonus total zombies
@@ -2241,7 +2148,7 @@ void Game::bonusStage()
 	currentZombieIndex = 0;
 	allZombiesTransformed = false;
 
-	// Clear active lasers
+	// Clear active basic lasers
 	activeLasers.clear();
 
 	// Clear laser power-up if still active
@@ -2264,10 +2171,10 @@ void Game::bonusStage()
 
 	int spacing = 120; // Space between zombies
 
-	// Generate random y-coordinate for left to right zombie row
-	int yLeft = 150 + (rand() % 360); // 150–559
+	// Generate random y-coordinate for left-to-right zombie row
+	int yLeft = 150 + (rand() % 360); // 150-559
 
-	// Left to Right group
+	// Left-to-Right group
 	for (int i = 0; i < numZombiesLeft; ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
@@ -2282,10 +2189,10 @@ void Game::bonusStage()
 		totalBonusZombies++;
 	}
 
-	// Generate random y-coordinate for right to left zombie row
+	// Generate random y-coordinate for right-to-left zombie row
 	int yRight = 150 + (rand() % 360); // 150-559
 
-	// Right to Left group
+	// Right-to-Left group
 	for (int i = 0; i < numZombiesRight; ++i)
 	{
 		Entity* newZombie = &manager.addEntity();
@@ -2307,12 +2214,8 @@ void Game::bonusStage()
 	zombieCount += leftToRight.size();
 	zombieCount += rightToLeft.size();
 
-	// Reset the typing target
-	currentPromptIndex = 0;
-	targetText = bonusLeft[currentPromptIndex];
-
-	// Reset hand sprites
-	//resetHandSprites();
+	// Set starting target
+	targetText = bonusLeft[currentZombieIndex];
 
 	// Reset letters typed incorrectly
 	typedWrong.clear();
@@ -2367,7 +2270,7 @@ void Game::resetGame()
 	}
 	tombstones.clear(); // Clear the tombstone vector
 
-	// Clear active lasers
+	// Clear active basic lasers
 	activeLasers.clear();
 
 	// Clear laser power-up if still active
@@ -2410,11 +2313,11 @@ void Game::resetGame()
 				break;
 			case 1: // Left
 				x = -spawnBuffer;
-				y = rand() % 650; // Keep it within valid height
+				y = rand() % 650; // Ensures zombies spawn above the barrier orb
 				break;
 			case 2: // Right
 				x = 1600 + spawnBuffer; // Force outside screen bounds
-				y = rand() % 650; // Keep within valid height
+				y = rand() % 650; // Ensures zombies spawn above the barrier orb
 				break;
 			}
 
@@ -2455,12 +2358,9 @@ void Game::resetGame()
 	// Reset HP / barrier damage
 	barrierHP = maxHP;
 	updateBarrierDamage(barrierHP);
-	//barrierDestroyed = false;
-	//gameOverDelayTimer = 0;
 
 	// Reset the typing target
-	currentPromptIndex = 0;
-	targetText = words[currentPromptIndex];
+	targetText = words[currentZombieIndex];
 
 	// Clear user input from last game
 	userInput.clear();
@@ -2495,164 +2395,134 @@ void Game::resetGame()
 }
 
 // Key-to-finger sprite mapping
-void Game::updateHandSprites() 
+void Game::updateHandSprites()
 {
 	// Get next letter to be typed and update sprite fingers accordingly
 	for (size_t i = 0; i < targetText.size(); i++) {
-		//std::cout << "Checking key: " << targetText[i] << std::endl;
 		if (i <= userInput.size()) {
 			// Left pinky
 			if (targetText[i] == 'q') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Pinky.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 'a') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Pinky.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 'z') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Pinky.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			// Left ring
 			else if (targetText[i] == 'w') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Ring.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 's') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Ring.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 'x') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Ring.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			// Left middle
 			else if (targetText[i] == 'e') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Middle.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 'd') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Middle.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 'c') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Middle.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			// Left index
 			else if (targetText[i] == 'r') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 'f') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 'v') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 't') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 'g') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 			else if (targetText[i] == 'b') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Index.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 			}
 
 			// Right index
 			else if (targetText[i] == 'y') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			else if (targetText[i] == 'h') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			else if (targetText[i] == 'n') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			else if (targetText[i] == 'u') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			else if (targetText[i] == 'j') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			else if (targetText[i] == 'm') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Index.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			// Right middle
 			else if (targetText[i] == 'i') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Middle.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			else if (targetText[i] == 'k') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Middle.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			else if (targetText[i] == ',') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Middle.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			// Right ring
 			else if (targetText[i] == 'o') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Ring.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			else if (targetText[i] == 'l') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Ring.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			else if (targetText[i] == '.') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Ring.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			// Right pinky
 			else if (targetText[i] == 'p') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Pinky.png");
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 			}
 			// Left thumb / Right thumb
 			else if (targetText[i] == ' ') {
-				//std::cout << "Checking key: " << targetText[i] << std::endl;
 				leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Thumb.png");
 				rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Thumb.png");
 			}
@@ -2660,13 +2530,15 @@ void Game::updateHandSprites()
 	}
 }
 
+// To reset hand sprites back to their default state (no fingers highlighted)
 void Game::resetHandSprites() {
 	leftHand.getComponent<SpriteComponent>().setTex("assets/Left_Hand.png");
 	rightHand.getComponent<SpriteComponent>().setTex("assets/Right_Hand.png");
 }
 
+// To update the barrier orb sprite based on how much damage has been taken
 void Game::updateBarrierDamage(int barrierHP) {
-	// Convert HP (0–100) to damage level (0–10)
+	// Convert HP (0-100) to damage level (0-10)
 	int damageLevel = 10 - (barrierHP / 10);
 
 	// Clamp damage level at 10
@@ -2679,6 +2551,7 @@ void Game::updateBarrierDamage(int barrierHP) {
 	barrier.getComponent<SpriteComponent>().setTex(texturePath.c_str());
 }
 
+// To check the current combo and update the on screen UI accordingly, and to activate the laser power-up when combo is at max
 void Game::checkCombo(const std::string& input, const std::string& target) {
 	if (brokenCombo || input != target) {
 		comboLevel = 0;
@@ -2691,33 +2564,32 @@ void Game::checkCombo(const std::string& input, const std::string& target) {
 		}
 	}
 
-	// Optional: update the combo status string for the UI
 	switch (comboLevel) {
-		case 0: comboStatus = "";
-			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_0.png");
-			break;
-		case 1: comboStatus = "x1";
-			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_1.png");
-			break;
-		case 2: comboStatus = "x2";
-			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_2.png");
-			break;
-		case 3: comboStatus = "x3";
-			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_3.png");
-			break;
-		case 4: comboStatus = "x4";
-			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_4.png");
-			break;
-		case 5: comboStatus = "x5";
-			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_5.png");
-			break;
-		case 6: comboStatus = "MAX!";
-			comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_6.png");
-			break;
+	case 0: comboStatus = "";
+		comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_0.png");
+		break;
+	case 1: comboStatus = "x1";
+		comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_1.png");
+		break;
+	case 2: comboStatus = "x2";
+		comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_2.png");
+		break;
+	case 3: comboStatus = "x3";
+		comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_3.png");
+		break;
+	case 4: comboStatus = "x4";
+		comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_4.png");
+		break;
+	case 5: comboStatus = "x5";
+		comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_5.png");
+		break;
+	case 6: comboStatus = "MAX!";
+		comboMeter.getComponent<SpriteComponent>().setTex("assets/Combo_Meter_6.png");
+		break;
 	}
 }
 
-// Fires laser powerup
+// Fires laser power-up
 void Game::fireLaser() {
 	if (laserActive) return; // to prevent multiple lasers...
 

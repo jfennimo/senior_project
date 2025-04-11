@@ -12,7 +12,7 @@ WordListManager::WordListManager() {
 	loadFromFile("wordlists/bonusRight.txt", BONUSRIGHT);
 }
 
-// Load words from file and shuffle them
+// Load words from text file and shuffle them
 void WordListManager::loadFromFile(const std::string& filename, Difficulty difficulty) {
 	std::ifstream file(filename);
 	if (!file.is_open()) {

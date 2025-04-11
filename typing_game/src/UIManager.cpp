@@ -11,7 +11,7 @@ void UIManager::drawText(const std::string& text, int x, int y, SDL_Color color,
 	SDL_Surface* surface = TTF_RenderText_Solid(font, text.c_str(), color);
 	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
- 	SDL_Rect destRect = { x, y, surface->w, surface->h };
+	SDL_Rect destRect = { x, y, surface->w, surface->h };
 	SDL_RenderCopy(renderer, texture, nullptr, &destRect);
 
 	SDL_FreeSurface(surface);
@@ -159,7 +159,6 @@ void UIManager::drawStatusBar(int x, int y, int width, int height, const std::st
 
 	// Render status text centered in the bar
 	if (statusFont && showStatusText) {
-		//SDL_Surface* textSurface = TTF_RenderText_Solid(statusFont, statusText.c_str(), textColor);
 		SDL_Surface* textSurface = TTF_RenderText_Blended(statusFont, statusText.c_str(), textColor);
 
 		if (textSurface) {
@@ -168,7 +167,7 @@ void UIManager::drawStatusBar(int x, int y, int width, int height, const std::st
 				int textWidth = textSurface->w;
 				int textHeight = textSurface->h;
 
-				int verticalOffset = 4; // Adjust this to taste
+				int verticalOffset = 4;
 
 				SDL_Rect textRect = {
 					x + (width / 2) - (textWidth / 2),
@@ -247,11 +246,9 @@ void UIManager::drawThreatLvl(int x, int y, int width, int height, int threatLvl
 
 void UIManager::drawComboAlert(int x, int y, int width, int height, int comboLevel, const std::string& labelText, const std::string& statusText, SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* statusFont, SDL_Color textColor)
 {
-	//bool showComboStatus = true;
-
 	if (statusText == "MAX!") {
 		bgColor = { 102, 255, 105, 255 }; // green
-	} 
+	}
 	else if (statusText == "X") {
 		bgColor = { 255, 102, 102, 255 }; // red
 	}
@@ -287,9 +284,6 @@ void UIManager::drawComboAlert(int x, int y, int width, int height, int comboLev
 				SDL_RenderFillRect(renderer, &bgRect);
 
 				// === Render the statusText centered inside the box ===
-				//std::string lvlStr = std::to_string(threatLvl);
-				//SDL_Surface* lvlSurface = TTF_RenderText_Blended(digitFont, lvlStr.c_str(), textColor);
-
 				SDL_Surface* statusSurface = TTF_RenderText_Blended(statusFont, statusText.c_str(), textColor);
 				if (statusSurface) {
 					SDL_Texture* statusTexture = SDL_CreateTextureFromSurface(renderer, statusSurface);

@@ -6,11 +6,11 @@
 
 class WordListManager {
 public:
-	enum Difficulty {EASY, MEDIUM, HARD, BONUSLEFT, BONUSRIGHT};
+	enum Difficulty { EASY, MEDIUM, HARD, BONUSLEFT, BONUSRIGHT };
 
 	WordListManager();
 
-	// Get words from file based on difficulty
+	// Get words from text file based on difficulty
 	std::vector<std::string> getRandomWords(Difficulty difficulty, size_t numWords) const;
 
 private:

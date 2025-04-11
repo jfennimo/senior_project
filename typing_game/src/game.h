@@ -1,5 +1,4 @@
-#ifndef Game_h
-#define Game_h
+#pragma once
 #include "SDL.h"
 #include "SDL_image.h"
 #include "UIManager.h"
@@ -16,7 +15,7 @@ public:
 	~Game();
 
 	void init(const char* title, int width, int height, bool fullscreen);
-	
+
 	void handleEvents();
 	void update();
 	void render();
@@ -36,16 +35,11 @@ public:
 
 	void fireLaser();
 
-	//void transformZombie(Entity* zombie);
-
-
-	//void updateBarrierSprite();
-
 	bool running() {
 		return isRunning;
 	}
 
-	static SDL_Renderer *renderer;
+	static SDL_Renderer* renderer;
 	static SDL_Event event;
 
 	// Fonts
@@ -71,8 +65,9 @@ private:
 
 	SDL_Window* window;
 	UIManager* uiManager;
-	std::string userInput = ""; // for storing typed text
-	bool isZombieTransformed = false; // to prevent multiple transformations!
+
+	// For storing typed text
+	std::string userInput = "";
 
 	// Screen size
 	int screenWidth;
@@ -85,6 +80,7 @@ private:
 	int playerX;
 	int barrierX;
 
+	// Middle laser cannon placement
 	int laserX;
 
 	// For barrier UI / logic
@@ -109,7 +105,7 @@ private:
 
 	// Basic laser
 	struct LaserStrike {
-		int startX, startY; // Laser source (e.g. from the cannon)
+		int startX, startY; // Laser source (bottom of middle cannon)
 		int endX, endY;     // Target position (zombie's center)
 		int duration;       // How long the beam lasts (in frames)
 	};
@@ -117,12 +113,12 @@ private:
 	std::vector<LaserStrike> activeLasers;
 
 	// Laser power up
-	//Entity* laser = nullptr;
 	bool laserActive = false;
 	float laserSpeed = 2.0f; // may need to adjust
 
-	// Zombie speed!!
-	float speed = 0.5f; // How fast the zombies move towards the player
+	// Zombie variables
+	float speed = 0.5f; // How fast the zombies move toward the player
+	bool isZombieTransformed = false; // to prevent multiple transformations!
 
 	// Results screen variables
 	int level = 1;
@@ -131,7 +127,7 @@ private:
 
 	// Barrier variables
 	std::string hpResults;
-	int resultsHP;
+	//int resultsHP;
 	int barrierHP;
 	int bonusHP;
 	const int maxHP = 100;
@@ -143,13 +139,13 @@ private:
 	int shakeOffsetX = 0;
 	int shakeOffsetY = 0;
 
-	// For game pause before screen transition to results screen
+	// For game pause before screen transition to level results
 	bool nextLevelDelayStarted = false;
 	int nextLevelDelayTimer = 0;
 
 	// For game pause before screen transition to game over
 	bool barrierDestroyed = false;
-	int gameOverDelayTimer = 0; // in frames — e.g. 120 for 2 seconds at 60 FPS
+	int gameOverDelayTimer = 0; // in frames
 
 	// Letters typed incorrectly
 	std::vector<char> typedWrong;
@@ -176,10 +172,8 @@ private:
 	int bonusLevel = 0;
 	bool inBonusStage = false;
 	bool leftGroupDefeated = false;
-	float bonusSpeed = 3.0f;
+	float bonusSpeed = 3.0f; // bonus zombie speed!
 	int bonusZombiesDefeated;
 	int totalBonusZombies;
 	std::string totalBonusZombiesDefeated;
 };
-
-#endif
