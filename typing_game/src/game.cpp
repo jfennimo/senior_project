@@ -207,12 +207,34 @@ void Game::handleEvents()
 				// Need to update final correct letters / total correct letters... (?!)
 				std::cout << "Returning to main menu!" << std::endl;
 			}
+			else if (gameState == GameState::PAUSE) {
+				if (pauseMenuSelection == 0) {
+					gameState = GameState::ARCADE_MODE;
+					std::cout << "Resuming gameplay!" << std::endl;
+				}
+				else if (pauseMenuSelection == 1) {
+					gameState = GameState::MAIN_MENU;
+					std::cout << "Navigating back to main menu!" << std::endl;
+				}
+			}
+			break;
+
+		case SDLK_UP:
+			if (gameState == GameState::PAUSE) {
+				pauseMenuSelection = std::max(0, pauseMenuSelection - 1);
+			}
+			break;
+
+		case SDLK_DOWN:
+			if (gameState == GameState::PAUSE) {
+				pauseMenuSelection = std::max(1, pauseMenuSelection + 1);
+			}
 			break;
 
 		case SDLK_LEFT:
 			if (gameState == GameState::ARCADE_TITLE) {
 				menuSelection = std::max(0, menuSelection - 1);  // Prevent going below 0
-			}
+			} 
 			break;
 
 		case SDLK_RIGHT:
@@ -231,6 +253,10 @@ void Game::handleEvents()
 			}
 			else if (gameState == GameState::ARCADE_HTP) {
 				gameState = GameState::ARCADE_TITLE;
+			}
+			else if (gameState == GameState::ARCADE_MODE) {
+				gameState = GameState::PAUSE;
+				std::cout << "Game paused!" << std::endl;
 			}
 			break;
 
@@ -1151,6 +1177,12 @@ void Game::update() {
 
 		break;
 
+	case GameState::PAUSE:
+		// Pause screen logic...
+
+		// No logic because game is paused!
+		break;
+
 	default:
 		break;
 	}
@@ -1939,6 +1971,20 @@ void Game::render()
 		SDL_RenderPresent(renderer);
 		break;
 
+	case GameState::PAUSE:
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180); // Semi-transparent overlay
+		SDL_RenderFillRect(renderer, nullptr);          // Fill entire screen
+
+		SDL_Color resumeColor = pauseMenuSelection == 0 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+		SDL_Color quitColor = pauseMenuSelection == 1 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+
+		uiManager->drawCenteredText("Paused", 300, { 255, 255, 255, 255 }, titleFont, screenWidth);
+		uiManager->drawCenteredText("Resume", 400, resumeColor, menuFont, screenWidth);
+		uiManager->drawCenteredText("Quit to Main Menu", 500, quitColor, menuFont, screenWidth);
+
+		SDL_RenderPresent(renderer);
+		break;
+
 	default:
 		break;
 	}
@@ -2659,7 +2705,7 @@ void Game::fireLaser() {
 	if (laserActive) return; // to prevent multiple lasers...
 
 	laserPowerup = &manager.addEntity();
-	laserPowerup->addComponent<TransformComponent>(60, 32, 1472, 64, 1);
+	laserPowerup->addComponent<TransformComponent>(65, 32, 1472, 64, 1);
 	laserPowerup->addComponent<SpriteComponent>("assets/Laser-Sheet.png", true);
 	laserPowerup->addComponent<ColliderComponent>("laser");
 

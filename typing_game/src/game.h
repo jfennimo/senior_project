@@ -64,6 +64,7 @@ private:
 
 	// MAIN MENU VARIABLES
 	int menuSelection = 0;  // 0 = "How To Play", 1 = "Start"
+	int pauseMenuSelection = 0; // 0 = Resume, 1 = Quit
 
 
 	//Entity* player = nullptr;
