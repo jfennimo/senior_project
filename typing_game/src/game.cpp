@@ -172,16 +172,22 @@ void Game::handleEvents()
 				std::cout << "Navigating to main menu!" << std::endl;
 			}
 			else if (gameState == GameState::MAIN_MENU) {
-				gameState = GameState::ARCADE_TITLE; // Transition to arcade mode
-				resetArcadeMode(); // Reset arcade mode as state is changing to arcade title
-				std::cout << "Navigating to arcade title!" << std::endl;
+				if (mainMenuSelection == 0) {
+					gameState = GameState::ARCADE_TITLE; // Transition to arcade mode
+					resetArcadeMode(); // Reset arcade mode as state is changing to arcade title
+					std::cout << "Navigating to arcade title!" << std::endl;
+				}
+				else if (mainMenuSelection == 1) {
+					gameState = GameState::RECORDS;
+					std::cout << "Navigating to records screen!" << std::endl;
+				}
 			}
 			else if (gameState == GameState::ARCADE_TITLE) {
-				if (menuSelection == 0) {
+				if (arcadeModeSelection == 0) {
 					gameState = GameState::ARCADE_HTP;
 					std::cout << "Navigating to arcade how to play!" << std::endl;
 				}
-				else if (menuSelection == 1) {
+				else if (arcadeModeSelection == 1) {
 					gameState = GameState::ARCADE_MODE;
 					std::cout << "Navigating to arcade mode!" << std::endl;
 				}
@@ -232,14 +238,20 @@ void Game::handleEvents()
 			break;
 
 		case SDLK_LEFT:
-			if (gameState == GameState::ARCADE_TITLE) {
-				menuSelection = std::max(0, menuSelection - 1);  // Prevent going below 0
+			if (gameState == GameState::MAIN_MENU) {
+				mainMenuSelection = std::max(0, mainMenuSelection - 1);  // Prevent going below 0
+			}
+			else if (gameState == GameState::ARCADE_TITLE) {
+				arcadeModeSelection = std::max(0, arcadeModeSelection - 1);  // Prevent going below 0
 			} 
 			break;
 
 		case SDLK_RIGHT:
-			if (gameState == GameState::ARCADE_TITLE) {
-				menuSelection = std::min(1, menuSelection + 1);  // Prevent going above 1
+			if (gameState == GameState::MAIN_MENU) {
+				mainMenuSelection = std::min(1, mainMenuSelection + 1);  // Prevent going above 1
+			}
+			else if (gameState == GameState::ARCADE_TITLE) {
+				arcadeModeSelection = std::min(1, arcadeModeSelection + 1);  // Prevent going above 1
 			}
 			break;
 
@@ -257,6 +269,9 @@ void Game::handleEvents()
 			else if (gameState == GameState::ARCADE_MODE) {
 				gameState = GameState::PAUSE;
 				std::cout << "Game paused!" << std::endl;
+			}
+			else if (gameState == GameState::RECORDS) {
+				gameState = GameState::MAIN_MENU;
 			}
 			break;
 
@@ -305,12 +320,12 @@ void Game::handleEvents()
 
 			// Increment total number of typed letters
 			levelTotalLetters++;
-			finalTotalLetters++;
+			sessionTotalLetters++;
 
 			// Check if typed letter matches target letter
 			if (userInput.size() <= targetText.size() && event.text.text[0] == targetText[userInput.size() - 1]) {
 				levelCorrectLetters++; // Increment correct letters
-				finalCorrectLetters++; // Increment total correct letters for game over screen
+				sessionCorrectLetters++; // Increment total correct letters for game over screen
 
 				// Resetting hand sprites
 				resetHandSprites();
@@ -333,12 +348,12 @@ void Game::handleEvents()
 
 			// Increment total number of typed letters
 			levelTotalLetters++;
-			finalTotalLetters++;
+			sessionTotalLetters++;
 
 			// Check if typed letter matches target letter
 			if (userInput.size() <= targetText.size() && event.text.text[0] == targetText[userInput.size() - 1]) {
 				levelCorrectLetters++; // Increment correct letters
-				finalCorrectLetters++; // Increment total correct letters for game over screen
+				sessionCorrectLetters++; // Increment total correct letters for game over screen
 
 				// Resetting hand sprites
 				resetHandSprites();
@@ -1177,6 +1192,11 @@ void Game::update() {
 
 		break;
 
+	case GameState::RECORDS:
+		// Records screen logic
+
+		break;
+
 	case GameState::PAUSE:
 		// Pause screen logic...
 
@@ -1224,9 +1244,11 @@ void Game::render()
 
 		uiManager->drawText("Main Menu!", 660, 60, { 255, 255, 255, 255 }, titleFont);
 
-		if (showBlinkText) {
-			uiManager->drawText("Arcade Mode", 640, 450, { 255, 255, 255, 255 }, titleFont);
-		}
+		SDL_Color arcadeColor = mainMenuSelection == 0 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+		SDL_Color recordsColor = mainMenuSelection == 1 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+
+		uiManager->drawText("Arcade", 500, 450, arcadeColor, titleFont);
+		uiManager->drawText("Records", 900, 450, recordsColor, titleFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1243,15 +1265,11 @@ void Game::render()
 
 		uiManager->drawText("Arcade Mode", 660, 60, { 255, 255, 255, 255 }, titleFont);
 
-		SDL_Color howToColor = menuSelection == 0 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
-		SDL_Color startColor = menuSelection == 1 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+		SDL_Color howToColor = arcadeModeSelection == 0 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+		SDL_Color startColor = arcadeModeSelection == 1 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
 
 		uiManager->drawText("How To Play", 500, 450, howToColor, titleFont);
 		uiManager->drawText("Start", 900, 450, startColor, titleFont);
-
-		//uiManager->drawText("How To Play", 500, 450, { 255, 255, 255, 255 }, titleFont);
-		//uiManager->drawText("Start", 900, 450, { 255, 255, 255, 255 }, titleFont);
-
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1948,9 +1966,18 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 255, 51, 51, 255);
 		SDL_RenderClear(renderer);
 
+		// Update lifetime stats of letters typed correctly
+		if (!gameOverStatsUpdated) {
+			// Update lifetime stats only once
+			finalCorrectLetters += sessionCorrectLetters;
+			finalTotalLetters += sessionTotalLetters;
+
+			gameOverStatsUpdated = true;
+		}
+
 		// Calculate accuracy
-		if (finalTotalLetters > 0) {
-			levelAccuracy = (static_cast<double>(finalCorrectLetters) / finalTotalLetters) * 100;
+		if (sessionTotalLetters > 0) {
+			levelAccuracy = (static_cast<double>(sessionCorrectLetters) / sessionTotalLetters) * 100;
 		}
 
 		levelAccuracyStream.str(""); // Clear previous accuracy
@@ -1967,6 +1994,35 @@ void Game::render()
 		if (showBlinkText) {
 			uiManager->drawText("Press Enter to Return to the Title Screen...", 400, 750, { 255, 255, 255, 255 }, menuFont);
 		}
+
+		SDL_RenderPresent(renderer);
+		break;
+
+	case GameState::RECORDS:
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		SDL_RenderClear(renderer);
+
+		uiManager->drawText("Records", 700, 100, { 255, 255, 255, 255 }, titleFont);
+
+		recordsAccuracy = finalTotalLetters > 0
+			? static_cast<float>(finalCorrectLetters) / finalTotalLetters * 100.0f
+			: 0.0f;
+
+		// Accuracy
+		accuracyText = "Accuracy: " + std::to_string(static_cast<int>(recordsAccuracy)) + "%";
+		uiManager->drawText(accuracyText, 600, 200, { 255, 255, 255, 255 }, menuFont);
+
+		// Typed wrong
+		uiManager->drawText("Incorrect Letters:", 600, 260, { 255, 255, 255, 255 }, menuFont);
+
+		y = 300;
+		for (const auto& [ch, count] : lifetimeWrongLetters) {
+			std::string entry = std::string(1, ch) + ": " + std::to_string(count);
+			uiManager->drawText(entry, 620, y, { 255, 100, 100, 255 }, menuFont);
+			y += 30;
+		}
+
+		uiManager->drawText("Press ESC to return", 580, y + 50, { 255, 255, 255, 255 }, menuFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -2148,6 +2204,11 @@ void Game::nextLevel()
 
 	// Clear user input
 	userInput.clear();
+
+	// Update lifetime stats for letters typed wrong before clearing
+	for (char ch : typedWrong) {
+		lifetimeWrongLetters[ch]++;
+	}
 
 	// Reset letters typed incorrectly
 	typedWrong.clear();
@@ -2449,8 +2510,8 @@ void Game::resetArcadeMode()
 		laserActive = false;
 	}
 
-
-
+	// For stats
+	gameOverStatsUpdated = false;
 
 	// Randomizing words
 	words = wordManager.getRandomWords(WordListManager::EASY, numZombies);
@@ -2482,8 +2543,8 @@ void Game::resetArcadeMode()
 	// Reset accuracy
 	levelCorrectLetters = 0;
 	levelTotalLetters = 0;
-	finalCorrectLetters = 0;
-	finalTotalLetters = 0;
+	sessionCorrectLetters= 0;
+	sessionTotalLetters = 0;
 
 	// Reset zambie speed!!
 	speed = 0.5f;

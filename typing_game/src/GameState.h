@@ -14,5 +14,6 @@ enum class GameState {
     LESSON_MODE,
     RIP_MODE,
     GAME_OVER,
+    RECORDS,
     PAUSE
 };

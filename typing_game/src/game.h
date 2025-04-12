@@ -60,14 +60,11 @@ private:
 	Uint32 currentTime;
 
 	SDL_Window* window;
-	//UIManager* uiManager;
 
 	// MAIN MENU VARIABLES
-	int menuSelection = 0;  // 0 = "How To Play", 1 = "Start"
+	int mainMenuSelection = 0; // 0 = Arcade, 1 = Records
+	int arcadeModeSelection = 0;  // 0 = "How To Play", 1 = "Start"
 	int pauseMenuSelection = 0; // 0 = Resume, 1 = Quit
-
-
-	//Entity* player = nullptr;
 
 
 
@@ -174,8 +171,8 @@ private:
 	bool resultsCalculated = false;
 	int levelCorrectLetters = 0;
 	int levelTotalLetters = 0;
-	int finalCorrectLetters = 0;
-	int finalTotalLetters = 0;
+	int sessionCorrectLetters = 0;
+	int sessionTotalLetters = 0;
 
 	// Bonus stage
 	int bonusLevel = 0;
@@ -185,4 +182,15 @@ private:
 	int bonusZombiesDefeated;
 	int totalBonusZombies;
 	std::string totalBonusZombiesDefeated;
+
+	// Records screen variables
+	bool gameOverStatsUpdated = false;
+
+	// Accuracy
+	int y;
+	float recordsAccuracy = 0.0f;
+	std::string accuracyText;
+	int finalCorrectLetters = 0; // lifetime total
+	int finalTotalLetters = 0;
+	std::unordered_map<char, int> lifetimeWrongLetters; // Track how often each wrong letter is typed
 };
