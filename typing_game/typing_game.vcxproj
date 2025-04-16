@@ -142,6 +142,7 @@
     <ClCompile Include="src\Game.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Map.cpp" />
+    <ClCompile Include="src\SaveSystem.cpp" />
     <ClCompile Include="src\TextureManager.cpp" />
     <ClCompile Include="src\UIManager.cpp" />
     <ClCompile Include="src\Vector2D.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="src\Game.h" />
     <ClInclude Include="src\GameState.h" />
     <ClInclude Include="src\Map.h" />
+    <ClInclude Include="src\SaveSystem.h" />
     <ClInclude Include="src\TextureManager.h" />
     <ClInclude Include="src\UIManager.h" />
     <ClInclude Include="src\Vector2D.h" />

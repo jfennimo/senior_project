@@ -34,18 +34,14 @@ Uint32 currentTime;
 
 // Arcade Mode Entities
 auto& player(manager.addEntity());
-auto& barrier(manager.addEntity());
 auto& leftHand(manager.addEntity());
 auto& rightHand(manager.addEntity());
-auto& barrier1(manager.addEntity());
-auto& barrier2(manager.addEntity());
-auto& barrier3(manager.addEntity());
-//auto& crosshair(manager.addEntity());
 auto& laserMiddle(manager.addEntity());
 auto& laserLeft(manager.addEntity());
 auto& laserRight(manager.addEntity());
 auto& comboMeter(manager.addEntity());
 
+Entity* barrier = nullptr;
 Entity* crosshair = nullptr;
 Entity* laserPowerup = nullptr;
 Entity* exclamation = nullptr;
@@ -60,6 +56,7 @@ TTF_Font* controlPanelFont;
 TTF_Font* statusFont;
 TTF_Font* threatLvlFont;
 TTF_Font* comboStatusFont;
+TTF_Font* wpmFont;
 
 // Wordlists
 std::vector<std::string> words = wordManager.getRandomWords(WordListManager::EASY, 3);
@@ -128,6 +125,9 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 		isRunning = false;
 	}
 
+	// Load current save
+	loadProgress();
+
 	gameState = GameState::TITLE_SCREEN; // Initial state
 
 	uiManager = new UIManager(renderer);
@@ -151,6 +151,7 @@ void Game::init(const char* title, int width, int height, bool fullscreen)
 	statusFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 40);
 	threatLvlFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 50);
 	comboStatusFont = TTF_OpenFont("assets/Technology-BoldItalic.TTF", 30);
+	wpmFont = TTF_OpenFont("assets/PressStart2P.ttf", 25);
 }
 
 
@@ -174,12 +175,17 @@ void Game::handleEvents()
 			else if (gameState == GameState::MAIN_MENU) {
 				if (mainMenuSelection == 0) {
 					gameState = GameState::ARCADE_TITLE; // Transition to arcade mode
-					resetArcadeMode(); // Reset arcade mode as state is changing to arcade title
+					resetArcadeMode(); // Reset/initialize arcade mode as state is changing to arcade title
 					std::cout << "Navigating to arcade title!" << std::endl;
 				}
 				else if (mainMenuSelection == 1) {
 					gameState = GameState::RECORDS;
 					std::cout << "Navigating to records screen!" << std::endl;
+				}
+				else if (mainMenuSelection == 2) {
+					gameState = GameState::WPM_TEST;
+					resetWPMTest();
+					std::cout << "Navigating to WPM test!" << std::endl;
 				}
 			}
 			else if (gameState == GameState::ARCADE_TITLE) {
@@ -208,9 +214,8 @@ void Game::handleEvents()
 				std::cout << "Starting next round!" << std::endl;
 			}
 			else if (gameState == GameState::GAME_OVER) {
+				saveProgress(); // Save progress after arcade game over
 				gameState = GameState::MAIN_MENU;
-				//resetGame();
-				// Need to update final correct letters / total correct letters... (?!)
 				std::cout << "Returning to main menu!" << std::endl;
 			}
 			else if (gameState == GameState::PAUSE) {
@@ -233,7 +238,7 @@ void Game::handleEvents()
 
 		case SDLK_DOWN:
 			if (gameState == GameState::PAUSE) {
-				pauseMenuSelection = std::max(1, pauseMenuSelection + 1);
+				pauseMenuSelection = std::min(1, pauseMenuSelection + 1);
 			}
 			break;
 
@@ -248,7 +253,7 @@ void Game::handleEvents()
 
 		case SDLK_RIGHT:
 			if (gameState == GameState::MAIN_MENU) {
-				mainMenuSelection = std::min(1, mainMenuSelection + 1);  // Prevent going above 1
+				mainMenuSelection = std::min(2, mainMenuSelection + 1); // 0, 1, or 2
 			}
 			else if (gameState == GameState::ARCADE_TITLE) {
 				arcadeModeSelection = std::min(1, arcadeModeSelection + 1);  // Prevent going above 1
@@ -269,6 +274,12 @@ void Game::handleEvents()
 			else if (gameState == GameState::ARCADE_MODE) {
 				gameState = GameState::PAUSE;
 				std::cout << "Game paused!" << std::endl;
+			}
+			else if (gameState == GameState::WPM_TEST) {
+				gameState = GameState::MAIN_MENU;
+			}
+			else if (gameState == GameState::WPM_RESULTS) {
+				gameState = GameState::MAIN_MENU;
 			}
 			else if (gameState == GameState::RECORDS) {
 				gameState = GameState::MAIN_MENU;
@@ -292,6 +303,9 @@ void Game::handleEvents()
 					userInput.pop_back(); // Remove last character
 				}
 			}
+			else if (gameState == GameState::WPM_TEST && !wpmUserInput.empty()) {
+				wpmUserInput.pop_back();
+			}
 			break;
 		}
 		break;
@@ -311,11 +325,13 @@ void Game::handleEvents()
 			userInput += event.text.text; // Append typed text
 			processedInput.assign(userInput.size(), false);
 
-			// Check for mistakes immediately, for combo system
 			if (userInput.back() != targetText[userInput.size() - 1]) {
 				brokenCombo = true;
 				comboStatus = "X";
 				comboLevel = 0;
+
+				char wrongChar = targetText[userInput.size() - 1];
+				typedWrong[wrongChar]++; // Count every wrong keypress
 			}
 
 			// Increment total number of typed letters
@@ -346,6 +362,11 @@ void Game::handleEvents()
 			userInput += event.text.text; // Append typed text
 			processedInput.assign(userInput.size(), false);
 
+			if (userInput.back() != targetText[userInput.size() - 1]) {
+				char wrongChar = targetText[userInput.size() - 1];
+				typedWrong[wrongChar]++; // Count every wrong keypress
+			}
+
 			// Increment total number of typed letters
 			levelTotalLetters++;
 			sessionTotalLetters++;
@@ -357,6 +378,47 @@ void Game::handleEvents()
 
 				// Resetting hand sprites
 				resetHandSprites();
+			}
+		}
+
+		if (gameState == GameState::WPM_TEST) {
+			char typedChar = event.text.text[0];
+
+			// Start timer on first keypress
+			if (!wpmTestStarted) {
+				wpmTestStarted = true;
+				lastSecondTick = SDL_GetTicks();
+			}
+
+			// Prevent typing beyond line length
+			if (wpmUserInput.size() >= wpmCurrentLine.size()) {
+				return; // Ignore extra input
+			}
+
+			// --- Handle spaces separately ---
+			if (typedChar == ' ') {
+				// Only allow if previous char wasn’t a space and we’re not at the end
+				if (!wpmUserInput.empty() &&
+					wpmUserInput.back() != ' ' &&
+					wpmUserInput.size() < wpmCurrentLine.size()) {
+
+					wpmUserInput += ' ';
+					wpmTotalTypedChars++;
+
+					if (wpmCurrentLine[wpmUserInput.size() - 1] == ' ') {
+						wpmCorrectChars++;
+					}
+				}
+
+				return; // Exit after space is handled
+			}
+
+			// --- All other characters ---
+			wpmUserInput += typedChar;
+			wpmTotalTypedChars++;
+
+			if (typedChar == wpmCurrentLine[wpmUserInput.size() - 1]) {
+				wpmCorrectChars++;
 			}
 		}
 		break;
@@ -555,7 +617,7 @@ void Game::update() {
 
 				// Check for wall collisions
 				if (Collision::AABB(zombie->getComponent<ColliderComponent>().collider,
-					barrier.getComponent<ColliderComponent>().collider)) {
+					barrier->getComponent<ColliderComponent>().collider)) {
 					zombieTransform.position.x -= dx * speed;
 					zombieTransform.position.y -= dy * speed;
 
@@ -604,14 +666,6 @@ void Game::update() {
 
 			// Check if zombie's prompt matches user input
 			if (i == currentZombieIndex && userInput == words[i] && !transformStatus.getTransformed()) {
-				for (size_t j = 0; j < userInput.size(); ++j) {
-					if (j >= targetText.size() || userInput[j] != targetText[j]) {
-						// Append to typedWrong only if not already processed
-						if (std::find(typedWrong.begin(), typedWrong.end(), userInput[j]) == typedWrong.end()) {
-							typedWrong.push_back(targetText[j]);
-						}
-					}
-				}
 
 				// Check if user types in prompt correctly without errors, to update combo
 				checkCombo(userInput, targetText);
@@ -907,14 +961,6 @@ void Game::update() {
 
 			// Check if zombie's prompt matches user input
 			if (i == currentZombieIndex && userInput == bonusLeft[i] && !transformStatus.getTransformed()) {
-				for (size_t j = 0; j < userInput.size(); ++j) {
-					if (j >= targetText.size() || userInput[j] != targetText[j]) {
-						// Append to typedWrong only if not already processed
-						if (std::find(typedWrong.begin(), typedWrong.end(), userInput[j]) == typedWrong.end()) {
-							typedWrong.push_back(targetText[j]);
-						}
-					}
-				}
 
 				// Basic laser animation for eliminating zombie
 				int cannonX = laserMiddle.getComponent<TransformComponent>().position.x + 68; // center of cannon
@@ -1041,14 +1087,6 @@ void Game::update() {
 
 				// Check if zombie's prompt matches user input
 				if (i == currentZombieIndex && userInput == bonusRight[i] && !transformStatus.getTransformed()) {
-					for (size_t j = 0; j < userInput.size(); ++j) {
-						if (j >= targetText.size() || userInput[j] != targetText[j]) {
-							// Append to typedWrong only if not already processed
-							if (std::find(typedWrong.begin(), typedWrong.end(), userInput[j]) == typedWrong.end()) {
-								typedWrong.push_back(targetText[j]);
-							}
-						}
-					}
 
 					// Basic laser animation for eliminating zombie
 					int cannonX = laserMiddle.getComponent<TransformComponent>().position.x + 68; // center of 68px cannon
@@ -1164,6 +1202,14 @@ void Game::update() {
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
 
+		// Update lifetime stats of letters typed correctly
+		if (!arcadeResultsStatsUpdated) {
+			for (const auto& [ch, count] : typedWrong) {
+				lifetimeWrongLetters[ch] += count;
+			}
+			arcadeResultsStatsUpdated = true;
+		}
+
 		break;
 
 	case GameState::BONUS_RESULTS:
@@ -1190,10 +1236,67 @@ void Game::update() {
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
 
+		// Update lifetime stats of letters typed correctly
+		if (!gameOverStatsUpdated) {
+			// Update lifetime stats only once
+			finalCorrectLetters += sessionCorrectLetters;
+			finalTotalLetters += sessionTotalLetters;
+
+			gameOverStatsUpdated = true;
+		}
+
 		break;
 
 	case GameState::RECORDS:
 		// Records screen logic
+
+		break;
+
+	case GameState::WPM_TEST:
+		// Words per minute test logic
+		currentTime = SDL_GetTicks();
+
+		// Update blinking text
+		if (currentTime > lastBlinkTime + BLINK_DELAY) {
+			showBlinkText = !showBlinkText;
+			lastBlinkTime = currentTime;
+		}
+
+		// decrement wpmTimeRemaining
+		if (wpmTestStarted && currentTime > lastSecondTick + 1000 && wpmTimeRemaining > 0) {
+			wpmTimeRemaining--;
+			lastSecondTick = currentTime;
+		}
+
+		// when timer hits 0, switch to wpm_results
+		if (wpmTimeRemaining <= 0 && !wpmTestEnded) {
+			wpmTestEnded = true;
+
+			calculateWPM(); // calculate results
+			saveProgress(); // Save progress after test
+
+			gameState = GameState::WPM_RESULTS;
+			break;
+		}
+
+		// if userInput == currentLine, shift nextLine to currentLine and load a new one
+		if (wpmUserInput.size() >= wpmCurrentLine.size()) {
+			wpmTypedLines++; // Count this line toward WPM stat
+			wpmTypedWords += countWords(wpmCurrentLine); // Helper function
+
+			shiftWpmLines(); // Handles shifting logic
+		}
+		break;
+
+	case GameState::WPM_RESULTS:
+		// Words per minute test results logic
+		currentTime = SDL_GetTicks();
+
+		// Update blinking text
+		if (currentTime > lastBlinkTime + BLINK_DELAY) {
+			showBlinkText = !showBlinkText;
+			lastBlinkTime = currentTime;
+		}
 
 		break;
 
@@ -1246,9 +1349,11 @@ void Game::render()
 
 		SDL_Color arcadeColor = mainMenuSelection == 0 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
 		SDL_Color recordsColor = mainMenuSelection == 1 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+		SDL_Color wpmColor = mainMenuSelection == 2 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
 
-		uiManager->drawText("Arcade", 500, 450, arcadeColor, titleFont);
-		uiManager->drawText("Records", 900, 450, recordsColor, titleFont);
+		uiManager->drawText("Arcade", 300, 450, arcadeColor, titleFont);
+		uiManager->drawText("Records", 600, 450, recordsColor, titleFont);
+		uiManager->drawText("WPM Test", 900, 450, wpmColor, titleFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1295,6 +1400,13 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 160, 160, 160, 255);
 		SDL_RenderClear(renderer);
 
+		// MAKE SURE TO REMOVE THIS BIT WHEN READY
+		// 
+		// 
+		// 
+		// 
+		// 
+		// 
 		// TESTING LINES TO ENSURE DIMENSIONS ARE CORRECT
 		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
 		SDL_RenderDrawLine(renderer, 800, 0, 800, 900);   // vertical center line
@@ -1373,11 +1485,6 @@ void Game::render()
 							}
 							else if (!processedInput[i]) {
 								color = { 255, 0, 0, 255 }; // Red for incorrect input
-
-								// Append to typedWrong only if not already processed
-								if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
-									typedWrong.push_back(targetText[i]);
-								}
 
 								processedInput[i] = true;
 							}
@@ -1606,11 +1713,6 @@ void Game::render()
 								else if (!processedInput[i]) {
 									color = { 255, 0, 0, 255 }; // Red for incorrect input
 
-									// Append to typedWrong only if not already processed
-									if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
-										typedWrong.push_back(targetText[i]);
-									}
-
 									processedInput[i] = true;
 								}
 								else if (processedInput[i]) {
@@ -1714,11 +1816,6 @@ void Game::render()
 								}
 								else if (!processedInput[i]) {
 									color = { 255, 0, 0, 255 }; // Red for incorrect input
-
-									// Append to typedWrong only if not already processed
-									if (std::find(typedWrong.begin(), typedWrong.end(), userInput[i]) == typedWrong.end()) {
-										typedWrong.push_back(targetText[i]);
-									}
 
 									processedInput[i] = true;
 								}
@@ -1840,11 +1937,9 @@ void Game::render()
 		hpResults = "Barrier HP Remaining: " + std::to_string(barrierHP);
 
 		// Move unique values from typedWrong to wrongResults
-		wrongResults.clear(); // Clear previous values
-		for (auto i : typedWrong) {
-			if (wrongResults.find(i) == std::string::npos) { // Ensure no duplicates
-				wrongResults.push_back(i);
-			}
+		wrongResults.clear();
+		for (const auto& [ch, count] : typedWrong) {
+			wrongResults.push_back(ch);
 		}
 
 		// Format wrongResults with commas
@@ -1852,6 +1947,7 @@ void Game::render()
 		formattedResults.clear(); // Reset state
 		for (size_t i = 0; i < wrongResults.size(); ++i) {
 			formattedResults << wrongResults[i];
+
 			if (i < wrongResults.size() - 1) { // Add comma for all but the last character
 				formattedResults << ", ";
 			}
@@ -1912,11 +2008,9 @@ void Game::render()
 		// maybe add total Barrier HP here
 
 		// Move unique values from typedWrong to wrongResults
-		wrongResults.clear(); // Clear previous values
-		for (auto i : typedWrong) {
-			if (wrongResults.find(i) == std::string::npos) { // Ensure no duplicates
-				wrongResults.push_back(i);
-			}
+		wrongResults.clear(); // Make sure it's reset first
+		for (const auto& [ch, count] : typedWrong) {
+			wrongResults.push_back(ch); 
 		}
 
 		// Format wrongResults with commas
@@ -1924,6 +2018,7 @@ void Game::render()
 		formattedResults.clear(); // Reset state
 		for (size_t i = 0; i < wrongResults.size(); ++i) {
 			formattedResults << wrongResults[i];
+
 			if (i < wrongResults.size() - 1) { // Add comma for all but the last character
 				formattedResults << ", ";
 			}
@@ -1966,15 +2061,6 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 255, 51, 51, 255);
 		SDL_RenderClear(renderer);
 
-		// Update lifetime stats of letters typed correctly
-		if (!gameOverStatsUpdated) {
-			// Update lifetime stats only once
-			finalCorrectLetters += sessionCorrectLetters;
-			finalTotalLetters += sessionTotalLetters;
-
-			gameOverStatsUpdated = true;
-		}
-
 		// Calculate accuracy
 		if (sessionTotalLetters > 0) {
 			levelAccuracy = (static_cast<double>(sessionCorrectLetters) / sessionTotalLetters) * 100;
@@ -2004,25 +2090,149 @@ void Game::render()
 
 		uiManager->drawText("Records", 700, 100, { 255, 255, 255, 255 }, titleFont);
 
+		title = getTypingTitle(highestWpm);
+
+		uiManager->drawText("Current Title: " + title, 600, 200, { 255, 255, 255, 255 }, menuFont);
+
 		recordsAccuracy = finalTotalLetters > 0
 			? static_cast<float>(finalCorrectLetters) / finalTotalLetters * 100.0f
 			: 0.0f;
 
 		// Accuracy
-		accuracyText = "Accuracy: " + std::to_string(static_cast<int>(recordsAccuracy)) + "%";
-		uiManager->drawText(accuracyText, 600, 200, { 255, 255, 255, 255 }, menuFont);
+		accuracyText = "Overall Accuracy: " + std::to_string(static_cast<int>(recordsAccuracy)) + "%";
+		uiManager->drawText(accuracyText, 600, 250, { 255, 255, 255, 255 }, menuFont);
+
+		uiManager->drawText("Highest WPM: " + std::to_string(highestWpm), 600, 300, { 255, 255, 255, 255 }, menuFont);
 
 		// Typed wrong
-		uiManager->drawText("Incorrect Letters:", 600, 260, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Incorrect Letters:", 600, 350, { 255, 255, 255, 255 }, menuFont);
 
-		y = 300;
+		y = 400;
 		for (const auto& [ch, count] : lifetimeWrongLetters) {
 			std::string entry = std::string(1, ch) + ": " + std::to_string(count);
 			uiManager->drawText(entry, 620, y, { 255, 100, 100, 255 }, menuFont);
 			y += 30;
 		}
 
-		uiManager->drawText("Press ESC to return", 580, y + 50, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Press ESC to return", 580, 800, { 255, 255, 255, 255 }, menuFont);
+
+		SDL_RenderPresent(renderer);
+		break;
+
+	case GameState::WPM_TEST:
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		SDL_RenderClear(renderer);
+
+		if (!wpmTestStarted && showBlinkText) {
+			uiManager->drawText(
+				"Start typing to begin!",
+				620, 250,
+				{ 255, 255, 255, 255 },
+				menuFont
+			);
+		}
+
+		uiManager->drawText("Words Per Minute Test", 600, 100, { 255, 255, 255, 255 }, titleFont);
+
+		// Draw timer
+		uiManager->drawText("Time: " + std::to_string(wpmTimeRemaining), 50, 50, { 255, 255, 255, 255 }, wpmFont);
+
+		// Typing box
+		uiManager->drawRectangle(200, 300, 1200, 200, { 255, 255, 255, 255 });
+
+		// Set positions
+		lineStartX = 220;
+		topLineY = 280;
+		middleLineY = 320;
+		bottomLineY = 360;
+
+		letterX = lineStartX;
+		cursorX = lineStartX;
+
+		correct = { 0, 255, 0, 255 };
+		wrong = { 255, 0, 0, 255 };
+		neutral = { 0, 0, 0, 255 };
+
+		if (!wpmTopLine.empty()) {
+			uiManager->drawText(wpmTopLine, lineStartX, topLineY, { 160, 160, 160, 255 }, menuFont);
+		}
+
+		// ----- RENDER CURRENT LINE -----
+		for (size_t i = 0; i < wpmCurrentLine.size(); ++i) {
+			SDL_Color color = neutral;
+
+			if (i < wpmUserInput.size()) {
+				if (wpmUserInput[i] == wpmCurrentLine[i]) color = correct;
+				else color = wrong;
+			}
+
+			std::string letter(1, wpmCurrentLine[i]);
+			SDL_Surface* surface = TTF_RenderText_Solid(menuFont, letter.c_str(), color);
+			if (surface) {
+				SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+				if (texture) {
+					SDL_Rect dst = { letterX, middleLineY, surface->w, surface->h };
+					SDL_RenderCopy(renderer, texture, nullptr, &dst);
+
+					letterX += surface->w + 1;
+
+					// Update cursor position after last typed character
+					if (i + 1 == wpmUserInput.size()) {
+						cursorX = letterX - 2;
+					}
+
+					SDL_DestroyTexture(texture);
+				}
+				SDL_FreeSurface(surface);
+			}
+		}
+
+		// Handle case where full line is typed
+		if (wpmUserInput.size() == wpmCurrentLine.size()) {
+			cursorX = letterX;
+		}
+
+		// ----- DRAW CURSOR -----
+		if (wpmUserInput.size() <= wpmCurrentLine.size()) {
+			SDL_Color caretColor = (wpmUserInput == wpmCurrentLine) ? neutral : wrong;
+
+			SDL_Rect caretRect = {
+				cursorX,
+				middleLineY,
+				2,
+				18
+			};
+
+			SDL_SetRenderDrawColor(renderer, caretColor.r, caretColor.g, caretColor.b, caretColor.a);
+			SDL_RenderFillRect(renderer, &caretRect);
+		}
+
+		// ----- RENDER NEXT LINE -----
+		uiManager->drawText(wpmNextLine, lineStartX, bottomLineY, { 160, 160, 160, 255 }, menuFont);
+
+		SDL_RenderPresent(renderer);
+		break;
+
+	case GameState::WPM_RESULTS:
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		SDL_RenderClear(renderer);
+
+		uiManager->drawText("Words Per Minute Test Results", 500, 100, { 255, 255, 255, 255 }, titleFont);
+
+		uiManager->drawText("Time: 60 seconds", 400, 300, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Raw WPM: " + std::to_string((int)rawWpm), 400, 400, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Accuracy: " + std::to_string((int)(accuracy * 100)) + "%", 400, 500, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Overall WPM: " + std::to_string((int)wpm), 400, 600, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Characters: " + std::to_string(wpmCorrectChars) + " / " + std::to_string(incorrectChars) + " (correct / incorrect)", 400, 700, {255, 255, 255, 255}, menuFont);
+
+		if (showBlinkText) {
+			uiManager->drawText(
+				"Press ESC to return to the main menu!",
+				400, 800,
+				{ 255, 255, 255, 255 },
+				menuFont
+			);
+		}
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -2199,16 +2409,14 @@ void Game::nextLevel()
 	currentZombieIndex = closestZombieIndex;
 	targetText = words[currentZombieIndex];
 
+	// For stats
+	arcadeResultsStatsUpdated = false;
+
 	// Intilalize zombies remaining
 	zombieCount = zombies.size();
 
 	// Clear user input
 	userInput.clear();
-
-	// Update lifetime stats for letters typed wrong before clearing
-	for (char ch : typedWrong) {
-		lifetimeWrongLetters[ch]++;
-	}
 
 	// Reset letters typed incorrectly
 	typedWrong.clear();
@@ -2328,7 +2536,7 @@ void Game::bonusStage()
 	bonusZombiesDefeated = 0;
 
 	// Increase zambie speed!!
-	bonusSpeed += 1.0;
+	bonusSpeed += 2.0;
 
 	std::cout << "Zombies reset for bonus round!" << std::endl;
 }
@@ -2380,11 +2588,15 @@ void Game::resetArcadeMode()
 	rightHand.addComponent<SpriteComponent>("assets/Right_Hand.png");
 
 	// Barrier orb
-	barrier.addComponent<TransformComponent>(barrierX, 640, 64, 64, 2);
-	barrier.addComponent<SpriteComponent>("assets/Barrier_Orb_0.png");
-	barrier.addComponent<ColliderComponent>("barrier");
+	if (barrier) {
+		barrier->destroy();
+	}
+	barrier = &manager.addEntity();
+	barrier->addComponent<TransformComponent>(barrierX, 640, 64, 64, 2);
+	barrier->addComponent<SpriteComponent>("assets/Barrier_Orb_0.png");
+	barrier->addComponent<ColliderComponent>("barrier");
 
-	//// Initialize crosshair entity
+	// Initialize crosshair entity
 	if (crosshair) {
 		crosshair->destroy();
 	}
@@ -2491,8 +2703,6 @@ void Game::resetArcadeMode()
 		}
 	}
 
-
-
 	// Set starting target
 	currentZombieIndex = closestZombieIndex;
 
@@ -2519,7 +2729,6 @@ void Game::resetArcadeMode()
 	// Reset map visual
 	map->setDifficulty(MapLevel::EASY);
 
-	
 
 	// Reset game variables
 
@@ -2561,7 +2770,7 @@ void Game::resetArcadeMode()
 	// Reset bonus stage variables
 	bonusLevel = 0;
 	inBonusStage = false;
-	bonusSpeed = 2.0f;
+	bonusSpeed = 4.0f;
 
 	std::cout << "Arcade mode reset!" << std::endl;
 }
@@ -2720,7 +2929,7 @@ void Game::updateBarrierDamage(int barrierHP) {
 	std::string texturePath = "assets/Barrier_Orb_" + std::to_string(damageLevel) + ".png";
 
 	// Set texture using c_str()
-	barrier.getComponent<SpriteComponent>().setTex(texturePath.c_str());
+	barrier->getComponent<SpriteComponent>().setTex(texturePath.c_str());
 }
 
 // To check the current combo and update the on screen UI accordingly, and to activate the laser power-up when combo is at max
@@ -2771,4 +2980,110 @@ void Game::fireLaser() {
 	laserPowerup->addComponent<ColliderComponent>("laser");
 
 	laserActive = true;
+}
+
+// WPM Test Methods
+
+// Reset/initialze WPM test
+void Game::resetWPMTest() {
+	std::cout << "WPM Test Reset!" << std::endl;
+	wpmTestStarted = false;
+	wpmTimeRemaining = 60;
+	lastSecondTick = 0;
+	rawWpm = 0.0f;
+	accuracy = 0.0f;
+	wpm = 0.0f;
+	wpmCorrectChars = 0;
+	wpmTotalTypedChars = 0;
+	incorrectChars = 0;
+	wpmTopLine = ""; // Nothing typed yet
+	wpmCurrentLine = generateRandomLine();
+	wpmNextLine = generateRandomLine();
+	wpmUserInput.clear();
+}
+
+void Game::shiftWpmLines() {
+	wpmTopLine = wpmCurrentLine;
+	wpmCurrentLine = wpmNextLine;
+	wpmNextLine = generateRandomLine();
+	wpmUserInput.clear();
+}
+
+int Game::countWords(const std::string& line) {
+	std::istringstream iss(line);
+	return std::distance(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>());
+}
+
+std::string Game::generateRandomLine() {
+	std::vector<std::string> wpmWords = wordManager.getRandomWords(WordListManager::WPM, 14); // May need to adjust count
+	std::string line;
+	for (const auto& word : wpmWords) {
+		line += word + " ";
+	}
+	if (!line.empty()) line.pop_back(); // remove trailing space
+	return line;
+}
+
+void Game::calculateWPM() {
+	rawWpm = (float)wpmTotalTypedChars / 5.0f;
+
+	accuracy = wpmTotalTypedChars > 0 ? (float)wpmCorrectChars / wpmTotalTypedChars : 0.0f;
+
+	wpm = (float)wpmCorrectChars / 5.0f;
+
+	incorrectChars = wpmTotalTypedChars - wpmCorrectChars;
+
+	// Update lifetime stat
+	if (wpm > highestWpm) {
+		highestWpm = wpm;
+	}
+}
+
+std::string Game::getTypingTitle(int highestWpm) {
+	if (highestWpm < 21) return "Keyboard Confused";
+	else if (highestWpm < 31) return "Home Row Tourist";
+	else if (highestWpm < 41) return "Hunter and Pecker";
+	else if (highestWpm < 51) return "Average Joe";
+	else if (highestWpm < 61) return "Speedy Scribbler";
+	else if (highestWpm < 71) return "Office Ninja";
+	else if (highestWpm < 81) return "Word Machine";
+	else if (highestWpm < 91) return "Precision Predator";
+	else if (highestWpm < 101) return "Keyboard Wizard";
+	else if (highestWpm < 121) return "Terrific Typist";
+	else return "QWERTY OVERLORD";
+}
+
+// Save/Loads Methods
+void Game::syncToSaveData() {
+	saveData.highestWpm = highestWpm;
+	saveData.finalCorrectLetters = finalCorrectLetters;
+	saveData.finalTotalLetters = finalTotalLetters;
+	saveData.lifetimeWrongLetters = lifetimeWrongLetters;
+}
+
+void Game::syncFromSaveData() {
+	highestWpm = saveData.highestWpm;
+	finalCorrectLetters = saveData.finalCorrectLetters;
+	finalTotalLetters = saveData.finalTotalLetters;
+	lifetimeWrongLetters = saveData.lifetimeWrongLetters;
+}
+
+void Game::saveProgress() {
+	syncToSaveData();
+	if (SaveSystem::saveToFile("autosave.txt", saveData)) {
+		std::cout << "Progress autosaved.\n";
+	}
+	else {
+		std::cerr << "Autosave failed!\n";
+	}
+}
+
+void Game::loadProgress() {
+	if (SaveSystem::loadFromFile("autosave.txt", saveData)) {
+		syncFromSaveData();
+		std::cout << "Save file loaded.\n";
+	}
+	else {
+		std::cerr << "No save file found. Using defaults.\n";
+	}
 }

@@ -15,5 +15,7 @@ enum class GameState {
     RIP_MODE,
     GAME_OVER,
     RECORDS,
+    WPM_TEST,
+    WPM_RESULTS,
     PAUSE
 };

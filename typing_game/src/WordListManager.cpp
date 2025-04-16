@@ -5,6 +5,7 @@
 #include <random>
 
 WordListManager::WordListManager() {
+	loadFromFile("wordlists/wpm.txt", WPM);
 	loadFromFile("wordlists/easy.txt", EASY);
 	loadFromFile("wordlists/medium.txt", MEDIUM);
 	loadFromFile("wordlists/hard.txt", HARD);

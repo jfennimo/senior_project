@@ -3,6 +3,7 @@
 #include "SDL_image.h"
 #include "UIManager.h"
 #include "GameState.h"
+#include "SaveSystem.h"
 #include <vector>
 #include <iostream>
 #include <sstream>
@@ -35,21 +36,24 @@ public:
 	void checkCombo(const std::string& input, const std::string& target);
 	void fireLaser();
 
+	// WPM Test Methods
+	void resetWPMTest();
+	void shiftWpmLines();
+	int countWords(const std::string& line);
+	std::string generateRandomLine();
+	void calculateWPM();
+	std::string getTypingTitle(int highestWpm);
+
+	// Save/Load methods
+	void syncToSaveData();       // Store current game stats into saveData
+	void syncFromSaveData();     // Load saved stats back into the game
+	void saveProgress();         // Full autosave wrapper
+	void loadProgress();         // Full load wrapper
+
 	static SDL_Renderer* renderer;
 	static SDL_Event event;
 
-	// Fonts
-	TTF_Font* titleFont;
-	TTF_Font* menuFont;
-	TTF_Font* healthFont;
-	TTF_Font* roundFont;
-	TTF_Font* gameOverFont;
-	TTF_Font* controlPanelFont;
-	TTF_Font* statusFont;
-	TTF_Font* threatLvlFont;
-	TTF_Font* comboStatusFont;
-
-	GameState gameState;
+	SaveSystem::SaveData saveData;
 
 private:
 	bool isRunning = false;
@@ -61,14 +65,16 @@ private:
 
 	SDL_Window* window;
 
-	// MAIN MENU VARIABLES
+	// Main menu variables:
+	//
+	//
+	//
 	int mainMenuSelection = 0; // 0 = Arcade, 1 = Records
 	int arcadeModeSelection = 0;  // 0 = "How To Play", 1 = "Start"
 	int pauseMenuSelection = 0; // 0 = Resume, 1 = Quit
 
 
-
-	// ARCADE MODE VARIABLES BELOW:
+	// Arcade mode variables:
 	// 
 	// 
 	// 
@@ -154,7 +160,7 @@ private:
 	int gameOverDelayTimer = 0; // in frames
 
 	// Letters typed incorrectly
-	std::vector<char> typedWrong;
+	std::unordered_map<char, int> typedWrong;
 	std::vector<bool> processedInput;
 	std::string wrongResults;
 	std::ostringstream formattedResults;
@@ -178,12 +184,16 @@ private:
 	int bonusLevel = 0;
 	bool inBonusStage = false;
 	bool leftGroupDefeated = false;
-	float bonusSpeed = 3.0f; // bonus zombie speed!
+	float bonusSpeed = 4.0f; // bonus zombie speed!
 	int bonusZombiesDefeated;
 	int totalBonusZombies;
 	std::string totalBonusZombiesDefeated;
 
-	// Records screen variables
+	// Records screen variables:
+	//
+	//
+	//
+	bool arcadeResultsStatsUpdated = false;
 	bool gameOverStatsUpdated = false;
 
 	// Accuracy
@@ -193,4 +203,43 @@ private:
 	int finalCorrectLetters = 0; // lifetime total
 	int finalTotalLetters = 0;
 	std::unordered_map<char, int> lifetimeWrongLetters; // Track how often each wrong letter is typed
+	int highestWpm;
+	std::string title;
+
+	// WPM Test Variables:
+	//
+	//
+	//
+	std::string wpmTopLine;
+	std::string wpmCurrentLine;
+	std::string wpmNextLine;
+	std::string wpmUserInput;
+
+	int wpmTimeRemaining = 60;
+	int wpmTypedWords = 0;
+	int wpmTypedLines = 0;
+
+	bool wpmTestStarted = false;
+	bool wpmTestEnded = false;
+
+	Uint32 lastSecondTick = 0;
+
+	float rawWpm = 0.0f;
+	float accuracy = 0.0f;
+	float wpm = 0.0f;
+	int wpmCorrectChars = 0;
+	int wpmTotalTypedChars = 0;
+	int incorrectChars = 0;
+
+	// WPM Render Variables
+	int topLineY;
+	int middleLineY;
+	int bottomLineY;
+	int lineStartX;
+	int letterX;
+	int cursorX;
+
+	SDL_Color correct;
+	SDL_Color wrong;
+	SDL_Color neutral;
 };
