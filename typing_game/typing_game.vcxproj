@@ -129,12 +129,16 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Dev\SDL2\SDL2-2.30.9\include;C:\Dev\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\include;C:\Dev\SDL2_ttf-2.22.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Dev\SDL2\SDL2-2.30.9\lib\x64;C:\Dev\SDL2_image-devel-2.8.2-VC\SDL2_image-2.8.2\lib\x64;C:\Dev\SDL2_ttf-2.22.0\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -164,6 +168,74 @@
     <ClInclude Include="src\UIManager.h" />
     <ClInclude Include="src\Vector2D.h" />
     <ClInclude Include="src\WordListManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SDL2.dll" />
+    <None Include="SDL2_image.dll" />
+    <None Include="SDL2_ttf.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="wordlists\bonusLeft.txt" />
+    <Text Include="wordlists\bonusRight.txt" />
+    <Text Include="wordlists\easy.txt" />
+    <Text Include="wordlists\hard.txt" />
+    <Text Include="wordlists\lesson_0.txt" />
+    <Text Include="wordlists\lesson_1.txt" />
+    <Text Include="wordlists\medium.txt" />
+    <Text Include="wordlists\wpm.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\Barrier_Orb_0.png" />
+    <Image Include="assets\Barrier_Orb_1.png" />
+    <Image Include="assets\Barrier_Orb_10.png" />
+    <Image Include="assets\Barrier_Orb_2.png" />
+    <Image Include="assets\Barrier_Orb_3.png" />
+    <Image Include="assets\Barrier_Orb_4.png" />
+    <Image Include="assets\Barrier_Orb_5.png" />
+    <Image Include="assets\Barrier_Orb_6.png" />
+    <Image Include="assets\Barrier_Orb_7.png" />
+    <Image Include="assets\Barrier_Orb_8.png" />
+    <Image Include="assets\Barrier_Orb_9.png" />
+    <Image Include="assets\Combo_Meter_0.png" />
+    <Image Include="assets\Combo_Meter_1.png" />
+    <Image Include="assets\Combo_Meter_2.png" />
+    <Image Include="assets\Combo_Meter_3.png" />
+    <Image Include="assets\Combo_Meter_4.png" />
+    <Image Include="assets\Combo_Meter_5.png" />
+    <Image Include="assets\Combo_Meter_6.png" />
+    <Image Include="assets\Crosshair.png" />
+    <Image Include="assets\Exclamation.png" />
+    <Image Include="assets\Floor_Caution.png" />
+    <Image Include="assets\Floor_Green.png" />
+    <Image Include="assets\Floor_Red.png" />
+    <Image Include="assets\Floor_Yellow.png" />
+    <Image Include="assets\Laser-Sheet.png" />
+    <Image Include="assets\Laser_Cannon_Left.png" />
+    <Image Include="assets\Laser_Cannon_Middle.png" />
+    <Image Include="assets\Laser_Cannon_Right.png" />
+    <Image Include="assets\Left_Hand.png" />
+    <Image Include="assets\Left_Index.png" />
+    <Image Include="assets\Left_Middle.png" />
+    <Image Include="assets\Left_Pinky.png" />
+    <Image Include="assets\Left_Ring.png" />
+    <Image Include="assets\Left_Thumb.png" />
+    <Image Include="assets\Right_Hand.png" />
+    <Image Include="assets\Right_Index.png" />
+    <Image Include="assets\Right_Middle.png" />
+    <Image Include="assets\Right_Pinky.png" />
+    <Image Include="assets\Right_Ring.png" />
+    <Image Include="assets\Right_Thumb.png" />
+    <Image Include="assets\Tombstone.png" />
+    <Image Include="assets\Wall.png" />
+    <Image Include="assets\Zambie_Test-Sheet.png" />
+    <Image Include="assets\Zombie.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="assets\PressStart2P.ttf" />
+    <Font Include="assets\Square.ttf" />
+    <Font Include="assets\Technology-Bold.ttf" />
+    <Font Include="assets\Technology-BoldItalic.ttf" />
+    <Font Include="assets\Technology.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

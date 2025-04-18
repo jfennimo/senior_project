@@ -18,4 +18,5 @@ public:
 	void drawStatusBar(int x, int y, int width, int height, const std::string& labelText, const std::string& statusText, SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* statusFont, SDL_Color textColor);
 	void drawThreatLvl(int x, int y, int width, int height, int threatLvl, const std::string& labelText, SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* digitFont, SDL_Color textColor);
 	void drawComboAlert(int x, int y, int width, int height, int comboLevel, const std::string& labelText, const std::string& statusText, SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* statusFont, SDL_Color textColor);
+	void drawTimeElapsed(int x, int y, int width, int height, int elapsedSeconds, const std::string& labelText, SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* digitFont, SDL_Color textColor);
 };

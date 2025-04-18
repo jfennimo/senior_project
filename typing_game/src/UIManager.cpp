@@ -308,3 +308,69 @@ void UIManager::drawComboAlert(int x, int y, int width, int height, int comboLev
 		}
 	}
 }
+
+void UIManager::drawTimeElapsed(int x, int y, int width, int height, int elapsedSeconds, const std::string& labelText,
+	SDL_Color outlineColor, SDL_Color bgColor, TTF_Font* labelFont, TTF_Font* digitFont, SDL_Color textColor)
+{
+	// Outline
+	SDL_Rect outlineRect = { x - 2, y - 2, width + 4, height + 4 };
+	SDL_SetRenderDrawColor(renderer, outlineColor.r, outlineColor.g, outlineColor.b, outlineColor.a);
+	SDL_RenderFillRect(renderer, &outlineRect);
+
+	// Background
+	SDL_Rect bgRect = { x, y, width, height };
+	SDL_SetRenderDrawColor(renderer, bgColor.r, bgColor.g, bgColor.b, bgColor.a);
+	SDL_RenderFillRect(renderer, &bgRect);
+
+	// Convert elapsed time to MM:SS
+	int minutes = elapsedSeconds / 60;
+	int seconds = elapsedSeconds % 60;
+	std::string timeStr = (minutes < 10 ? "0" : "") + std::to_string(minutes) + ":" +
+		(seconds < 10 ? "0" : "") + std::to_string(seconds);
+
+	// Render time string centered
+	if (digitFont) {
+		SDL_Surface* timeSurface = TTF_RenderText_Blended(digitFont, timeStr.c_str(), textColor);
+		if (timeSurface) {
+			SDL_Texture* timeTexture = SDL_CreateTextureFromSurface(renderer, timeSurface);
+			if (timeTexture) {
+				int textW = timeSurface->w;
+				int textH = timeSurface->h;
+
+				SDL_Rect textRect = {
+					x + (width / 2) - (textW / 2),
+					y + (height / 2) - (textH / 2),
+					textW,
+					textH
+				};
+
+				SDL_RenderCopy(renderer, timeTexture, nullptr, &textRect);
+				SDL_DestroyTexture(timeTexture);
+			}
+			SDL_FreeSurface(timeSurface);
+		}
+	}
+
+	// Label below
+	if (labelFont) {
+		SDL_Surface* labelSurface = TTF_RenderText_Blended(labelFont, labelText.c_str(), textColor);
+		if (labelSurface) {
+			SDL_Texture* labelTexture = SDL_CreateTextureFromSurface(renderer, labelSurface);
+			if (labelTexture) {
+				int labelW = labelSurface->w;
+				int labelH = labelSurface->h;
+
+				SDL_Rect labelRect = {
+					x + (width / 2) - (labelW / 2),
+					y + height + 6,
+					labelW,
+					labelH
+				};
+
+				SDL_RenderCopy(renderer, labelTexture, nullptr, &labelRect);
+				SDL_DestroyTexture(labelTexture);
+			}
+			SDL_FreeSurface(labelSurface);
+		}
+	}
+}
