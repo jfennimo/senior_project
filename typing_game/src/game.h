@@ -55,8 +55,12 @@ public:
 	void calculateWPM();
 	std::string getTypingTitle(int highestWpm);
 
-	// Shared methods
+	// Results method(s)
+	void calculateAverageRecords();
+
+	// Shared method(s)
 	void updateHandSprites(const std::string& targetText, const std::string& userInput);
+	std::string formatPercentage(float value);
 
 	// Save/Load methods
 	void syncToSaveData();
@@ -249,7 +253,6 @@ private:
 	int gameOverDelayTimer = 0; // in frames
 
 	// Letters typed incorrectly
-	std::unordered_map<char, int> typedWrong;
 	std::vector<bool> processedInput;
 	std::string wrongResults;
 	std::ostringstream formattedResults;
@@ -261,6 +264,7 @@ private:
 	// Overall accuracy
 	double levelAccuracy = 0.0;
 	double totalAccuracy = 0.0;
+	double arcadeSessionAccuracy = 0.0;
 	std::ostringstream levelAccuracyStream;
 	std::string overallAccuracy;
 	bool resultsCalculated = false;
@@ -283,22 +287,36 @@ private:
 	//
 	//
 	//
+	bool lessonResultsStatsUpdated = false;
 	bool arcadeResultsStatsUpdated = false;
-	bool gameOverStatsUpdated = false;
+	bool wpmResultsStatsUpdated = false;
+
+	// Games played
+	int lessonGamesPlayed = 0;
+	int arcadeGamesPlayed = 0;
+	int wpmGamesPlayed = 0;
+
+	// Accuracy for each time a game mode was played
+	float lessonAccuracyTotal = 0.0f;
+	float arcadeAccuracyTotal = 0.0f;
+	float wpmAccuracyTotal = 0.0f;
 
 	// Overall accuracy
-	float recordsAccuracy = 0.0f;
-	std::string accuracyText;
+	float recordsLessonAccuracy = 0.0f;
+	float recordsArcadeAccuracy = 0.0f;
+	float recordsWpmAccuracy = 0.0f;
+	float recordsOverallAccuracy = 0.0f;
 
 	// Highest WPM achieved / WPM title
 	int highestWpm;
 	std::string title;
 
-	// Lifetime wrong letters (letters typed incorrectly throughout playtime)
-	int y;
-	int finalCorrectLetters = 0; // lifetime total
-	int finalTotalLetters = 0;
-	std::unordered_map<char, int> lifetimeWrongLetters; // Track how often each wrong letter is typed
+	// Arcade highest level
+	int arcadeHighestLevel = 0;
+
+	// Lifetime wrong characters (characters typed incorrectly throughout playtime)
+	int y; // Just for draw positioning
+	std::unordered_map<char, int> lifetimeWrongCharacters; // Track how often each wrong letter is typed
 	
 
 	// WPM Test variables:
@@ -345,6 +363,7 @@ private:
 	SDL_Color wrong;
 	SDL_Color neutral;
 
+	std::unordered_map<char, int> typedWrong;
 	std::string currentLeftTex;
 	std::string currentRightTex;
 };

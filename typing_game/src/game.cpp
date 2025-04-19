@@ -197,6 +197,7 @@ void Game::handleEvents()
 				else if (mainMenuSelection == 2) {
 					exitLessonsMode();
 					exitArcadeMode();
+					calculateAverageRecords();
 					gameState = GameState::RECORDS;
 					std::cout << "Navigating to records screen!" << std::endl;
 				}
@@ -233,6 +234,10 @@ void Game::handleEvents()
 				}
 			}
 			else if (gameState == GameState::LESSONS_RESULTS) {
+				// Updating overall accuracy stats
+				lessonGamesPlayed++;
+				lessonAccuracyTotal += lessonCompletion;
+				saveProgress(); // Save game
 				gameState = GameState::LESSONS_SELECTION;
 				std::cout << "Navigating back to lessons level selection!" << std::endl;
 			}
@@ -262,9 +267,18 @@ void Game::handleEvents()
 				std::cout << "Starting next round!" << std::endl;
 			}
 			else if (gameState == GameState::GAME_OVER) {
+				// Updating overall accuracy stats
+				arcadeGamesPlayed++;
+				arcadeAccuracyTotal += arcadeSessionAccuracy;
 				saveProgress(); // Save progress after arcade game over
 				gameState = GameState::MAIN_MENU;
 				std::cout << "Returning to main menu!" << std::endl;
+			}
+			else if (gameState == GameState::WPM_RESULTS) {
+				wpmGamesPlayed++;
+				wpmAccuracyTotal += wpmAccuracy * 100.0f; // Converting to percent when storing
+				saveProgress(); // Save progress after test
+				gameState = GameState::MAIN_MENU;
 			}
 			else if (gameState == GameState::PAUSE) {
 				if (pauseMenuSelection == 0) {
@@ -345,9 +359,6 @@ void Game::handleEvents()
 			else if (gameState == GameState::WPM_TEST) {
 				gameState = GameState::MAIN_MENU;
 			}
-			else if (gameState == GameState::WPM_RESULTS) {
-				gameState = GameState::MAIN_MENU;
-			}
 			else if (gameState == GameState::RECORDS) {
 				gameState = GameState::MAIN_MENU;
 			}
@@ -402,6 +413,7 @@ void Game::handleEvents()
 			}
 			else {
 				lessonIncorrectChars++;
+				typedWrong[typedChar]++;
 			}
 
 			// Cache texture (placing this here rather than in draw for frame stability)
@@ -497,16 +509,18 @@ void Game::handleEvents()
 				return; // Ignore extra input
 			}
 
+			// Check correctness before appending char
+			size_t index = wpmUserInput.size();
+			if (typedChar == wpmCurrentLine[index]) {
+				wpmCorrectChars++;
+			}
+			else {
+				typedWrong[typedChar]++;
+			}
+
 			// Add typed character
 			wpmUserInput += typedChar;
 			wpmTotalTypedChars++;
-
-			// Check correctness if within the current line
-			if (wpmUserInput.size() <= wpmCurrentLine.size()) {
-				if (typedChar == wpmCurrentLine[wpmUserInput.size() - 1]) {
-					wpmCorrectChars++;
-				}
-			}
 		}
 		break;
 
@@ -738,7 +752,6 @@ void Game::update() {
 			else {
 				lessonsDelayTimerStarted = false; // Reset for next level
 				calculateLessonResults();
-				saveProgress(); // Save game
 				gameState = GameState::LESSONS_RESULTS;
 			}
 		}
@@ -756,17 +769,13 @@ void Game::update() {
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
 
-		// UPDATE HERE
-		// 
-		// 
-		//
 		// Update lifetime stats of letters typed correctly
-		//if (!arcadeResultsStatsUpdated) {
-		//	for (const auto& [ch, count] : typedWrong) {
-		//		lifetimeWrongLetters[ch] += count;
-		//	}
-		//	arcadeResultsStatsUpdated = true;
-		//}
+		if (!lessonResultsStatsUpdated) {
+			for (const auto& [ch, count] : typedWrong) {
+				lifetimeWrongCharacters[ch] += count;
+			}
+			lessonResultsStatsUpdated = true;
+		}
 
 		break;
 
@@ -1499,7 +1508,7 @@ void Game::update() {
 		// Update lifetime stats of letters typed incorrectly
 		if (!arcadeResultsStatsUpdated) {
 			for (const auto& [ch, count] : typedWrong) {
-				lifetimeWrongLetters[ch] += count;
+				lifetimeWrongCharacters[ch] += count;
 			}
 			arcadeResultsStatsUpdated = true;
 		}
@@ -1518,11 +1527,12 @@ void Game::update() {
 		}
 
 		// Update lifetime stats of letter typed incorrectly
-		// ADD THIS
-		//
-		//
-		//
-		//
+		if (!arcadeResultsStatsUpdated) {
+			for (const auto& [ch, count] : typedWrong) {
+				lifetimeWrongCharacters[ch] += count;
+			}
+			arcadeResultsStatsUpdated = true;
+		}
 
 		break;
 
@@ -1537,13 +1547,17 @@ void Game::update() {
 			lastBlinkTime = currentTime;    // Update last blink time
 		}
 
-		// Update lifetime stats for arcade mode accuracy
-		if (!gameOverStatsUpdated) {
-			// Update lifetime stats only once
-			finalCorrectLetters += sessionCorrectLetters;
-			finalTotalLetters += sessionTotalLetters;
+		// Update highest level achieved
+		if (level > arcadeHighestLevel) {
+			arcadeHighestLevel = level;
+		}
 
-			gameOverStatsUpdated = true;
+		// Update lifetime stats of letter typed incorrectly
+		if (!arcadeResultsStatsUpdated) {
+			for (const auto& [ch, count] : typedWrong) {
+				lifetimeWrongCharacters[ch] += count;
+			}
+			arcadeResultsStatsUpdated = true;
 		}
 
 		break;
@@ -1583,7 +1597,6 @@ void Game::update() {
 			wpmTestEnded = true;
 
 			calculateWPM(); // Calculate results
-			saveProgress(); // Save progress after test
 
 			gameState = GameState::WPM_RESULTS;
 			break;
@@ -1606,6 +1619,14 @@ void Game::update() {
 		if (currentTime > lastBlinkTime + BLINK_DELAY) {
 			showBlinkText = !showBlinkText;
 			lastBlinkTime = currentTime;
+		}
+
+		// Update lifetime stats of letter typed incorrectly
+		if (!wpmResultsStatsUpdated) {
+			for (const auto& [ch, count] : typedWrong) {
+				lifetimeWrongCharacters[ch] += count;
+			}
+			wpmResultsStatsUpdated = true;
 		}
 
 		break;
@@ -2483,10 +2504,7 @@ void Game::render()
 			levelAccuracy = (static_cast<double>(levelCorrectLetters) / levelTotalLetters) * 100;
 		}
 
-		levelAccuracyStream.str(""); // Clear previous accuracy
-		levelAccuracyStream.clear(); // Reset state
-		levelAccuracyStream << "Level Accuracy: " << std::fixed << std::setprecision(2) << levelAccuracy << "%";
-		overallAccuracy = levelAccuracyStream.str(); // Assign the formatted string
+		overallAccuracy = "Level Accuracy: " + formatPercentage(levelAccuracy);
 
 		uiManager->drawText("Level " + std::to_string(level) + " Results!", 625, 50, { 255, 255, 255, 255 }, titleFont);
 		uiManager->drawText(hpResults, 40, 200, { 255, 255, 255, 255 }, menuFont);
@@ -2552,10 +2570,7 @@ void Game::render()
 
 		totalBonusZombiesDefeated = "Zombies defeated: " + std::to_string(bonusZombiesDefeated) + "/" + std::to_string(totalBonusZombies);
 
-		levelAccuracyStream.str(""); // Clear previous accuracy
-		levelAccuracyStream.clear(); // Reset state
-		levelAccuracyStream << "Level Accuracy: " << std::fixed << std::setprecision(2) << levelAccuracy << "%";
-		overallAccuracy = levelAccuracyStream.str(); // Assign the formatted string
+		overallAccuracy = "Level Accuracy: " + formatPercentage(levelAccuracy);
 
 		uiManager->drawText("Bonus Stage Results!", 560, 50, { 255, 255, 255, 255 }, titleFont);
 		uiManager->drawText(hpResults, 40, 200, { 255, 255, 255, 255 }, menuFont);
@@ -2578,16 +2593,16 @@ void Game::render()
 
 		// Calculate accuracy
 		if (sessionTotalLetters > 0) {
-			levelAccuracy = (static_cast<double>(sessionCorrectLetters) / sessionTotalLetters) * 100;
+			arcadeSessionAccuracy = (static_cast<double>(sessionCorrectLetters) / sessionTotalLetters) * 100;
 		}
 
-		levelAccuracyStream.str(""); // Clear previous accuracy
-		levelAccuracyStream.clear(); // Reset state
-		levelAccuracyStream << "Overall Accuracy: " << std::fixed << std::setprecision(2) << levelAccuracy << "%";
-		overallAccuracy = levelAccuracyStream.str(); // Assign the formatted string
+		overallAccuracy = "Overall Accuracy: " + formatPercentage(arcadeSessionAccuracy);
 
 		uiManager->drawText("GAME", 600, 100, { 255, 255, 255, 255 }, gameOverFont);
-		uiManager->drawText("OVER!", 575, 350, { 255, 255, 255, 255 }, gameOverFont);
+		uiManager->drawText("OVER!", 575, 300, { 255, 255, 255, 255 }, gameOverFont);
+		if (showBlinkText && level == arcadeHighestLevel) {
+			uiManager->drawText("NEW RECORD!", 575, 450, { 255, 255, 255, 255 }, menuFont);
+		}
 		uiManager->drawText("Highest Level Reached: " + std::to_string(level), 600, 500, { 255, 255, 255, 255 }, menuFont);
 		uiManager->drawText("Total Zombies Defeated: " + std::to_string(zombiesDefeated), 600, 550, { 255, 255, 255, 255 }, menuFont);
 		uiManager->drawText(overallAccuracy, 600, 600, { 255, 255, 255, 255 }, menuFont);
@@ -2611,21 +2626,24 @@ void Game::render()
 
 		uiManager->drawText("Current Title: " + title, 600, 200, { 255, 255, 255, 255 }, menuFont);
 
-		recordsAccuracy = finalTotalLetters > 0
-			? static_cast<float>(finalCorrectLetters) / finalTotalLetters * 100.0f
-			: 0.0f;
+		// Add in how many time each mode was played
+
+		// Lessons Mode Accuracy
+		uiManager->drawText("Lessons Mode Total Accuracy: " + formatPercentage(recordsLessonAccuracy), 600, 250, {255, 255, 255, 255}, menuFont);
+
+		// Arcade Mode Accuracy
+		uiManager->drawText("Arcade Mode Total Accuracy: " + formatPercentage(recordsArcadeAccuracy), 600, 300, {255, 255, 255, 255}, menuFont);
+
+		// WPM Test Accuracy
+		uiManager->drawText("WPM Test Total Accuracy: " + formatPercentage(recordsWpmAccuracy), 600, 350, {255, 255, 255, 255}, menuFont);
 
 		// Overall accuracy of every mode
-		//
-		//
-		//
-		//
-		accuracyText = "Overall Accuracy: " + std::to_string(static_cast<int>(recordsAccuracy)) + "%";
-		uiManager->drawText(accuracyText, 600, 250, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Overall Accuracy: " + formatPercentage(recordsOverallAccuracy), 600, 400, {255, 255, 255, 255}, menuFont);
 
-		uiManager->drawText("Highest WPM: " + std::to_string(highestWpm), 600, 300, { 255, 255, 255, 255 }, menuFont);
+		// Highest WPM test score
+		uiManager->drawText("Highest WPM Score: " + std::to_string(highestWpm), 600, 450, { 255, 255, 255, 255 }, menuFont);
 
-		// Lessons Completed
+		// Lessons completed
 		lessonsCompleted = 0;
 		for (const auto& [difficulty, progress] : saveData.lessonProgressMap) {
 			if (progress.passed || progress.fullyCompleted) {
@@ -2634,17 +2652,19 @@ void Game::render()
 		}
 
 		lessonSummary = "Lessons Completed: (" + std::to_string(lessonsCompleted) + "/" + std::to_string(totalLessons) + ")";
-		uiManager->drawText(lessonSummary, 600, 350, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText(lessonSummary, 600, 500, { 255, 255, 255, 255 }, menuFont);
 
-		// Letters typed wrong in every mode
+		// Characters typed wrong in every mode
 		//
 		//
 		//
 		//
-		uiManager->drawText("Incorrect Letters:", 600, 400, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Incorrect Characters:", 600, 550, { 255, 255, 255, 255 }, menuFont);
 
-		y = 450;
-		for (const auto& [ch, count] : lifetimeWrongLetters) {
+		y = 600;
+		for (const auto& [ch, count] : lifetimeWrongCharacters) {
+			//std::string displaySpace = (ch == ' ') ? "<space>" : std::string(1, ch);
+			//std::string entry = displaySpace + ": " + std::to_string(count);
 			std::string entry = std::string(1, ch) + ": " + std::to_string(count);
 			uiManager->drawText(entry, 620, y, { 255, 100, 100, 255 }, menuFont);
 			y += 30;
@@ -2769,7 +2789,7 @@ void Game::render()
 
 		if (showBlinkText) {
 			uiManager->drawText(
-				"Press ESC to return to the main menu!",
+				"Press Enter to Return to the Main Menu!",
 				400, 800,
 				{ 255, 255, 255, 255 },
 				menuFont
@@ -2907,6 +2927,12 @@ void Game::resetLessonsMode(WordListManager::Difficulty lessonDifficulty)
 	lessonTotalTypedChars = 0;
 	lessonIncorrectChars = 0;
 
+	// Reset letters typed incorrectly
+	typedWrong.clear();
+
+	// For stats
+	lessonResultsStatsUpdated = false;
+
 	// Reset zombies defeated
 	zombie1Defeated = false;
 	zombie2Defeated = false;
@@ -2993,6 +3019,12 @@ void Game::exitLessonsMode()
 	lessonCorrectChars = 0;
 	lessonTotalTypedChars = 0;
 	lessonIncorrectChars = 0;
+
+	// Reset letters typed incorrectly
+	typedWrong.clear();
+
+	// For stats
+	lessonResultsStatsUpdated = false;
 
 	// Anything else to delete?!
 }
@@ -3203,7 +3235,7 @@ void Game::resetArcadeMode()
 	}
 
 	// For stats
-	gameOverStatsUpdated = false;
+	arcadeResultsStatsUpdated = false;
 
 	// Randomizing words
 	arcadeWords = wordManager.getRandomWords(WordListManager::EASY, numZombies);
@@ -3305,6 +3337,12 @@ void Game::exitArcadeMode()
 	if (comboMeter) { comboMeter->destroy(); comboMeter = nullptr; }
 
 	// Cleanup anything else necessary...
+
+	// For stats
+	arcadeResultsStatsUpdated = false;
+
+	// Reset letters typed incorrectly
+	typedWrong.clear();
 
 	// Reset hand sprites
 	currentLeftTex = "";
@@ -3561,6 +3599,9 @@ void Game::bonusStage()
 	// Set starting target
 	targetText = bonusLeft[currentZombieIndex];
 
+	// For stats
+	arcadeResultsStatsUpdated = false;
+
 	// Reset letters typed incorrectly
 	typedWrong.clear();
 
@@ -3664,6 +3705,8 @@ void Game::resetWPMTest() {
 	wpmCurrentLine = generateRandomLine();
 	wpmNextLine = generateRandomLine();
 	wpmUserInput.clear();
+	// Reset letters typed incorrectly
+	typedWrong.clear();
 }
 
 // Handles line shifting logic
@@ -3720,6 +3763,31 @@ std::string Game::getTypingTitle(int highestWpm) {
 	else if (highestWpm < 101) return "Keyboard Wizard";
 	else if (highestWpm < 121) return "Terrific Typist";
 	else return "QWERTY OVERLORD";
+}
+
+// Results method(s)
+//
+// To calculate the average for each mode
+void Game::calculateAverageRecords()
+{
+	recordsLessonAccuracy = lessonGamesPlayed > 0
+		? lessonAccuracyTotal / lessonGamesPlayed
+		: 0.0f;
+
+	recordsArcadeAccuracy = arcadeGamesPlayed > 0
+		? arcadeAccuracyTotal / arcadeGamesPlayed
+		: 0.0f;
+
+	recordsWpmAccuracy = wpmGamesPlayed > 0
+		? wpmAccuracyTotal / wpmGamesPlayed
+		: 0.0f;
+
+	int totalGames = lessonGamesPlayed + arcadeGamesPlayed + wpmGamesPlayed;
+	float totalAccuracy = lessonAccuracyTotal + arcadeAccuracyTotal + wpmAccuracyTotal;
+
+	recordsOverallAccuracy = totalGames > 0
+		? totalAccuracy / totalGames
+		: 0.0f;
 }
 
 // Shared method(s)
@@ -3802,38 +3870,58 @@ void Game::updateHandSprites(const std::string& targetText, const std::string& u
 	}
 }
 
+std::string Game::formatPercentage(float value) {
+	std::ostringstream oss;
+	oss << std::fixed << std::setprecision(2) << value;
+	return oss.str() + "%";
+}
+
 // Save/Loads Methods
 //
 // Store current game stats into saveData
 void Game::syncToSaveData() {
-	// Lessons Mode Progress
+	// Lessons mode Stats
+	saveData.lessonGamesPlayed = lessonGamesPlayed;
+	saveData.lessonAccuracyTotal = lessonAccuracyTotal;
+
+	// Lessons mode progress
 	saveData.lessonProgressMap = lessonProgressMap;
 
-	// WPM Test
+	// Arcade mode stats
+	saveData.arcadeGamesPlayed = arcadeGamesPlayed;
+	saveData.arcadeAccuracyTotal = arcadeAccuracyTotal;
+	saveData.arcadeHighestLevel = arcadeHighestLevel;
+
+	// WPM mode stats
+	saveData.wpmGamesPlayed = wpmGamesPlayed;
+	saveData.wpmAccuracyTotal = wpmAccuracyTotal;
 	saveData.highestWpm = highestWpm;
 
-	// Overall Accuracy
-	saveData.finalCorrectLetters = finalCorrectLetters;
-	saveData.finalTotalLetters = finalTotalLetters;
-
-	// Letters Typed Incorrectly
-	saveData.lifetimeWrongLetters = lifetimeWrongLetters;
+	// Letters typed incorrectly
+	saveData.lifetimeWrongCharacters = lifetimeWrongCharacters;
 }
 
 // Load saved stats back into the game
 void Game::syncFromSaveData() {
-	// Lessons Mode Progress
+	// Lessons mode Stats
+	lessonGamesPlayed = saveData.lessonGamesPlayed;
+	lessonAccuracyTotal = saveData.lessonAccuracyTotal;
+
+	// Lessons mode progress
 	lessonProgressMap = saveData.lessonProgressMap;
 
-	// WPM Test
+	// Arcade mode stats
+	arcadeGamesPlayed = saveData.arcadeGamesPlayed;
+	arcadeAccuracyTotal = saveData.arcadeAccuracyTotal;
+	arcadeHighestLevel = saveData.arcadeHighestLevel;
+
+	// WPM mode stats
+	wpmGamesPlayed = saveData.wpmGamesPlayed;
+	wpmAccuracyTotal = saveData.wpmAccuracyTotal;
 	highestWpm = saveData.highestWpm;
 
-	// Overall Accuracy
-	finalCorrectLetters = saveData.finalCorrectLetters;
-	finalTotalLetters = saveData.finalTotalLetters;
-
 	// Letters Typed Incorrectly
-	lifetimeWrongLetters = saveData.lifetimeWrongLetters;
+	lifetimeWrongCharacters = saveData.lifetimeWrongCharacters;
 }
 
 // Full autosave wrapper

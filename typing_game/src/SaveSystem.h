@@ -15,11 +15,23 @@ public:
 	};
 
 	struct SaveData {
-		int highestWpm = 0;
-		int finalCorrectLetters = 0;
-		int finalTotalLetters = 0;
-		std::unordered_map<char, int> lifetimeWrongLetters;
+		// Lessons
+		int lessonGamesPlayed = 0;
+		float lessonAccuracyTotal = 0.0f;
 		std::unordered_map<WordListManager::Difficulty, LessonProgress> lessonProgressMap;
+
+		// Arcade
+		int arcadeGamesPlayed = 0;
+		float arcadeAccuracyTotal = 0.0f;
+		int arcadeHighestLevel = 0;
+
+		// WPM
+		int wpmGamesPlayed = 0;
+		float wpmAccuracyTotal = 0.0f;
+		int highestWpm = 0;
+
+		// Overall
+		std::unordered_map<char, int> lifetimeWrongCharacters;
 	};
 
 	static bool saveToFile(const std::string& filename, const SaveData& data);

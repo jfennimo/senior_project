@@ -9,14 +9,20 @@ bool SaveSystem::saveToFile(const std::string& filename, const SaveData& data) {
 		return false;
 	}
 
+	outFile << data.lessonGamesPlayed << "\n";
+	outFile << data.lessonAccuracyTotal << "\n";
+	outFile << data.arcadeGamesPlayed << "\n";
+	outFile << data.arcadeAccuracyTotal << "\n";
+	outFile << data.arcadeHighestLevel << "\n";
+	outFile << data.wpmGamesPlayed << "\n";
+	outFile << data.wpmAccuracyTotal << "\n";
 	outFile << data.highestWpm << "\n";
-	outFile << data.finalCorrectLetters << "\n";
-	outFile << data.finalTotalLetters << "\n";
 
-	// Save lifetime wrong letters
-	outFile << data.lifetimeWrongLetters.size() << "\n";
-	for (const auto& [ch, count] : data.lifetimeWrongLetters) {
-		outFile << ch << " " << count << "\n";
+	// Save lifetime wrong characters
+	outFile << data.lifetimeWrongCharacters.size() << "\n";
+	for (const auto& [ch, count] : data.lifetimeWrongCharacters) {
+		std::string encodedChar = (ch == ' ') ? "<space>" : std::string(1, ch);
+		outFile << encodedChar << " " << count << "\n";
 	}
 
 	// Save lesson progress
@@ -36,23 +42,30 @@ bool SaveSystem::saveToFile(const std::string& filename, const SaveData& data) {
 bool SaveSystem::loadFromFile(const std::string& filename, SaveData& data) {
 	std::ifstream inFile(filename);
 	if (!inFile.is_open()) {
-		std::cerr << "No save file found. Starting fresh!" << std::endl;
+		std::cerr << "No save file found. Starting fresh (or make that... flesh)!" << std::endl;
 		return false;
 	}
 
+	inFile >> data.lessonGamesPlayed;
+	inFile >> data.lessonAccuracyTotal;
+	inFile >> data.arcadeGamesPlayed;
+	inFile >> data.arcadeAccuracyTotal;
+	inFile >> data.arcadeHighestLevel;
+	inFile >> data.wpmGamesPlayed;
+	inFile >> data.wpmAccuracyTotal;
 	inFile >> data.highestWpm;
-	inFile >> data.finalCorrectLetters;
-	inFile >> data.finalTotalLetters;
 
-	// Load lifetime wrong letters
+	// Load lifetime wrong characters
 	size_t wrongCount;
-	inFile >> wrongCount;
-	data.lifetimeWrongLetters.clear();
+	if (!(inFile >> wrongCount)) return false; // Safety measure for corrupt save
+	data.lifetimeWrongCharacters.clear();
 	for (size_t i = 0; i < wrongCount; ++i) {
-		char ch;
+		std::string chStr;
 		int count;
-		inFile >> ch >> count;
-		data.lifetimeWrongLetters[ch] = count;
+		if (!(inFile >> chStr >> count)) return false;
+
+		char ch = (chStr == "<space>") ? ' ' : chStr[0];
+		data.lifetimeWrongCharacters[ch] = count;
 	}
 
 	// Load lesson progress
