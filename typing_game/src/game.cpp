@@ -33,6 +33,7 @@ SDL_Event Game::event;
 Uint32 currentTime;
 
 // Lessons Mode Entities
+Entity* background = nullptr;
 Entity* zombie1 = nullptr;
 Entity* zombie2 = nullptr;
 Entity* zombie3 = nullptr;
@@ -1773,6 +1774,9 @@ void Game::render()
 			lessonTimeElapsed = (SDL_GetTicks() - lessonStartTime) / 1000; // Store lessonStartTime at lesson init
 		}
 
+		// Draw background first
+		background->getComponent<SpriteComponent>().draw();
+
 		// Draw middle laser cannon at top
 		laserMiddle->getComponent<SpriteComponent>().draw();
 
@@ -1960,9 +1964,9 @@ void Game::render()
 		// 
 		// 
 		// TESTING LINES TO ENSURE DIMENSIONS ARE CORRECT
-		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
-		SDL_RenderDrawLine(renderer, 800, 0, 800, 900);   // vertical center line
-		SDL_RenderDrawLine(renderer, 1599, 0, 1599, 900); // far right edge
+		//SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
+		//SDL_RenderDrawLine(renderer, 800, 0, 800, 900);   // vertical center line
+		//SDL_RenderDrawLine(renderer, 1599, 0, 1599, 900); // far right edge
 
 		// Cursor rendering
 		cursorBlinkSpeed = 500; // Milliseconds
@@ -2640,9 +2644,6 @@ void Game::render()
 		// Overall accuracy of every mode
 		uiManager->drawText("Overall Accuracy: " + formatPercentage(recordsOverallAccuracy), 600, 400, {255, 255, 255, 255}, menuFont);
 
-		// Highest WPM test score
-		uiManager->drawText("Highest WPM Score: " + std::to_string(highestWpm), 600, 450, { 255, 255, 255, 255 }, menuFont);
-
 		// Lessons completed
 		lessonsCompleted = 0;
 		for (const auto& [difficulty, progress] : saveData.lessonProgressMap) {
@@ -2652,14 +2653,16 @@ void Game::render()
 		}
 
 		lessonSummary = "Lessons Completed: (" + std::to_string(lessonsCompleted) + "/" + std::to_string(totalLessons) + ")";
-		uiManager->drawText(lessonSummary, 600, 500, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText(lessonSummary, 600, 450, { 255, 255, 255, 255 }, menuFont);
+
+		// Highest arcade level achieved
+		uiManager->drawText("Highest Arcade Level: " + std::to_string(arcadeHighestLevel), 600, 500, { 255, 255, 255, 255 }, menuFont);
+
+		// Highest WPM test score
+		uiManager->drawText("Highest WPM Score: " + std::to_string(highestWpm), 600, 550, { 255, 255, 255, 255 }, menuFont);
 
 		// Characters typed wrong in every mode
-		//
-		//
-		//
-		//
-		uiManager->drawText("Incorrect Characters:", 600, 550, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Incorrect Characters:", 600, 580, { 255, 255, 255, 255 }, menuFont);
 
 		y = 600;
 		for (const auto& [ch, count] : lifetimeWrongCharacters) {
@@ -2846,6 +2849,7 @@ void Game::clean()
 void Game::resetLessonsMode(WordListManager::Difficulty lessonDifficulty)
 {
 	// Clean up previous entities if they exist
+	if (background) { background->destroy(); background = nullptr; }
 	if (zombie1) { zombie1->destroy(); zombie1 = nullptr; }
 	if (zombie2) { zombie2->destroy(); zombie2 = nullptr; }
 	if (zombie3) { zombie3->destroy(); zombie3 = nullptr; }
@@ -2854,6 +2858,11 @@ void Game::resetLessonsMode(WordListManager::Difficulty lessonDifficulty)
 	if (rightHand) { rightHand->destroy(); rightHand = nullptr; }
 	if (crosshair) { crosshair->destroy(); crosshair = nullptr; }
 	if (laserMiddle) { laserMiddle->destroy(); laserMiddle = nullptr; }
+
+	// Create background
+	background = &manager.addEntity();
+	background->addComponent<TransformComponent>(0, 150, 1600, 600, 1);
+	background->addComponent<SpriteComponent>("assets/Lessons_Background.png");
 
 	// Create fresh zombies
 	zombie1 = &manager.addEntity();
@@ -2978,6 +2987,7 @@ void Game::resetLessonsMode(WordListManager::Difficulty lessonDifficulty)
 void Game::exitLessonsMode()
 {
 	// Clean up previous entities if they exist
+	if (background) { background->destroy(); background = nullptr; }
 	if (zombie1) { zombie1->destroy(); zombie1 = nullptr; }
 	if (zombie2) { zombie2->destroy(); zombie2 = nullptr; }
 	if (zombie3) { zombie3->destroy(); zombie3 = nullptr; }
@@ -3193,7 +3203,7 @@ void Game::resetArcadeMode()
 		}
 
 		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
+		newZombie->addComponent<SpriteComponent>("assets/Zambie-Sheet.png", true);
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		zombies.push_back(newZombie);
@@ -3287,7 +3297,7 @@ void Game::resetArcadeMode()
 	// Reset bonus stage variables
 	bonusLevel = 0;
 	inBonusStage = false;
-	bonusSpeed = 4.0f;
+	bonusSpeed = 3.0f;
 
 	std::cout << "Arcade mode reset!" << std::endl;
 }
@@ -3454,7 +3464,7 @@ void Game::nextLevel()
 		}
 
 		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
+		newZombie->addComponent<SpriteComponent>("assets/Zambie-Sheet.png", true);
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		zombies.push_back(newZombie);
@@ -3564,7 +3574,7 @@ void Game::bonusStage()
 		int y = yLeft;
 
 		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
+		newZombie->addComponent<SpriteComponent>("assets/Zambie-Sheet.png", true);
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		leftToRight.push_back(newZombie);
@@ -3582,7 +3592,7 @@ void Game::bonusStage()
 		int y = yRight;
 
 		newZombie->addComponent<TransformComponent>(x, y);
-		newZombie->addComponent<SpriteComponent>("assets/Zambie_Test-Sheet.png", true);
+		newZombie->addComponent<SpriteComponent>("assets/Zambie-Sheet.png", true);
 		newZombie->addComponent<ColliderComponent>("zombie");
 		newZombie->addComponent<TransformStatusComponent>(); // Add transformation status
 		rightToLeft.push_back(newZombie);
@@ -3616,7 +3626,7 @@ void Game::bonusStage()
 	bonusZombiesDefeated = 0;
 
 	// Increase zambie speed!!
-	bonusSpeed += 2.0;
+	bonusSpeed += 1.0;
 
 	std::cout << "Zombies reset for bonus round!" << std::endl;
 }

@@ -208,6 +208,7 @@
     <Image Include="assets\Floor_Caution.png" />
     <Image Include="assets\Floor_Green.png" />
     <Image Include="assets\Floor_Red.png" />
+    <Image Include="assets\Floor_White.png" />
     <Image Include="assets\Floor_Yellow.png" />
     <Image Include="assets\Laser-Sheet.png" />
     <Image Include="assets\Laser_Cannon_Left.png" />
@@ -219,6 +220,7 @@
     <Image Include="assets\Left_Pinky.png" />
     <Image Include="assets\Left_Ring.png" />
     <Image Include="assets\Left_Thumb.png" />
+    <Image Include="assets\Lessons_Background.png" />
     <Image Include="assets\Right_Hand.png" />
     <Image Include="assets\Right_Index.png" />
     <Image Include="assets\Right_Middle.png" />
@@ -227,7 +229,7 @@
     <Image Include="assets\Right_Thumb.png" />
     <Image Include="assets\Tombstone.png" />
     <Image Include="assets\Wall.png" />
-    <Image Include="assets\Zambie_Test-Sheet.png" />
+    <Image Include="assets\Zambie-Sheet.png" />
     <Image Include="assets\Zombie.png" />
   </ItemGroup>
   <ItemGroup>

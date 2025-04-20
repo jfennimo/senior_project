@@ -235,7 +235,13 @@
     <Image Include="assets\Zombie.png">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="assets\Zambie_Test-Sheet.png">
+    <Image Include="assets\Floor_White.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Lessons_Background.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Zambie-Sheet.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

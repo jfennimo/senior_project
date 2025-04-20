@@ -115,7 +115,7 @@ private:
 
 	bool lessonTimeFrozen = false;
 	int lessonsCompleted;
-	int totalLessons = 2;
+	int totalLessons = 10;
 	int baseY;
 	int lessonScrollX = 0;
 	const int lessonFixedCursorX = 800; // X position of cursor
@@ -277,7 +277,7 @@ private:
 	int bonusLevel = 0;
 	bool inBonusStage = false;
 	bool leftGroupDefeated = false;
-	float bonusSpeed = 4.0f; // bonus zombie speed!
+	float bonusSpeed = 3.0f; // bonus zombie speed!
 	int bonusZombiesDefeated;
 	int totalBonusZombies;
 	std::string totalBonusZombiesDefeated;

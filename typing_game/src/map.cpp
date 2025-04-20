@@ -32,7 +32,7 @@ int arcadeMap[24][50] = {
 Map::Map()
 {
 	wall = TextureManager::LoadTexture("assets/Wall.png");
-	floorEasy = TextureManager::LoadTexture("assets/Floor_Green.png");
+	floorEasy = TextureManager::LoadTexture("assets/Floor_White.png");
 	floorMedium = TextureManager::LoadTexture("assets/Floor_Yellow.png");
 	floorHard = TextureManager::LoadTexture("assets/Floor_Red.png");
 	floorCaution = TextureManager::LoadTexture("assets/Floor_Caution.png");
