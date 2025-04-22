@@ -198,16 +198,16 @@ void Game::handleEvents()
 				else if (mainMenuSelection == 2) {
 					exitLessonsMode();
 					exitArcadeMode();
-					calculateAverageRecords();
-					gameState = GameState::RECORDS;
-					std::cout << "Navigating to records screen!" << std::endl;
+					gameState = GameState::WPM_TEST;
+					resetWPMTest();
+					std::cout << "Navigating to WPM test!" << std::endl;
 				}
 				else if (mainMenuSelection == 3) {
 					exitLessonsMode();
 					exitArcadeMode();
-					gameState = GameState::WPM_TEST;
-					resetWPMTest();
-					std::cout << "Navigating to WPM test!" << std::endl;
+					calculateAverageRecords();
+					gameState = GameState::RECORDS;
+					std::cout << "Navigating to records screen!" << std::endl;
 				}
 			}
 			else if (gameState == GameState::LESSONS_TITLE) {
@@ -646,96 +646,110 @@ void Game::update() {
 		}
 
 		// Handle zombie defeats (based on percentage, each count as 25%)
-		if (!zombie1Defeated && lessonTargetCompletion >= 25.0f) {
-			// Basic laser animation for eliminating zombie
-			int cannonX = laserMiddle->getComponent<TransformComponent>().position.x + 68; // Center of cannon
-			int cannonY = laserMiddle->getComponent<TransformComponent>().position.y + 128; // Bottom of cannon
+		if (!zombie1Defeated) {
+			zombie1->getComponent<SpriteComponent>().Play("Attack Down");
+			if (lessonTargetCompletion >= 25.0f) {
+				//
+				//
+				//
+				// Basic laser animation for eliminating zombie
+				int cannonX = laserMiddle->getComponent<TransformComponent>().position.x + 68; // Center of cannon
+				int cannonY = laserMiddle->getComponent<TransformComponent>().position.y + 128; // Bottom of cannon
 
-			int zombieX = zombie1->getComponent<TransformComponent>().position.x + 32;
-			int zombieY = zombie1->getComponent<TransformComponent>().position.y + 32;
+				int zombieX = zombie1->getComponent<TransformComponent>().position.x + 32;
+				int zombieY = zombie1->getComponent<TransformComponent>().position.y + 32;
 
-			LaserStrike laser;
-			laser.startX = cannonX;
-			laser.startY = cannonY;
-			laser.endX = zombieX;
-			laser.endY = zombieY;
-			laser.duration = 6;
+				LaserStrike laser;
+				laser.startX = cannonX;
+				laser.startY = cannonY;
+				laser.endX = zombieX;
+				laser.endY = zombieY;
+				laser.duration = 6;
 
-			activeLasers.push_back(laser);
+				activeLasers.push_back(laser);
 
-			zombie1Defeated = true;
-			zombie1->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
-			crosshair->getComponent<TransformComponent>().position = zombie2->getComponent<TransformComponent>().position;
-			zombiesRemaining = 3;
+				zombie1Defeated = true;
+				zombie1->getComponent<SpriteComponent>().Play("Defeat");
+				crosshair->getComponent<TransformComponent>().position = zombie2->getComponent<TransformComponent>().position;
+				zombiesRemaining = 3;
+			}
 		}
-		if (!zombie2Defeated && lessonTargetCompletion >= 50.0f) {
-			// Basic laser animation for eliminating zombie
-			int cannonX = laserMiddle->getComponent<TransformComponent>().position.x + 68; // Center of cannon
-			int cannonY = laserMiddle->getComponent<TransformComponent>().position.y + 128; // Bottom of cannon
+		if (!zombie2Defeated) {
+			zombie2->getComponent<SpriteComponent>().Play("Attack Down");
+			if (lessonTargetCompletion >= 50.0f) {
+				// Basic laser animation for eliminating zombie
+				int cannonX = laserMiddle->getComponent<TransformComponent>().position.x + 68; // Center of cannon
+				int cannonY = laserMiddle->getComponent<TransformComponent>().position.y + 128; // Bottom of cannon
 
-			int zombieX = zombie2->getComponent<TransformComponent>().position.x + 32;
-			int zombieY = zombie2->getComponent<TransformComponent>().position.y + 32;
+				int zombieX = zombie2->getComponent<TransformComponent>().position.x + 32;
+				int zombieY = zombie2->getComponent<TransformComponent>().position.y + 32;
 
-			LaserStrike laser;
-			laser.startX = cannonX;
-			laser.startY = cannonY;
-			laser.endX = zombieX;
-			laser.endY = zombieY;
-			laser.duration = 6;
+				LaserStrike laser;
+				laser.startX = cannonX;
+				laser.startY = cannonY;
+				laser.endX = zombieX;
+				laser.endY = zombieY;
+				laser.duration = 6;
 
-			activeLasers.push_back(laser);
+				activeLasers.push_back(laser);
 
-			zombie2Defeated = true;
-			zombie2->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
-			crosshair->getComponent<TransformComponent>().position = zombie3->getComponent<TransformComponent>().position;
-			zombiesRemaining = 2;
+				zombie2Defeated = true;
+				zombie2->getComponent<SpriteComponent>().Play("Defeat");
+				crosshair->getComponent<TransformComponent>().position = zombie3->getComponent<TransformComponent>().position;
+				zombiesRemaining = 2;
+			}
 		}
-		if (!zombie3Defeated && lessonTargetCompletion >= 75.0f) {
-			// Basic laser animation for eliminating zombie
-			int cannonX = laserMiddle->getComponent<TransformComponent>().position.x + 68; // Center of cannon
-			int cannonY = laserMiddle->getComponent<TransformComponent>().position.y + 128; // Bottom of cannon
+		if (!zombie3Defeated) {
+			zombie3->getComponent<SpriteComponent>().Play("Attack Down");
+			if (lessonTargetCompletion >= 75.0f) {
+				// Basic laser animation for eliminating zombie
+				int cannonX = laserMiddle->getComponent<TransformComponent>().position.x + 68; // Center of cannon
+				int cannonY = laserMiddle->getComponent<TransformComponent>().position.y + 128; // Bottom of cannon
 
-			int zombieX = zombie3->getComponent<TransformComponent>().position.x + 32;
-			int zombieY = zombie3->getComponent<TransformComponent>().position.y + 32;
+				int zombieX = zombie3->getComponent<TransformComponent>().position.x + 32;
+				int zombieY = zombie3->getComponent<TransformComponent>().position.y + 32;
 
-			LaserStrike laser;
-			laser.startX = cannonX;
-			laser.startY = cannonY;
-			laser.endX = zombieX;
-			laser.endY = zombieY;
-			laser.duration = 6;
+				LaserStrike laser;
+				laser.startX = cannonX;
+				laser.startY = cannonY;
+				laser.endX = zombieX;
+				laser.endY = zombieY;
+				laser.duration = 6;
 
-			activeLasers.push_back(laser);
+				activeLasers.push_back(laser);
 
-			zombie3Defeated = true;
-			lessonPassed = true; // they've earned a pass!
-			zombie3->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
-			crosshair->getComponent<TransformComponent>().position = zombie4->getComponent<TransformComponent>().position;
-			zombiesRemaining = 1;
+				zombie3Defeated = true;
+				lessonPassed = true; // they've earned a pass!
+				zombie3->getComponent<SpriteComponent>().Play("Defeat");
+				crosshair->getComponent<TransformComponent>().position = zombie4->getComponent<TransformComponent>().position;
+				zombiesRemaining = 1;
+			}
 		}
-		if (!zombie4Defeated && lessonTargetCompletion >= 100.0f) {
-			// Basic laser animation for eliminating zombie
-			int cannonX = laserMiddle->getComponent<TransformComponent>().position.x + 68; // Center of cannon
-			int cannonY = laserMiddle->getComponent<TransformComponent>().position.y + 128; // Bottom of cannon
+		if (!zombie4Defeated) {
+			zombie4->getComponent<SpriteComponent>().Play("Attack Down");
+			if (lessonTargetCompletion >= 100.0f) {
+				// Basic laser animation for eliminating zombie
+				int cannonX = laserMiddle->getComponent<TransformComponent>().position.x + 68; // Center of cannon
+				int cannonY = laserMiddle->getComponent<TransformComponent>().position.y + 128; // Bottom of cannon
 
-			int zombieX = zombie4->getComponent<TransformComponent>().position.x + 32;
-			int zombieY = zombie4->getComponent<TransformComponent>().position.y + 32;
+				int zombieX = zombie4->getComponent<TransformComponent>().position.x + 32;
+				int zombieY = zombie4->getComponent<TransformComponent>().position.y + 32;
 
-			LaserStrike laser;
-			laser.startX = cannonX;
-			laser.startY = cannonY;
-			laser.endX = zombieX;
-			laser.endY = zombieY;
-			laser.duration = 6;
+				LaserStrike laser;
+				laser.startX = cannonX;
+				laser.startY = cannonY;
+				laser.endX = zombieX;
+				laser.endY = zombieY;
+				laser.duration = 6;
 
-			activeLasers.push_back(laser);
+				activeLasers.push_back(laser);
 
-			zombie4Defeated = true;
-			lessonFullyCompleted = true;
-			zombie4->getComponent<SpriteComponent>().setTex("assets/Tombstone.png");
-			zombiesRemaining = 0;
+				zombie4Defeated = true;
+				lessonFullyCompleted = true;
+				zombie4->getComponent<SpriteComponent>().Play("Defeat");
+				zombiesRemaining = 0;
+			}
 		}
-
 		// If full line typed, go to results after delay
 		if (lessonUserInput.size() >= lessonCurrentLine.size()) {
 			if (!lessonsDelayTimerStarted) {
@@ -1679,13 +1693,14 @@ void Game::render()
 		// Changes color of text on screen based on which menu selection is currently chosen
 		SDL_Color lessonsColor = mainMenuSelection == 0 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
 		SDL_Color arcadeColor = mainMenuSelection == 1 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
-		SDL_Color recordsColor = mainMenuSelection == 2 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
-		SDL_Color wpmColor = mainMenuSelection == 3 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+		SDL_Color wpmColor = mainMenuSelection == 2 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
+		SDL_Color recordsColor = mainMenuSelection == 3 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
 
-		uiManager->drawText("Lessons", 400, 400, lessonsColor, titleFont);
-		uiManager->drawText("Arcade", 800, 400, arcadeColor, titleFont);
-		uiManager->drawText("Records", 400, 500, recordsColor, titleFont);
-		uiManager->drawText("WPM Test", 800, 500, wpmColor, titleFont);
+		uiManager->drawText("Lessons", 250, 400, lessonsColor, titleFont);
+		uiManager->drawText("Arcade", 550, 400, arcadeColor, titleFont);
+		uiManager->drawText("WPM Test", 900, 400, wpmColor, titleFont);
+		uiManager->drawText("Records", 1200, 400, recordsColor, titleFont);
+		uiManager->drawText("[ARROW KEYS]: Navigate    [ENTER]: Select    [ESC]: Back", 250, 800, { 255, 255, 255, 255 }, menuFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1696,13 +1711,14 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
-		uiManager->drawText("Lessons Mode", 660, 60, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawText("Lessons Mode", 620, 50, { 255, 255, 255, 255 }, titleFont);
 
 		howToColor = lessonsMenuSelection == 0 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
 		startColor = lessonsMenuSelection == 1 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
 
-		uiManager->drawText("How To Play", 500, 450, howToColor, titleFont);
-		uiManager->drawText("Lesson Selection", 900, 450, startColor, titleFont);
+		uiManager->drawText("How To Play", 400, 450, howToColor, titleFont);
+		uiManager->drawText("Lesson Selection", 850, 450, startColor, titleFont);
+		uiManager->drawText("[ARROW KEYS]: Navigate    [ENTER]: Select    [ESC]: Back", 250, 800, { 255, 255, 255, 255 }, menuFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1713,7 +1729,19 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
-		uiManager->drawText("How To Play", 660, 60, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawText("How To Play", 660, 50, { 255, 255, 255, 255 }, titleFont);
+
+		// Instructions/intro
+		uiManager->drawCenteredText("*incoming message from Doctor Qwerty...*", 150, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("\"You there, intern! Get to the lab immediately!", 250, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("There's a zombie outbreak! Didn't you see it on the news?!", 300, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("You know how to touch type, right? Well here's quick reminder.", 350, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Place your left fingers on A, S, D, and F, and your thumb on the spacebar.", 400, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Place your right fingers on J, K, L, and ;, and your thumb on the spacebar.", 450, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Then type in the on-screen codes to lay those zombies at rest... humanely.", 500, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Please hurry! You're our only hope!\"", 600, { 255, 255, 255, 255 }, menuFont, screenWidth);
+
+		uiManager->drawText("[ESC]: Back", 700, 800, { 255, 255, 255, 255 }, menuFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1724,16 +1752,16 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
-		uiManager->drawText("Lesson Selection", 660, 60, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawText("Lesson Selection", 600, 50, { 255, 255, 255, 255 }, titleFont);
 
-		baseY = 250; // Vertical spacing between lesson rows
+		baseY = 110; // Vertical spacing between lesson rows
 		for (int i = 0; i < totalLessons; ++i) {
 			// Highlight the selected lesson
 			SDL_Color color = (lessonsLevelSelection == i) ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
 
 			// Display lesson title
 			std::string label = "Lesson " + std::to_string(i);
-			uiManager->drawText(label, 200, baseY + (i * 100), color, menuFont);
+			uiManager->drawText(label, 80, baseY + (i * 70), color, menuFont);
 
 			// Get progress data for each lesson
 			WordListManager::Difficulty lessonDiff = static_cast<WordListManager::Difficulty>(i);
@@ -1756,10 +1784,12 @@ void Game::render()
 				}
 
 				if (!status.empty()) {
-					uiManager->drawText(status + stats, 500, baseY + (i * 100), { 102, 255, 105, 255 }, menuFont);
+					uiManager->drawText(status + stats, 500, baseY + (i * 70), { 102, 255, 105, 255 }, menuFont);
 				}
 			}
 		}
+
+		uiManager->drawText("[ARROW KEYS]: Navigate    [ENTER]: Select    [ESC]: Back", 250, 800, { 255, 255, 255, 255 }, menuFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1848,11 +1878,6 @@ void Game::render()
 		// Draw game objects
 		manager.draw();
 
-		zombie1->getComponent<SpriteComponent>().draw();
-		zombie2->getComponent<SpriteComponent>().draw();
-		zombie3->getComponent<SpriteComponent>().draw();
-		zombie4->getComponent<SpriteComponent>().draw();
-
 		crosshair->getComponent<SpriteComponent>().draw();
 
 		leftHand->getComponent<SpriteComponent>().draw();
@@ -1897,7 +1922,7 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
-		uiManager->drawText("Lessons Results", 660, 60, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawCenteredText("Lessons Results", 50, { 255, 255, 255, 255 }, titleFont, screenWidth);
 
 		// Completion Message
 		if (lessonFullyCompleted) {
@@ -1911,12 +1936,12 @@ void Game::render()
 		}
 
 		// Stats
-		uiManager->drawText("Time: " + std::to_string(lessonResultTime) + " seconds", 400, 300, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Time: " + std::to_string(lessonResultTime) + " seconds", 400, 350, { 255, 255, 255, 255 }, menuFont);
 		uiManager->drawText("Accuracy: " + std::to_string((int)(lessonCompletion)) + "%", 400, 500, { 255, 255, 255, 255 }, menuFont);
-		uiManager->drawText("Characters: " + std::to_string(lessonCorrectChars) + " / " + std::to_string(lessonIncorrectChars) + " (correct / incorrect)", 400, 700, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Characters: " + std::to_string(lessonCorrectChars) + " / " + std::to_string(lessonIncorrectChars) + " (correct / incorrect)", 400, 650, { 255, 255, 255, 255 }, menuFont);
 
 		if (showBlinkText) {
-			uiManager->drawText("Press Enter to Return to the Lesson Selection Screen!", 400, 800, { 255, 255, 255, 255 }, menuFont);
+			uiManager->drawCenteredText("Press Enter to Return to the Lesson Selection Screen!", 800, { 255, 255, 255, 255 }, menuFont, screenWidth);
 		}
 
 		SDL_RenderPresent(renderer);
@@ -1928,13 +1953,15 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
-		uiManager->drawText("Arcade Mode", 660, 60, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawText("Arcade Mode", 600, 50, { 255, 255, 255, 255 }, titleFont);
 
 		howToColor = arcadeMenuSelection == 0 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
 		startColor = arcadeMenuSelection == 1 ? SDL_Color{ 255, 255, 0, 255 } : SDL_Color{ 255, 255, 255, 255 };
 
 		uiManager->drawText("How To Play", 500, 450, howToColor, titleFont);
 		uiManager->drawText("Start", 900, 450, startColor, titleFont);
+
+		uiManager->drawText("[ARROW KEYS]: Navigate    [ENTER]: Select    [ESC]: Back", 250, 800, { 255, 255, 255, 255 }, menuFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1945,7 +1972,22 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
-		uiManager->drawText("How To Play", 660, 60, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawText("How To Play", 660, 50, { 255, 255, 255, 255 }, titleFont);
+
+		// Instructions/intro
+		uiManager->drawCenteredText("*incoming message from Doctor Qwerty...*", 150, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("\"Intern! We've got a serious problem! Get to the defense orb immediately!", 250, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("My advanced auto-targeting system will do the legwork. Just type!", 300, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Remember your touch typing skills and you'll be fine. But maintain accuracy!", 350, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Make no errors when typing and you'll charge the laser power-up...", 400, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Unleash the power-up with the spacebar when fully charged to stun those freaks!", 450, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Hit the backspace if you make any errors, or else you can't defeat them.", 500, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Lastly, please be careful and don't let them too close to the orb!", 550, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Interns are expensive these days, ya know!", 600, { 255, 255, 255, 255 }, menuFont, screenWidth);
+
+		uiManager->drawCenteredText("Please hurry! You're our only hope!\"", 700, { 255, 255, 255, 255 }, menuFont, screenWidth);
+
+		uiManager->drawText("[ESC]: Back", 700, 800, { 255, 255, 255, 255 }, menuFont);
 
 		SDL_RenderPresent(renderer);
 		break;
@@ -1955,18 +1997,6 @@ void Game::render()
 
 		SDL_SetRenderDrawColor(renderer, 160, 160, 160, 255);
 		SDL_RenderClear(renderer);
-
-		// MAKE SURE TO REMOVE THIS BIT WHEN READY
-		// 
-		// 
-		// 
-		// 
-		// 
-		// 
-		// TESTING LINES TO ENSURE DIMENSIONS ARE CORRECT
-		//SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // red
-		//SDL_RenderDrawLine(renderer, 800, 0, 800, 900);   // vertical center line
-		//SDL_RenderDrawLine(renderer, 1599, 0, 1599, 900); // far right edge
 
 		// Cursor rendering
 		cursorBlinkSpeed = 500; // Milliseconds
@@ -2003,13 +2033,6 @@ void Game::render()
 			int textY = static_cast<int>(zombieTransform.position.y - 20); // Slightly above zombie
 
 			if (uiManager) {
-				// HERE ya goob
-				//
-				//
-				// 
-				// 
-				// 
-				// NEED TO UPDATE PROMPT BOX AND POSSIBLY TEXT SIZE !
 				SDL_Color rectColor = { 255, 178, 102, 255 };
 				TTF_Font* font = TTF_OpenFont("assets/PressStart2P.ttf", 16);
 
@@ -2515,15 +2538,6 @@ void Game::render()
 		uiManager->drawText(finalWrongResults, 40, 400, { 255, 255, 255, 255 }, menuFont);
 		uiManager->drawText(overallAccuracy, 40, 600, { 255, 255, 255, 255 }, menuFont);
 
-		// heeeree
-		//
-		//
-		//
-		//
-		//
-		//
-		// Add alert when another zombie is spawning
-
 		if (showBlinkText) {
 			uiManager->drawText("Press Enter to Start the Next Level!", 500, 750, { 255, 255, 255, 255 }, menuFont);
 		}
@@ -2538,15 +2552,6 @@ void Game::render()
 		SDL_RenderClear(renderer);
 
 		hpResults = "Barrier HP restored: " + std::to_string(bonusHP);
-
-		// heeerreeeee
-		// 
-		// 
-		// 
-		// 
-		// 
-		// 
-		// maybe add total Barrier HP here
 
 		// Move unique values from typedWrong to wrongResults
 		wrongResults.clear();
@@ -2605,7 +2610,7 @@ void Game::render()
 		uiManager->drawText("GAME", 600, 100, { 255, 255, 255, 255 }, gameOverFont);
 		uiManager->drawText("OVER!", 575, 300, { 255, 255, 255, 255 }, gameOverFont);
 		if (showBlinkText && level == arcadeHighestLevel) {
-			uiManager->drawText("NEW RECORD!", 575, 450, { 255, 255, 255, 255 }, menuFont);
+			uiManager->drawCenteredText("NEW RECORD!", 450, { 255, 255, 255, 255 }, menuFont, screenWidth);
 		}
 		uiManager->drawText("Highest Level Reached: " + std::to_string(level), 600, 500, { 255, 255, 255, 255 }, menuFont);
 		uiManager->drawText("Total Zombies Defeated: " + std::to_string(zombiesDefeated), 600, 550, { 255, 255, 255, 255 }, menuFont);
@@ -2624,25 +2629,25 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
-		uiManager->drawText("Records", 700, 100, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawCenteredText("Records", 50, { 255, 255, 255, 255 }, titleFont, screenWidth);
 
 		title = getTypingTitle(highestWpm);
 
-		uiManager->drawText("Current Title: " + title, 600, 200, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawCenteredText("Current Title: " + title, 150, { 255, 255, 255, 255 }, menuFont, screenWidth);
 
 		// Add in how many time each mode was played
 
 		// Lessons Mode Accuracy
-		uiManager->drawText("Lessons Mode Total Accuracy: " + formatPercentage(recordsLessonAccuracy), 600, 250, {255, 255, 255, 255}, menuFont);
+		uiManager->drawText("Lessons Mode Total Accuracy: " + formatPercentage(recordsLessonAccuracy), 100, 300, {255, 255, 255, 255}, menuFont);
 
 		// Arcade Mode Accuracy
-		uiManager->drawText("Arcade Mode Total Accuracy: " + formatPercentage(recordsArcadeAccuracy), 600, 300, {255, 255, 255, 255}, menuFont);
+		uiManager->drawText("Arcade Mode Total Accuracy: " + formatPercentage(recordsArcadeAccuracy), 100, 350, {255, 255, 255, 255}, menuFont);
 
 		// WPM Test Accuracy
-		uiManager->drawText("WPM Test Total Accuracy: " + formatPercentage(recordsWpmAccuracy), 600, 350, {255, 255, 255, 255}, menuFont);
+		uiManager->drawText("WPM Test Total Accuracy: " + formatPercentage(recordsWpmAccuracy), 100, 400, {255, 255, 255, 255}, menuFont);
 
 		// Overall accuracy of every mode
-		uiManager->drawText("Overall Accuracy: " + formatPercentage(recordsOverallAccuracy), 600, 400, {255, 255, 255, 255}, menuFont);
+		uiManager->drawText("Overall Accuracy: " + formatPercentage(recordsOverallAccuracy), 100, 450, {255, 255, 255, 255}, menuFont);
 
 		// Lessons completed
 		lessonsCompleted = 0;
@@ -2653,28 +2658,51 @@ void Game::render()
 		}
 
 		lessonSummary = "Lessons Completed: (" + std::to_string(lessonsCompleted) + "/" + std::to_string(totalLessons) + ")";
-		uiManager->drawText(lessonSummary, 600, 450, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText(lessonSummary, 100, 500, { 255, 255, 255, 255 }, menuFont);
 
 		// Highest arcade level achieved
-		uiManager->drawText("Highest Arcade Level: " + std::to_string(arcadeHighestLevel), 600, 500, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Highest Arcade Level: " + std::to_string(arcadeHighestLevel), 100, 550, { 255, 255, 255, 255 }, menuFont);
 
 		// Highest WPM test score
-		uiManager->drawText("Highest WPM Score: " + std::to_string(highestWpm), 600, 550, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Highest WPM Score: " + std::to_string(highestWpm), 100, 600, { 255, 255, 255, 255 }, menuFont);
 
 		// Characters typed wrong in every mode
-		uiManager->drawText("Incorrect Characters:", 600, 580, { 255, 255, 255, 255 }, menuFont);
+		uiManager->drawText("Incorrect Characters:", 1000, 300, { 255, 255, 255, 255 }, menuFont);
 
-		y = 600;
-		for (const auto& [ch, count] : lifetimeWrongCharacters) {
-			//std::string displaySpace = (ch == ' ') ? "<space>" : std::string(1, ch);
-			//std::string entry = displaySpace + ": " + std::to_string(count);
+		// Copy map contents into a vector for sorting
+		sortedWrongCharacters.assign(lifetimeWrongCharacters.begin(), lifetimeWrongCharacters.end());
+
+		// Sort by count, descending
+		std::sort(sortedWrongCharacters.begin(), sortedWrongCharacters.end(),
+			[](const auto& a, const auto& b) {
+				return a.second > b.second;
+			});
+
+		column = 0;
+		row = 0;
+		itemsPerColumn = 10;
+		startX = 1000;
+		startY = 350;
+		spacingY = 30;
+		spacingX = 150;
+
+		entryIndex = 0;
+		for (const auto& [ch, count] : sortedWrongCharacters) {
 			std::string entry = std::string(1, ch) + ": " + std::to_string(count);
-			uiManager->drawText(entry, 620, y, { 255, 100, 100, 255 }, menuFont);
-			y += 30;
+
+			column = entryIndex / itemsPerColumn;
+			row = entryIndex % itemsPerColumn;
+
+			int x = startX + (column * spacingX);
+			int y = startY + (row * spacingY);
+
+			uiManager->drawText(entry, x, y, { 255, 100, 100, 255 }, menuFont);
+
+			++entryIndex;
 		}
 
 		if (showBlinkText) {
-			uiManager->drawText("Press ESC to return to the Main Menu!", 580, 800, { 255, 255, 255, 255 }, menuFont);
+			uiManager->drawCenteredText("Press ESC to return to the Main Menu!", 800, { 255, 255, 255, 255 }, menuFont, screenWidth);
 		}
 
 		SDL_RenderPresent(renderer);
@@ -2687,15 +2715,10 @@ void Game::render()
 		SDL_RenderClear(renderer);
 
 		if (!wpmTestStarted && showBlinkText) {
-			uiManager->drawText(
-				"Start typing to begin!",
-				620, 250,
-				{ 255, 255, 255, 255 },
-				menuFont
-			);
+			uiManager->drawText("Start typing to begin!", 620, 250, { 255, 255, 255, 255 }, menuFont);
 		}
 
-		uiManager->drawText("Words Per Minute Test", 600, 100, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawCenteredText("Words Per Minute Test", 50, { 255, 255, 255, 255 }, titleFont, screenWidth);
 
 		// Draw timer
 		uiManager->drawText("Time: " + std::to_string(wpmTimeRemaining), 50, 50, { 255, 255, 255, 255 }, wpmFont);
@@ -2782,7 +2805,7 @@ void Game::render()
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
 
-		uiManager->drawText("Words Per Minute Test Results", 500, 100, { 255, 255, 255, 255 }, titleFont);
+		uiManager->drawCenteredText("Words Per Minute Test Results", 100, { 255, 255, 255, 255 }, titleFont, screenWidth);
 
 		uiManager->drawText("Time: 60 seconds", 400, 300, { 255, 255, 255, 255 }, menuFont);
 		uiManager->drawText("Raw WPM: " + std::to_string((int)rawWpm), 400, 400, { 255, 255, 255, 255 }, menuFont);
@@ -2791,12 +2814,7 @@ void Game::render()
 		uiManager->drawText("Characters: " + std::to_string(wpmCorrectChars) + " / " + std::to_string(wpmIncorrectChars) + " (correct / incorrect)", 400, 700, {255, 255, 255, 255}, menuFont);
 
 		if (showBlinkText) {
-			uiManager->drawText(
-				"Press Enter to Return to the Main Menu!",
-				400, 800,
-				{ 255, 255, 255, 255 },
-				menuFont
-			);
+			uiManager->drawCenteredText("Press Enter to Return to the Main Menu!", 800, { 255, 255, 255, 255 }, menuFont, screenWidth);
 		}
 
 		SDL_RenderPresent(renderer);
@@ -2815,6 +2833,8 @@ void Game::render()
 		uiManager->drawCenteredText("Resume", 400, resumeColor, menuFont, screenWidth);
 		uiManager->drawCenteredText("Quit to Main Menu", 500, quitColor, menuFont, screenWidth);
 
+		uiManager->drawText("[ARROW KEYS]: Navigate    [ENTER]: Select    [ESC]: Back", 250, 800, { 255, 255, 255, 255 }, menuFont);
+
 		SDL_RenderPresent(renderer);
 		break;
 
@@ -2829,12 +2849,6 @@ void Game::clean()
 {
 	// Clean game/free memory on exit
 
-	// heerree
-	// 
-	// 
-	// 
-	// 
-	// TODO (add more items to free?!)
 	delete uiManager;
 	SDL_DestroyWindow(window);
 	SDL_DestroyRenderer(renderer);
@@ -2867,19 +2881,19 @@ void Game::resetLessonsMode(WordListManager::Difficulty lessonDifficulty)
 	// Create fresh zombies
 	zombie1 = &manager.addEntity();
 	zombie1->addComponent<TransformComponent>(300, 600, 32, 32, 2);
-	zombie1->addComponent<SpriteComponent>("assets/Zombie.png");
+	zombie1->addComponent<SpriteComponent>("assets/Zambie-Sheet.png", true);
 
 	zombie2 = &manager.addEntity();
-	zombie2->addComponent<TransformComponent>(700, 600, 32, 32, 2);
-	zombie2->addComponent<SpriteComponent>("assets/Zombie.png");
+	zombie2->addComponent<TransformComponent>(650, 600, 32, 32, 2);
+	zombie2->addComponent<SpriteComponent>("assets/Zambie-Sheet.png", true);
 
 	zombie3 = &manager.addEntity();
 	zombie3->addComponent<TransformComponent>(900, 600, 32, 32, 2);
-	zombie3->addComponent<SpriteComponent>("assets/Zombie.png");
+	zombie3->addComponent<SpriteComponent>("assets/Zambie-Sheet.png", true);
 
 	zombie4 = &manager.addEntity();
-	zombie4->addComponent<TransformComponent>(1300, 600, 32, 32, 2);
-	zombie4->addComponent<SpriteComponent>("assets/Zombie.png");
+	zombie4->addComponent<TransformComponent>(1250, 600, 32, 32, 2);
+	zombie4->addComponent<SpriteComponent>("assets/Zambie-Sheet.png", true);
 
 	// Setting hand sprites
 	leftHand = &manager.addEntity();

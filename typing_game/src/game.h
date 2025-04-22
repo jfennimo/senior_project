@@ -315,9 +315,18 @@ private:
 	int arcadeHighestLevel = 0;
 
 	// Lifetime wrong characters (characters typed incorrectly throughout playtime)
-	int y; // Just for draw positioning
+	// Just for draw positioning
+	int column;
+	int row;
+	int itemsPerColumn;
+	int startX;
+	int startY;
+	int spacingY;
+	int spacingX;
+	int y; 
+	int entryIndex;
 	std::unordered_map<char, int> lifetimeWrongCharacters; // Track how often each wrong letter is typed
-	
+	std::vector<std::pair<char, int>> sortedWrongCharacters; // Sorts characters by most common to least common
 
 	// WPM Test variables:
 	//
