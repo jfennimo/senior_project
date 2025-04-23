@@ -1,8 +1,7 @@
 #include "Map.h"
 #include "TextureManager.h"
 
-// previously 23 height, 40 width
-// now 24 height, 50 width
+// 24 height, 50 width
 int arcadeMap[24][50] = {
 	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
 	{0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0},
@@ -33,7 +32,7 @@ int arcadeMap[24][50] = {
 Map::Map()
 {
 	wall = TextureManager::LoadTexture("assets/Wall.png");
-	floorEasy = TextureManager::LoadTexture("assets/Floor_Green.png");
+	floorEasy = TextureManager::LoadTexture("assets/Floor_White.png");
 	floorMedium = TextureManager::LoadTexture("assets/Floor_Yellow.png");
 	floorHard = TextureManager::LoadTexture("assets/Floor_Red.png");
 	floorCaution = TextureManager::LoadTexture("assets/Floor_Caution.png");

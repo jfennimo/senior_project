@@ -1,9 +1,10 @@
-#ifndef Game_h
-#define Game_h
+#pragma once
 #include "SDL.h"
 #include "SDL_image.h"
 #include "UIManager.h"
+#include "WordListManager.h"
 #include "GameState.h"
+#include "SaveSystem.h"
 #include <vector>
 #include <iostream>
 #include <sstream>
@@ -16,50 +17,70 @@ public:
 	~Game();
 
 	void init(const char* title, int width, int height, bool fullscreen);
-	
+
+	// Game methods for main method
 	void handleEvents();
 	void update();
 	void render();
 	void clean();
 
-	void nextLevel();
-	void bonusStage();
-	void resetGame();
-
-	void updateHandSprites();
-
-	void resetHandSprites();
-
-	void updateBarrierDamage(int barrierHP);
-
-	void checkCombo(const std::string& input, const std::string& target);
-
-	void fireLaser();
-
-	//void transformZombie(Entity* zombie);
-
-
-	//void updateBarrierSprite();
-
 	bool running() {
 		return isRunning;
 	}
 
-	static SDL_Renderer *renderer;
+	// Public methods
+	//
+	//
+	//
+
+	// Lessons Mode methods
+	void resetLessonsMode(WordListManager::Difficulty lessonDifficulty);
+	void exitLessonsMode();
+	void calculateLessonResults();
+
+	// Arcade Mode methods
+	void resetArcadeMode();
+	void exitArcadeMode();
+	void nextLevel();
+	void bonusStage();
+	void updateBarrierDamage(int barrierHP);
+	void checkCombo(const std::string& input, const std::string& target);
+	void fireLaser();
+
+	// WPM Test methods
+	void resetWPMTest();
+	void shiftWpmLines();
+	int countWords(const std::string& line);
+	std::string generateRandomLine();
+	void calculateWPM();
+	std::string getTypingTitle(int highestWpm);
+
+	// Results method(s)
+	void calculateAverageRecords();
+
+	// Shared method(s)
+	void updateHandSprites(const std::string& targetText, const std::string& userInput);
+	std::string formatPercentage(float value);
+
+	// Save/Load methods
+	void syncToSaveData();
+	void syncFromSaveData();
+	void saveProgress();
+	void loadProgress();
+
+
+	// Public Members
+	//
+	//
+	//
+
+	// Holds saved lesson progress
+	std::unordered_map<WordListManager::Difficulty, SaveSystem::LessonProgress> lessonProgressMap;
+
+	static SDL_Renderer* renderer;
 	static SDL_Event event;
 
-	// Fonts
-	TTF_Font* titleFont;
-	TTF_Font* menuFont;
-	TTF_Font* healthFont;
-	TTF_Font* roundFont;
-	TTF_Font* gameOverFont;
-	TTF_Font* controlPanelFont;
-	TTF_Font* statusFont;
-	TTF_Font* threatLvlFont;
-	TTF_Font* comboStatusFont;
-
-	GameState gameState;
+	SaveSystem::SaveData saveData;
 
 private:
 	bool isRunning = false;
@@ -70,9 +91,89 @@ private:
 	Uint32 currentTime;
 
 	SDL_Window* window;
-	UIManager* uiManager;
-	std::string userInput = ""; // for storing typed text
-	bool isZombieTransformed = false; // to prevent multiple transformations!
+
+	// Main menu variables:
+	//
+	//
+	//
+	int mainMenuSelection = 0; // 0 = Lessons, 1 = Arcade, 2 = Records, 3 = WPM Test
+	int lessonsMenuSelection = 0; // 0 = How To Play, 1 = Start
+	int lessonsLevelSelection = 0; // 0 - ? = Lesson selection
+	int arcadeMenuSelection = 0;  // 0 = How To Play, 1 = Start
+	int pauseMenuSelection = 0; // 0 = Resume, 1 = Quit
+
+	SDL_Color howToColor;
+	SDL_Color startColor;
+
+	// Lessons mode variables:
+	//
+	//
+	//
+	SDL_Color panelColor;
+	SDL_Color screenColor;
+	SDL_Color outlineColor;
+
+	bool lessonTimeFrozen = false;
+	int lessonsCompleted;
+	int totalLessons = 10;
+	int baseY;
+	int lessonScrollX = 0;
+	const int lessonFixedCursorX = 800; // X position of cursor
+	int typedWidth;
+	int refLineLetterX = 800;
+
+	std::vector<SDL_Texture*> lessonCharTextures; // For reference line
+	std::vector<int> lessonCharWidths;
+
+	std::vector<SDL_Texture*> typedCharTextures;  // For typed line
+	std::vector<int> typedCharWidths;
+	std::vector<SDL_Color> typedCharColors;
+
+	int lessonTargetY;
+	int lessonInputY;
+	int lessonLetterX;
+
+	std::string lessonCurrentLine;
+	std::string lessonUserInput;
+
+	bool zombie1Defeated = false;
+	bool zombie2Defeated = false;
+	bool zombie3Defeated = false;
+	bool zombie4Defeated = false;
+
+	bool lessonPassed = false;
+	bool lessonFullyCompleted = false;
+
+	float lessonCompletion = 0.0f;
+	float lessonTargetCompletion = 0.0f;
+	int correctChars = 0;
+	float fillSpeed = 0.0f;
+	int zombiesRemaining = 4;
+
+	bool isCorrect;
+	int lessonCorrectChars = 0;
+	int lessonTotalTypedChars = 0;
+	int lessonIncorrectChars = 0;
+
+	bool lessonsDelayTimerStarted = false;
+	int lessonsResultsDelayTimer = 0;
+
+	int lessonTimeElapsed = 0;
+	int lessonStartTime = 0;
+	int lessonResultTime = 0;
+
+	std::string lessonSummary;
+
+
+	// Arcade mode variables:
+	// 
+	// 
+	//
+	// For storing typed text
+	std::string userInput;
+
+	// Holds current target prompt
+	std::string targetText;
 
 	// Screen size
 	int screenWidth;
@@ -85,6 +186,7 @@ private:
 	int playerX;
 	int barrierX;
 
+	// Middle laser cannon placement
 	int laserX;
 
 	// For barrier UI / logic
@@ -109,7 +211,7 @@ private:
 
 	// Basic laser
 	struct LaserStrike {
-		int startX, startY; // Laser source (e.g. from the cannon)
+		int startX, startY; // Laser source (bottom of middle cannon)
 		int endX, endY;     // Target position (zombie's center)
 		int duration;       // How long the beam lasts (in frames)
 	};
@@ -117,12 +219,12 @@ private:
 	std::vector<LaserStrike> activeLasers;
 
 	// Laser power up
-	//Entity* laser = nullptr;
 	bool laserActive = false;
 	float laserSpeed = 2.0f; // may need to adjust
 
-	// Zombie speed!!
-	float speed = 0.5f; // How fast the zombies move towards the player
+	// Zombie variables
+	float speed = 0.5f; // How fast the zombies move toward the player
+	bool isZombieTransformed = false; // to prevent multiple transformations!
 
 	// Results screen variables
 	int level = 1;
@@ -131,7 +233,6 @@ private:
 
 	// Barrier variables
 	std::string hpResults;
-	int resultsHP;
 	int barrierHP;
 	int bonusHP;
 	const int maxHP = 100;
@@ -143,16 +244,15 @@ private:
 	int shakeOffsetX = 0;
 	int shakeOffsetY = 0;
 
-	// For game pause before screen transition to results screen
+	// For game pause before screen transition to level results
 	bool nextLevelDelayStarted = false;
 	int nextLevelDelayTimer = 0;
 
 	// For game pause before screen transition to game over
 	bool barrierDestroyed = false;
-	int gameOverDelayTimer = 0; // in frames — e.g. 120 for 2 seconds at 60 FPS
+	int gameOverDelayTimer = 0; // in frames
 
 	// Letters typed incorrectly
-	std::vector<char> typedWrong;
 	std::vector<bool> processedInput;
 	std::string wrongResults;
 	std::ostringstream formattedResults;
@@ -164,22 +264,115 @@ private:
 	// Overall accuracy
 	double levelAccuracy = 0.0;
 	double totalAccuracy = 0.0;
+	double arcadeSessionAccuracy = 0.0;
 	std::ostringstream levelAccuracyStream;
 	std::string overallAccuracy;
 	bool resultsCalculated = false;
 	int levelCorrectLetters = 0;
 	int levelTotalLetters = 0;
-	int finalCorrectLetters = 0;
-	int finalTotalLetters = 0;
+	int sessionCorrectLetters = 0;
+	int sessionTotalLetters = 0;
 
 	// Bonus stage
 	int bonusLevel = 0;
 	bool inBonusStage = false;
 	bool leftGroupDefeated = false;
-	float bonusSpeed = 3.0f;
+	float bonusSpeed = 3.0f; // bonus zombie speed!
 	int bonusZombiesDefeated;
 	int totalBonusZombies;
 	std::string totalBonusZombiesDefeated;
-};
 
-#endif
+
+	// Records screen variables:
+	//
+	//
+	//
+	bool lessonResultsStatsUpdated = false;
+	bool arcadeResultsStatsUpdated = false;
+	bool wpmResultsStatsUpdated = false;
+
+	// Games played
+	int lessonGamesPlayed = 0;
+	int arcadeGamesPlayed = 0;
+	int wpmGamesPlayed = 0;
+
+	// Accuracy for each time a game mode was played
+	float lessonAccuracyTotal = 0.0f;
+	float arcadeAccuracyTotal = 0.0f;
+	float wpmAccuracyTotal = 0.0f;
+
+	// Overall accuracy
+	float recordsLessonAccuracy = 0.0f;
+	float recordsArcadeAccuracy = 0.0f;
+	float recordsWpmAccuracy = 0.0f;
+	float recordsOverallAccuracy = 0.0f;
+
+	// Highest WPM achieved / WPM title
+	int highestWpm;
+	std::string title;
+
+	// Arcade highest level
+	int arcadeHighestLevel = 0;
+
+	// Lifetime wrong characters (characters typed incorrectly throughout playtime)
+	// Just for draw positioning
+	int column;
+	int row;
+	int itemsPerColumn;
+	int startX;
+	int startY;
+	int spacingY;
+	int spacingX;
+	int y; 
+	int entryIndex;
+	std::unordered_map<char, int> lifetimeWrongCharacters; // Track how often each wrong letter is typed
+	std::vector<std::pair<char, int>> sortedWrongCharacters; // Sorts characters by most common to least common
+
+	// WPM Test variables:
+	//
+	//
+	//
+	Uint32 lastSecondTick = 0;
+
+	std::string wpmTopLine;
+	std::string wpmCurrentLine;
+	std::string wpmNextLine;
+	std::string wpmUserInput;
+
+	bool wpmTestStarted = false;
+	bool wpmTestEnded = false;
+
+	int wpmTimeRemaining = 60;
+	//int wpmTypedWords = 0; // Can safely delete, but may keep for results
+	float rawWpm = 0.0f;
+	float wpmAccuracy = 0.0f;
+	float wpm = 0.0f;
+	int wpmCorrectChars = 0;
+	int wpmTotalTypedChars = 0;
+	int wpmIncorrectChars = 0;
+
+	// WPM Render Variables
+	int lineStartX;
+	int topLineY;
+	int middleLineY;
+	int bottomLineY;
+	int letterX;
+	int cursorX;
+
+
+	// Shared variables:
+	//
+	//
+	//
+	SDL_Color fgColor;
+	SDL_Color bgColor;
+	SDL_Color comboColor;
+	SDL_Color textColor;
+	SDL_Color correct;
+	SDL_Color wrong;
+	SDL_Color neutral;
+
+	std::unordered_map<char, int> typedWrong;
+	std::string currentLeftTex;
+	std::string currentRightTex;
+};

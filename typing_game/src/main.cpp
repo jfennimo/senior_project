@@ -12,9 +12,7 @@ int main(int argc, char* argv[])
 
 	game = new Game();
 
-	// previously 800x640
-		// previously 1280x720
-	game->init("Engine", 1600, 900, false);
+	game->init("Letter RIP", 1600, 900, false);
 
 	while (game->running())
 	{

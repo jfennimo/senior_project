@@ -39,6 +39,9 @@
     <ClCompile Include="src\WordListManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\SaveSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Game.h">
@@ -83,5 +86,178 @@
     <ClInclude Include="src\ECS\Animation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\SaveSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SDL2.dll" />
+    <None Include="SDL2_image.dll" />
+    <None Include="SDL2_ttf.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="wordlists\wpm.txt" />
+    <Text Include="wordlists\medium.txt" />
+    <Text Include="wordlists\hard.txt" />
+    <Text Include="wordlists\easy.txt" />
+    <Text Include="wordlists\bonusRight.txt" />
+    <Text Include="wordlists\bonusLeft.txt" />
+    <Text Include="wordlists\lesson_0.txt" />
+    <Text Include="wordlists\lesson_1.txt" />
+    <Text Include="wordlists\lesson_2.txt" />
+    <Text Include="wordlists\lesson_3.txt" />
+    <Text Include="wordlists\lesson_4.txt" />
+    <Text Include="wordlists\lesson_5.txt" />
+    <Text Include="wordlists\lesson_6.txt" />
+    <Text Include="wordlists\lesson_7.txt" />
+    <Text Include="wordlists\lesson_8.txt" />
+    <Text Include="wordlists\lesson_9.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\Barrier_Orb_10.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Barrier_Orb_0.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Barrier_Orb_1.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Barrier_Orb_3.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Barrier_Orb_2.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Barrier_Orb_4.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Barrier_Orb_5.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Barrier_Orb_6.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Barrier_Orb_7.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Barrier_Orb_8.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Barrier_Orb_9.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Combo_Meter_0.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Combo_Meter_1.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Combo_Meter_2.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Combo_Meter_3.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Combo_Meter_4.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Combo_Meter_5.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Combo_Meter_6.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Crosshair.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Exclamation.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Floor_Caution.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Floor_Green.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Laser_Cannon_Left.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Floor_Yellow.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Floor_Red.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Laser_Cannon_Middle.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Laser_Cannon_Right.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Laser-Sheet.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Left_Hand.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Left_Index.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Left_Middle.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Left_Ring.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Left_Pinky.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Left_Thumb.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Right_Hand.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Right_Index.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Right_Middle.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Right_Pinky.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Right_Ring.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Right_Thumb.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Wall.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Tombstone.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Zombie.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Floor_White.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Lessons_Background.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\Zambie-Sheet.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="assets\PressStart2P.ttf" />
+    <Font Include="assets\Square.ttf" />
+    <Font Include="assets\Technology.ttf" />
+    <Font Include="assets\Technology-Bold.ttf" />
+    <Font Include="assets\Technology-BoldItalic.ttf" />
   </ItemGroup>
 </Project>

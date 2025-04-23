@@ -39,9 +39,9 @@ public:
 		Animation walkDown = Animation(0, 4, 100);
 		Animation attackDown = Animation(1, 4, 100);
 		Animation walkRight = Animation(2, 4, 100);
-		Animation attackRight = Animation(3, 4, 100);
+		Animation attackRight = Animation(3, 6, 70);
 		Animation walkLeft = Animation(4, 4, 100);
-		Animation attackLeft = Animation(5, 4, 100);
+		Animation attackLeft = Animation(5, 6, 70);
 		Animation defeat = Animation(6, 19, 100, false);
 		Animation stun = Animation(7, 8, 100);
 
