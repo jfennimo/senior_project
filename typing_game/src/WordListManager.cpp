@@ -7,6 +7,15 @@
 WordListManager::WordListManager() {
 	loadFromFile("wordlists/lesson_0.txt", LESSON_0);
 	loadFromFile("wordlists/lesson_1.txt", LESSON_1);
+	loadFromFile("wordlists/lesson_2.txt", LESSON_2);
+	loadFromFile("wordlists/lesson_3.txt", LESSON_3);
+	loadFromFile("wordlists/lesson_4.txt", LESSON_4);
+	loadFromFile("wordlists/lesson_5.txt", LESSON_5);
+	loadFromFile("wordlists/lesson_6.txt", LESSON_6);
+	loadFromFile("wordlists/lesson_7.txt", LESSON_7);
+	loadFromFile("wordlists/lesson_8.txt", LESSON_8);
+	loadFromFile("wordlists/lesson_9.txt", LESSON_9);
+
 	loadFromFile("wordlists/wpm.txt", WPM);
 	loadFromFile("wordlists/easy.txt", EASY);
 	loadFromFile("wordlists/medium.txt", MEDIUM);

@@ -233,6 +233,54 @@ void Game::handleEvents()
 					gameState = GameState::LESSONS_MODE;
 					std::cout << "Navigating to lesson 1!" << std::endl;
 				}
+				else if (lessonsLevelSelection == 2) {
+					currentLessonDifficulty = WordListManager::LESSON_2;
+					resetLessonsMode(currentLessonDifficulty);
+					gameState = GameState::LESSONS_MODE;
+					std::cout << "Navigating to lesson 2!" << std::endl;
+				}
+				else if (lessonsLevelSelection == 3) {
+					currentLessonDifficulty = WordListManager::LESSON_3;
+					resetLessonsMode(currentLessonDifficulty);
+					gameState = GameState::LESSONS_MODE;
+					std::cout << "Navigating to lesson 3!" << std::endl;
+				}
+				else if (lessonsLevelSelection == 4) {
+					currentLessonDifficulty = WordListManager::LESSON_4;
+					resetLessonsMode(currentLessonDifficulty);
+					gameState = GameState::LESSONS_MODE;
+					std::cout << "Navigating to lesson 4!" << std::endl;
+				}
+				else if (lessonsLevelSelection == 5) {
+					currentLessonDifficulty = WordListManager::LESSON_5;
+					resetLessonsMode(currentLessonDifficulty);
+					gameState = GameState::LESSONS_MODE;
+					std::cout << "Navigating to lesson 5!" << std::endl;
+				}
+				else if (lessonsLevelSelection == 6) {
+					currentLessonDifficulty = WordListManager::LESSON_6;
+					resetLessonsMode(currentLessonDifficulty);
+					gameState = GameState::LESSONS_MODE;
+					std::cout << "Navigating to lesson 6!" << std::endl;
+				}
+				else if (lessonsLevelSelection == 7) {
+					currentLessonDifficulty = WordListManager::LESSON_7;
+					resetLessonsMode(currentLessonDifficulty);
+					gameState = GameState::LESSONS_MODE;
+					std::cout << "Navigating to lesson 7!" << std::endl;
+				}
+				else if (lessonsLevelSelection == 8) {
+					currentLessonDifficulty = WordListManager::LESSON_8;
+					resetLessonsMode(currentLessonDifficulty);
+					gameState = GameState::LESSONS_MODE;
+					std::cout << "Navigating to lesson 8!" << std::endl;
+				}
+				else if (lessonsLevelSelection == 9) {
+					currentLessonDifficulty = WordListManager::LESSON_9;
+					resetLessonsMode(currentLessonDifficulty);
+					gameState = GameState::LESSONS_MODE;
+					std::cout << "Navigating to lesson 9!" << std::endl;
+				}
 			}
 			else if (gameState == GameState::LESSONS_RESULTS) {
 				// Updating overall accuracy stats
@@ -306,7 +354,7 @@ void Game::handleEvents()
 
 		case SDLK_DOWN:
 			if (gameState == GameState::LESSONS_SELECTION) {
-				lessonsLevelSelection = std::min(1, lessonsLevelSelection + 1);
+				lessonsLevelSelection = std::min(1, lessonsLevelSelection + 9);
 			}
 			else if (gameState == GameState::PAUSE) {
 				pauseMenuSelection = std::min(1, pauseMenuSelection + 1);

@@ -181,6 +181,14 @@
     <Text Include="wordlists\hard.txt" />
     <Text Include="wordlists\lesson_0.txt" />
     <Text Include="wordlists\lesson_1.txt" />
+    <Text Include="wordlists\lesson_2.txt" />
+    <Text Include="wordlists\lesson_3.txt" />
+    <Text Include="wordlists\lesson_4.txt" />
+    <Text Include="wordlists\lesson_5.txt" />
+    <Text Include="wordlists\lesson_6.txt" />
+    <Text Include="wordlists\lesson_7.txt" />
+    <Text Include="wordlists\lesson_8.txt" />
+    <Text Include="wordlists\lesson_9.txt" />
     <Text Include="wordlists\medium.txt" />
     <Text Include="wordlists\wpm.txt" />
   </ItemGroup>

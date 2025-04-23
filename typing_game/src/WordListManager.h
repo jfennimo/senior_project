@@ -6,7 +6,7 @@
 
 class WordListManager {
 public:
-	enum Difficulty { LESSON_0, LESSON_1, WPM, EASY, MEDIUM, HARD, BONUSLEFT, BONUSRIGHT };
+	enum Difficulty { LESSON_0, LESSON_1, LESSON_2, LESSON_3, LESSON_4, LESSON_5, LESSON_6, LESSON_7, LESSON_8, LESSON_9, WPM, EASY, MEDIUM, HARD, BONUSLEFT, BONUSRIGHT };
 
 	WordListManager();
 
