@@ -354,7 +354,7 @@ void Game::handleEvents()
 
 		case SDLK_DOWN:
 			if (gameState == GameState::LESSONS_SELECTION) {
-				lessonsLevelSelection = std::min(1, lessonsLevelSelection + 9);
+				lessonsLevelSelection = std::min(9, lessonsLevelSelection + 1);
 			}
 			else if (gameState == GameState::PAUSE) {
 				pauseMenuSelection = std::min(1, pauseMenuSelection + 1);
