@@ -1783,10 +1783,10 @@ void Game::render()
 		uiManager->drawCenteredText("*incoming message from Doctor Qwerty...*", 150, { 255, 255, 255, 255 }, menuFont, screenWidth);
 		uiManager->drawCenteredText("\"You there, intern! Get to the lab immediately!", 250, { 255, 255, 255, 255 }, menuFont, screenWidth);
 		uiManager->drawCenteredText("There's a zombie outbreak! Didn't you see it on the news?!", 300, { 255, 255, 255, 255 }, menuFont, screenWidth);
-		uiManager->drawCenteredText("You know how to touch type, right? Well here's quick reminder.", 350, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("You know how to touch type, right? Well, here's quick reminder.", 350, { 255, 255, 255, 255 }, menuFont, screenWidth);
 		uiManager->drawCenteredText("Place your left fingers on A, S, D, and F, and your thumb on the spacebar.", 400, { 255, 255, 255, 255 }, menuFont, screenWidth);
 		uiManager->drawCenteredText("Place your right fingers on J, K, L, and ;, and your thumb on the spacebar.", 450, { 255, 255, 255, 255 }, menuFont, screenWidth);
-		uiManager->drawCenteredText("Then type in the on-screen codes to lay those zombies at rest... humanely.", 500, { 255, 255, 255, 255 }, menuFont, screenWidth);
+		uiManager->drawCenteredText("Then type in the on-screen prompts to lay those zombies at rest... 'humanely'.", 500, { 255, 255, 255, 255 }, menuFont, screenWidth);
 		uiManager->drawCenteredText("Please hurry! You're our only hope!\"", 600, { 255, 255, 255, 255 }, menuFont, screenWidth);
 
 		uiManager->drawText("[ESC]: Back", 700, 800, { 255, 255, 255, 255 }, menuFont);
